@@ -32,6 +32,7 @@ void _PG_init(void);
 void _PG_fini(void);
 
 CURL *curl = NULL;
+StringInfoData read;
 StringInfoData write;
 pqsigfunc pgsql_interrupt_handler = NULL;
 int pg_curl_interrupt_requested = 0;
@@ -42,6 +43,7 @@ void _PG_init(void) {
     if (curl_global_init(CURL_GLOBAL_ALL)) ereport(ERROR, (errmsg("curl_global_init")));
     pgsql_interrupt_handler = pqsignal(SIGINT, pg_curl_interrupt_handler);
     pg_curl_interrupt_requested = 0;
+    (void)initStringInfo(&read);
     (void)initStringInfo(&write);
 }
 
@@ -49,6 +51,7 @@ void _PG_fini(void) {
     (pqsigfunc)pqsignal(SIGINT, pgsql_interrupt_handler);
     if (curl) { (void)curl_easy_cleanup(curl); curl = NULL; }
     (void)curl_global_cleanup();
+    if (read.data) (void)pfree(read.data);
     if (write.data) (void)pfree(write.data);
 }
 
@@ -63,6 +66,16 @@ Datum pg_curl_easy_reset(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_res
     PG_RETURN_VOID();
 }
 
+inline static size_t read_callback(void *buffer, size_t size, size_t nitems, void *instream) {
+    size_t reqsize = size * nitems;
+    StringInfo si = (StringInfo)instream;
+    size_t remaining = si->len - si->cursor;
+    size_t readsize = reqsize < remaining ? reqsize : remaining;
+    memcpy(buffer, si->data + si->cursor, readsize);
+    si->cursor += readsize;
+    return readsize;
+}
+
 Datum pg_curl_easy_setopt_str(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_setopt_str); Datum pg_curl_easy_setopt_str(PG_FUNCTION_ARGS) {
     CURLcode res = CURL_LAST;
     CURLoption option;
@@ -73,6 +86,11 @@ Datum pg_curl_easy_setopt_str(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_eas
     if (!curl) curl = curl_easy_init();
     option_str = text_to_cstring(PG_GETARG_TEXT_P(0));
     if (!pg_strncasecmp(option_str, "CURLOPT_READDATA", sizeof("CURLOPT_READDATA") - 1)) {
+/*			appendBinaryStringInfo(&si_read, VARDATA(content_text), content_size);
+			CURL_SETOPT(g_http_handle, CURLOPT_UPLOAD, 1);
+			CURL_SETOPT(g_http_handle, CURLOPT_READFUNCTION, http_readback);
+			CURL_SETOPT(g_http_handle, CURLOPT_READDATA, &si_read);
+			CURL_SETOPT(g_http_handle, CURLOPT_INFILESIZE, content_size);*/
     }
     else if (!pg_strncasecmp(option_str, "CURLOPT_URL", sizeof("CURLOPT_URL") - 1)) option = CURLOPT_URL;
     else if (!pg_strncasecmp(option_str, "CURLOPT_USERAGENT", sizeof("CURLOPT_USERAGENT") - 1)) option = CURLOPT_USERAGENT;
