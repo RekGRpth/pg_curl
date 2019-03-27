@@ -61,7 +61,15 @@ Datum pg_curl_easy_reset(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_res
 }
 
 Datum pg_curl_easy_setopt(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_setopt); Datum pg_curl_easy_setopt(PG_FUNCTION_ARGS) {
+    if (!curl) elog(FATAL, "!curl %s %i", __FILE__, __LINE__);
     PG_RETURN_BOOL(true);
+}
+
+Datum pg_curl_easy_perform(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_perform); Datum pg_curl_easy_perform(PG_FUNCTION_ARGS) {
+    CURLcode res;
+    if (!curl) elog(FATAL, "!curl %s %i", __FILE__, __LINE__);
+    if ((res = curl_easy_perform(curl)) != CURLE_OK) elog(FATAL, "curl_easy_perform: %s %s %i", curl_easy_strerror(res), __FILE__, __LINE__);
+    PG_RETURN_BOOL(res == CURLE_OK);
 }
 
 Datum pg_curl_easy_cleanup(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_cleanup); Datum pg_curl_easy_cleanup(PG_FUNCTION_ARGS) {
