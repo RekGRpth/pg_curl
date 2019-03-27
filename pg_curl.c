@@ -39,15 +39,6 @@ static inline void pg_curl_interrupt_handler(int sig) {
     pg_curl_interrupt_requested = sig;
 }
 
-Datum pg_curl_easy_init(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_init); Datum pg_curl_easy_init(PG_FUNCTION_ARGS) {
-    curl = curl_easy_init();
-    PG_RETURN_BOOL(curl != NULL);
-}
-
-Datum pg_curl_easy_setopt(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_setopt); Datum pg_curl_easy_setopt(PG_FUNCTION_ARGS) {
-    PG_RETURN_BOOL(true);
-}
-
 void _PG_init(void) {
     if (curl_global_init(CURL_GLOBAL_ALL)) elog(FATAL, "curl_global_init %s %i", __FILE__, __LINE__);
     pgsql_interrupt_handler = pqsignal(SIGINT, pg_curl_interrupt_handler);
@@ -57,8 +48,26 @@ void _PG_init(void) {
 void _PG_fini(void) {
     (pqsigfunc)pqsignal(SIGINT, pgsql_interrupt_handler);
     if (curl) {
-        curl_easy_cleanup(curl);
+        (void)curl_easy_cleanup(curl);
         curl = NULL;
     }
     (void)curl_global_cleanup();
+}
+
+Datum pg_curl_easy_init(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_init); Datum pg_curl_easy_init(PG_FUNCTION_ARGS) {
+    if (curl) (void)curl_easy_cleanup(curl);
+    curl = curl_easy_init();
+    PG_RETURN_BOOL(curl != NULL);
+}
+
+Datum pg_curl_easy_setopt(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_setopt); Datum pg_curl_easy_setopt(PG_FUNCTION_ARGS) {
+    PG_RETURN_BOOL(true);
+}
+
+Datum pg_curl_easy_cleanup(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_cleanup); Datum pg_curl_easy_cleanup(PG_FUNCTION_ARGS) {
+    if (curl) {
+        (void)curl_easy_cleanup(curl);
+        curl = NULL;
+    }
+    PG_RETURN_VOID();
 }
