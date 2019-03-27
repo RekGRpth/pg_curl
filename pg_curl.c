@@ -65,7 +65,7 @@ Datum pg_curl_easy_setopt(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_se
     CURLoption option = CURLOPT_LASTENTRY;
     char *option_str;
     char *parameter_str = NULL;
-    long parameter_long;
+    long parameter_long = 0;
     int len = sizeof("CURLOPT_") - 1;
     if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("pg_curl_easy_setopt: PG_ARGISNULL(0)"), errhint("arg option must not null!")));
     if (PG_ARGISNULL(1)) ereport(ERROR, (errmsg("pg_curl_easy_setopt: PG_ARGISNULL(1)"), errhint("arg parameter must not null!")));
@@ -92,16 +92,23 @@ Datum pg_curl_easy_setopt(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_se
     }
     if (option == CURLOPT_LASTENTRY) ereport(ERROR, (errmsg("pg_curl_easy_setopt: option == CURLOPT_LASTENTRY"), errhint("unsupported option %s", option_str)));
     if (parameter_str) {
-        if ((res = curl_easy_setopt(curl, option, parameter_str)) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_setopt: %s", curl_easy_strerror(res))));
+        if ((res = curl_easy_setopt(curl, option, parameter_str)) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_setopt(%s, %s): %s", option_str, parameter_str, curl_easy_strerror(res))));
     } else {
-        if ((res = curl_easy_setopt(curl, option, parameter_long)) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_setopt: %s", curl_easy_strerror(res))));
+        if ((res = curl_easy_setopt(curl, option, parameter_long)) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_setopt(%s, %li): %s", option_str, parameter_long, curl_easy_strerror(res))));
     }
     PG_RETURN_BOOL(res == CURLE_OK);
+}
+
+inline static size_t pg_curl_write_callback(void *contents, size_t size, size_t nmemb, void *userp) {
+    size_t realsize = size * nmemb;
+    (void)appendBinaryStringInfo((StringInfo)userp, (const char *)contents, (int)realsize);
+    return realsize;
 }
 
 Datum pg_curl_easy_perform(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_perform); Datum pg_curl_easy_perform(PG_FUNCTION_ARGS) {
     CURLcode res = CURL_LAST;
     if (!curl) ereport(ERROR, (errmsg("pg_curl_easy_perform: !curl"), errhint("call pg_curl_easy_init before!")));
+    if ((res = curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, pg_curl_write_callback)) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_setopt(CURLOPT_WRITEFUNCTION): %s", curl_easy_strerror(res))));
     if ((res = curl_easy_perform(curl)) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_perform: %s", curl_easy_strerror(res))));
     PG_RETURN_BOOL(res == CURLE_OK);
 }
