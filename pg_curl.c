@@ -108,7 +108,7 @@ Datum pg_curl_easy_setopt(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_se
     PG_RETURN_BOOL(res == CURLE_OK);
 }
 
-inline static size_t pg_curl_write_callback(void *contents, size_t size, size_t nmemb, void *userp) {
+inline static size_t write_callback(void *contents, size_t size, size_t nmemb, void *userp) {
     size_t realsize = size * nmemb;
     (void)appendBinaryStringInfo((StringInfo)userp, (const char *)contents, (int)realsize);
     return realsize;
@@ -121,7 +121,7 @@ Datum pg_curl_easy_perform(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_p
         curl = curl_easy_init();
         (void)resetStringInfo(&data);
     }
-    if ((res = curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, pg_curl_write_callback)) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_setopt(CURLOPT_WRITEFUNCTION): %s", curl_easy_strerror(res))));
+    if ((res = curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback)) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_setopt(CURLOPT_WRITEFUNCTION): %s", curl_easy_strerror(res))));
     if ((res = curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void*)(&data))) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_setopt(CURLOPT_WRITEDATA): %s", curl_easy_strerror(res))));
     if ((res = curl_easy_perform(curl)) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_perform: %s", curl_easy_strerror(res))));
     PG_RETURN_BOOL(res == CURLE_OK);
