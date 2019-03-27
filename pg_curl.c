@@ -55,13 +55,11 @@ void _PG_fini(void) {
 Datum pg_curl_easy_init(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_init); Datum pg_curl_easy_init(PG_FUNCTION_ARGS) {
     if (curl) (void)curl_easy_cleanup(curl);
     curl = curl_easy_init();
-    (void)resetStringInfo(&data);
     PG_RETURN_BOOL(curl != NULL);
 }
 
 Datum pg_curl_easy_reset(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_reset); Datum pg_curl_easy_reset(PG_FUNCTION_ARGS) {
     if (curl) (void)curl_easy_reset(curl);
-    (void)resetStringInfo(&data);
     PG_RETURN_VOID();
 }
 
@@ -72,10 +70,7 @@ Datum pg_curl_easy_setopt_str(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_eas
     char *parameter_str;
     if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("first argument option must not null!")));
     if (PG_ARGISNULL(1)) ereport(ERROR, (errmsg("second argument parameter must not null!")));
-    if (!curl) {
-        curl = curl_easy_init();
-        (void)resetStringInfo(&data);
-    }
+    if (!curl) curl = curl_easy_init();
     option_str = text_to_cstring(PG_GETARG_TEXT_P(0));
     if (!pg_strncasecmp(option_str, "CURLOPT_URL", sizeof("CURLOPT_URL") - 1)) option = CURLOPT_URL;
     if (option == CURLOPT_LASTENTRY) ereport(ERROR, (errmsg("unsupported option %s", option_str)));
@@ -91,10 +86,7 @@ Datum pg_curl_easy_setopt_long(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_ea
     long parameter_long;
     if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("first argument option must not null!")));
     if (PG_ARGISNULL(1)) ereport(ERROR, (errmsg("second argument parameter must not null!")));
-    if (!curl) {
-        curl = curl_easy_init();
-        (void)resetStringInfo(&data);
-    }
+    if (!curl) curl = curl_easy_init();
     option_str = text_to_cstring(PG_GETARG_TEXT_P(0));
     if (!pg_strncasecmp(option_str, "CURLOPT_URL", sizeof("CURLOPT_URL") - 1)) option = CURLOPT_URL;
     if (option == CURLOPT_LASTENTRY) ereport(ERROR, (errmsg("unsupported option %s", option_str)));
@@ -106,17 +98,13 @@ Datum pg_curl_easy_setopt_long(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_ea
 inline static size_t write_callback(void *contents, size_t size, size_t nmemb, void *userp) {
     size_t realsize = size * nmemb;
     (void)appendBinaryStringInfo((StringInfo)userp, (const char *)contents, (int)realsize);
-//    elog(LOG, "write_callback contents=%s", (const char *)contents);
     return realsize;
 }
 
 Datum pg_curl_easy_perform(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_perform); Datum pg_curl_easy_perform(PG_FUNCTION_ARGS) {
     CURLcode res = CURL_LAST;
-//    if (!curl) ereport(ERROR, (errmsg("pg_curl_easy_perform: !curl"), errhint("call pg_curl_easy_init before!")));
-    if (!curl) {
-        curl = curl_easy_init();
-        (void)resetStringInfo(&data);
-    }
+    if (!curl) curl = curl_easy_init();
+    (void)resetStringInfo(&data);
     if ((res = curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback)) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_setopt(CURLOPT_WRITEFUNCTION): %s", curl_easy_strerror(res))));
     if ((res = curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void*)(&data))) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_setopt(CURLOPT_WRITEDATA): %s", curl_easy_strerror(res))));
     if ((res = curl_easy_perform(curl)) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_perform: %s", curl_easy_strerror(res))));
