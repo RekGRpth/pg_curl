@@ -70,46 +70,40 @@ Datum pg_curl_easy_setopt_str(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_eas
     CURLoption option = CURLOPT_LASTENTRY;
     char *option_str;
     char *parameter_str;
-//    long parameter_long = 0;
-//    int len = sizeof("CURLOPT_") - 1;
     if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("pg_curl_easy_setopt_str: PG_ARGISNULL(0)"), errhint("arg option must not null!")));
     if (PG_ARGISNULL(1)) ereport(ERROR, (errmsg("pg_curl_easy_setopt_str: PG_ARGISNULL(1)"), errhint("arg parameter must not null!")));
-//    if (!curl) ereport(ERROR, (errmsg("pg_curl_easy_setopt: !curl"), errhint("call pg_curl_easy_init before!")));
     if (!curl) {
         curl = curl_easy_init();
         (void)resetStringInfo(&data);
     }
     option_str = text_to_cstring(PG_GETARG_TEXT_P(0));
-/*    if (strlen(option_str) <= len) ereport(ERROR, (errmsg("pg_curl_easy_setopt: strlen"), errhint("arg option length must greater!")));
-    if (pg_strncasecmp(option_str, "CURLOPT_", len)) ereport(ERROR, (errmsg("pg_curl_easy_setopt: pg_strncasecmp"), errhint("arg option must starts with CURLOPT_")));
-    switch (option_str[len++]) {
-        case 'u':
-        case 'U': {
-            switch (option_str[len++]) {
-                case 'r':
-                case 'R': {
-                    switch (option_str[len++]) {
-                        case 'l':
-                        case 'L': {
-                            option = CURLOPT_URL;
-                            parameter_str = text_to_cstring(PG_GETARG_TEXT_P(1));
-                        } break;
-                    }
-                } break;
-            }
-        } break;
-    }*/
     if (!pg_strncasecmp(option_str, "CURLOPT_URL", sizeof("CURLOPT_URL") - 1)) {
         option = CURLOPT_URL;
     }
-    parameter_str = text_to_cstring(PG_GETARG_TEXT_P(1));
     if (option == CURLOPT_LASTENTRY) ereport(ERROR, (errmsg("pg_curl_easy_setopt_str: option == CURLOPT_LASTENTRY"), errhint("unsupported option %s", option_str)));
+    parameter_str = text_to_cstring(PG_GETARG_TEXT_P(1));
     if ((res = curl_easy_setopt(curl, option, parameter_str)) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_setopt(%s, %s): %s", option_str, parameter_str, curl_easy_strerror(res))));
-/*    if (parameter_str) {
-        if ((res = curl_easy_setopt(curl, option, parameter_str)) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_setopt(%s, %s): %s", option_str, parameter_str, curl_easy_strerror(res))));
-    } else {
-        if ((res = curl_easy_setopt(curl, option, parameter_long)) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_setopt(%s, %li): %s", option_str, parameter_long, curl_easy_strerror(res))));
-    }*/
+    PG_RETURN_BOOL(res == CURLE_OK);
+}
+
+Datum pg_curl_easy_setopt_long(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_setopt_long); Datum pg_curl_easy_setopt_long(PG_FUNCTION_ARGS) {
+    CURLcode res = CURL_LAST;
+    CURLoption option = CURLOPT_LASTENTRY;
+    char *option_str;
+    long parameter_long;
+    if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("pg_curl_easy_setopt_long: PG_ARGISNULL(0)"), errhint("arg option must not null!")));
+    if (PG_ARGISNULL(1)) ereport(ERROR, (errmsg("pg_curl_easy_setopt_long: PG_ARGISNULL(1)"), errhint("arg parameter must not null!")));
+    if (!curl) {
+        curl = curl_easy_init();
+        (void)resetStringInfo(&data);
+    }
+    option_str = text_to_cstring(PG_GETARG_TEXT_P(0));
+    if (!pg_strncasecmp(option_str, "CURLOPT_URL", sizeof("CURLOPT_URL") - 1)) {
+        option = CURLOPT_URL;
+    }
+    if (option == CURLOPT_LASTENTRY) ereport(ERROR, (errmsg("pg_curl_easy_setopt_long: option == CURLOPT_LASTENTRY"), errhint("unsupported option %s", option_str)));
+    parameter_long = PG_GETARG_INT64(1);
+    if ((res = curl_easy_setopt(curl, option, parameter_long)) != CURLE_OK) ereport(ERROR, (errmsg("pg_curl_easy_setopt_long(%s, %li): %s", option_str, parameter_long, curl_easy_strerror(res))));
     PG_RETURN_BOOL(res == CURLE_OK);
 }
 
