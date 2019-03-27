@@ -91,6 +91,7 @@ Datum pg_curl_easy_setopt_long(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_ea
     option_str = text_to_cstring(PG_GETARG_TEXT_P(0));
     if (!pg_strncasecmp(option_str, "CURLOPT_CONNECTTIMEOUT", sizeof("CURLOPT_CONNECTTIMEOUT") - 1)) option = CURLOPT_CONNECTTIMEOUT;
     else if (!pg_strncasecmp(option_str, "CURLOPT_TIMEOUT_MS", sizeof("CURLOPT_TIMEOUT_MS") - 1)) option = CURLOPT_TIMEOUT_MS;
+    else if (!pg_strncasecmp(option_str, "CURLOPT_FORBID_REUSE", sizeof("CURLOPT_FORBID_REUSE") - 1)) option = CURLOPT_FORBID_REUSE;
     if (option == CURLOPT_LASTENTRY) ereport(ERROR, (errmsg("unsupported option %s", option_str)));
     parameter_long = PG_GETARG_INT64(1);
     if ((res = curl_easy_setopt(curl, option, parameter_long)) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_setopt(%s, %li): %s", option_str, parameter_long, curl_easy_strerror(res))));
