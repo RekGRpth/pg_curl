@@ -134,7 +134,7 @@ Datum pg_curl_easy_getinfo_str(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_ea
     if (info == CURLINFO_NONE) ereport(ERROR, (errmsg("unsupported option %s", info_str)));
     if ((res = curl_easy_getinfo(curl, info, &str)) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_getinfo(%s): %s", info_str, curl_easy_strerror(res))));
     if (!str) PG_RETURN_NULL();
-    PG_RETURN_TEXT_P(str);
+    PG_RETURN_TEXT_P(cstring_to_text(str));
 }
 
 Datum pg_curl_easy_getinfo_long(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_getinfo_long); Datum pg_curl_easy_getinfo_long(PG_FUNCTION_ARGS) {
