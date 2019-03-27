@@ -74,7 +74,11 @@ Datum pg_curl_easy_setopt(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_se
     int len = sizeof("CURLOPT_") - 1;
     if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("pg_curl_easy_setopt: PG_ARGISNULL(0)"), errhint("arg option must not null!")));
     if (PG_ARGISNULL(1)) ereport(ERROR, (errmsg("pg_curl_easy_setopt: PG_ARGISNULL(1)"), errhint("arg parameter must not null!")));
-    if (!curl) ereport(ERROR, (errmsg("pg_curl_easy_setopt: !curl"), errhint("call pg_curl_easy_init before!")));
+//    if (!curl) ereport(ERROR, (errmsg("pg_curl_easy_setopt: !curl"), errhint("call pg_curl_easy_init before!")));
+    if (!curl) {
+        curl = curl_easy_init();
+        (void)resetStringInfo(&data);
+    }
     option_str = text_to_cstring(PG_GETARG_TEXT_P(0));
     if (strlen(option_str) <= len) ereport(ERROR, (errmsg("pg_curl_easy_setopt: strlen"), errhint("arg option length must greater!")));
     if (pg_strncasecmp(option_str, "CURLOPT_", len)) ereport(ERROR, (errmsg("pg_curl_easy_setopt: pg_strncasecmp"), errhint("arg option must starts with CURLOPT_")));
@@ -112,7 +116,11 @@ inline static size_t pg_curl_write_callback(void *contents, size_t size, size_t 
 
 Datum pg_curl_easy_perform(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_perform); Datum pg_curl_easy_perform(PG_FUNCTION_ARGS) {
     CURLcode res = CURL_LAST;
-    if (!curl) ereport(ERROR, (errmsg("pg_curl_easy_perform: !curl"), errhint("call pg_curl_easy_init before!")));
+//    if (!curl) ereport(ERROR, (errmsg("pg_curl_easy_perform: !curl"), errhint("call pg_curl_easy_init before!")));
+    if (!curl) {
+        curl = curl_easy_init();
+        (void)resetStringInfo(&data);
+    }
     if ((res = curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, pg_curl_write_callback)) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_setopt(CURLOPT_WRITEFUNCTION): %s", curl_easy_strerror(res))));
     if ((res = curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void*)(&data))) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_setopt(CURLOPT_WRITEDATA): %s", curl_easy_strerror(res))));
     if ((res = curl_easy_perform(curl)) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_perform: %s", curl_easy_strerror(res))));
