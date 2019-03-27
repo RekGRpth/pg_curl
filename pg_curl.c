@@ -106,6 +106,7 @@ Datum pg_curl_easy_setopt_long(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_ea
 inline static size_t write_callback(void *contents, size_t size, size_t nmemb, void *userp) {
     size_t realsize = size * nmemb;
     (void)appendBinaryStringInfo((StringInfo)userp, (const char *)contents, (int)realsize);
+//    elog(LOG, "write_callback contents=%s", (const char *)contents);
     return realsize;
 }
 
