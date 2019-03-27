@@ -32,7 +32,7 @@ void _PG_init(void);
 void _PG_fini(void);
 
 CURL *curl = NULL;
-StringInfoData data;
+StringInfoData write;
 pqsigfunc pgsql_interrupt_handler = NULL;
 int pg_curl_interrupt_requested = 0;
 
@@ -42,14 +42,14 @@ void _PG_init(void) {
     if (curl_global_init(CURL_GLOBAL_ALL)) ereport(ERROR, (errmsg("curl_global_init")));
     pgsql_interrupt_handler = pqsignal(SIGINT, pg_curl_interrupt_handler);
     pg_curl_interrupt_requested = 0;
-    (void)initStringInfo(&data);
+    (void)initStringInfo(&write);
 }
 
 void _PG_fini(void) {
     (pqsigfunc)pqsignal(SIGINT, pgsql_interrupt_handler);
     if (curl) { (void)curl_easy_cleanup(curl); curl = NULL; }
     (void)curl_global_cleanup();
-    if (data.data) (void)pfree(data.data);
+    if (write.data) (void)pfree(write.data);
 }
 
 Datum pg_curl_easy_init(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_init); Datum pg_curl_easy_init(PG_FUNCTION_ARGS) {
@@ -72,7 +72,9 @@ Datum pg_curl_easy_setopt_str(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_eas
     if (PG_ARGISNULL(1)) ereport(ERROR, (errmsg("second argument parameter must not null!")));
     if (!curl) curl = curl_easy_init();
     option_str = text_to_cstring(PG_GETARG_TEXT_P(0));
-    if (!pg_strncasecmp(option_str, "CURLOPT_URL", sizeof("CURLOPT_URL") - 1)) option = CURLOPT_URL;
+    if (!pg_strncasecmp(option_str, "CURLOPT_READDATA", sizeof("CURLOPT_READDATA") - 1)) {
+    }
+    else if (!pg_strncasecmp(option_str, "CURLOPT_URL", sizeof("CURLOPT_URL") - 1)) option = CURLOPT_URL;
     else if (!pg_strncasecmp(option_str, "CURLOPT_USERAGENT", sizeof("CURLOPT_USERAGENT") - 1)) option = CURLOPT_USERAGENT;
     else if (!pg_strncasecmp(option_str, "CURLOPT_ACCEPT_ENCODING", sizeof("CURLOPT_ACCEPT_ENCODING") - 1)) option = CURLOPT_ACCEPT_ENCODING;
     else if (!pg_strncasecmp(option_str, "CURLOPT_CUSTOMREQUEST", sizeof("CURLOPT_CUSTOMREQUEST") - 1)) option = CURLOPT_CUSTOMREQUEST;
@@ -117,9 +119,9 @@ inline static int progress_callback(void *clientp, curl_off_t dltotal, curl_off_
 Datum pg_curl_easy_perform(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_perform); Datum pg_curl_easy_perform(PG_FUNCTION_ARGS) {
     CURLcode res = CURL_LAST;
     if (!curl) curl = curl_easy_init();
-    (void)resetStringInfo(&data);
+    (void)resetStringInfo(&write);
     if ((res = curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback)) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_setopt(CURLOPT_WRITEFUNCTION): %s", curl_easy_strerror(res))));
-    if ((res = curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void*)(&data))) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_setopt(CURLOPT_WRITEDATA): %s", curl_easy_strerror(res))));
+    if ((res = curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void*)(&write))) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_setopt(CURLOPT_WRITEDATA): %s", curl_easy_strerror(res))));
     if ((res = curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION, progress_callback)) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_setopt(CURLOPT_XFERINFOFUNCTION): %s", curl_easy_strerror(res))));
     if ((res = curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L)) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_setopt(CURLOPT_NOPROGRESS): %s", curl_easy_strerror(res))));
     if ((res = curl_easy_setopt(curl, CURLOPT_PROTOCOLS, CURLPROTO_HTTP | CURLPROTO_HTTPS)) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_setopt(CURLOPT_PROTOCOLS): %s", curl_easy_strerror(res))));
@@ -135,7 +137,7 @@ Datum pg_curl_easy_getinfo_str(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_ea
     if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("argument info must not null!")));
     if (!curl) ereport(ERROR, (errmsg("call pg_curl_easy_init before!")));
     info_str = text_to_cstring(PG_GETARG_TEXT_P(0));
-    if (!pg_strncasecmp(info_str, "CURLINFO_RESPONSE", sizeof("CURLINFO_RESPONSE") - 1)) { str = data.data; goto ret; }
+    if (!pg_strncasecmp(info_str, "CURLINFO_RESPONSE", sizeof("CURLINFO_RESPONSE") - 1)) { str = write.data; goto ret; }
     else if (!pg_strncasecmp(info_str, "CURLINFO_CONTENT_TYPE", sizeof("CURLINFO_CONTENT_TYPE") - 1)) info = CURLINFO_CONTENT_TYPE;
     else ereport(ERROR, (errmsg("unsupported option %s", info_str)));
     if ((res = curl_easy_getinfo(curl, info, &str)) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_getinfo(%s): %s", info_str, curl_easy_strerror(res))));
