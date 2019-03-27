@@ -61,8 +61,12 @@ Datum pg_curl_easy_reset(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_res
 }
 
 Datum pg_curl_easy_setopt(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_setopt); Datum pg_curl_easy_setopt(PG_FUNCTION_ARGS) {
+    CURLcode res;
+    if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("pg_curl_easy_setopt: PG_ARGISNULL(0)"), errhint("arg option must not null!")));
+    if (PG_ARGISNULL(1)) ereport(ERROR, (errmsg("pg_curl_easy_setopt: PG_ARGISNULL(1)"), errhint("arg parameter must not null!")));
     if (!curl) ereport(ERROR, (errmsg("pg_curl_easy_setopt: !curl"), errhint("call pg_curl_easy_init before!")));
-    PG_RETURN_BOOL(true);
+    if ((res = curl_easy_setopt(curl, CURLOPT_URL, "http://example.com")) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_setopt: %s", curl_easy_strerror(res))));
+    PG_RETURN_BOOL(res == CURLE_OK);
 }
 
 Datum pg_curl_easy_perform(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_perform); Datum pg_curl_easy_perform(PG_FUNCTION_ARGS) {
