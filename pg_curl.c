@@ -73,6 +73,7 @@ Datum pg_curl_easy_setopt_str(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_eas
     if (!curl) curl = curl_easy_init();
     option_str = text_to_cstring(PG_GETARG_TEXT_P(0));
     if (!pg_strncasecmp(option_str, "CURLOPT_URL", sizeof("CURLOPT_URL") - 1)) option = CURLOPT_URL;
+    else if (!pg_strncasecmp(option_str, "CURLOPT_USERAGENT", sizeof("CURLOPT_USERAGENT") - 1)) option = CURLOPT_USERAGENT;
     if (option == CURLOPT_LASTENTRY) ereport(ERROR, (errmsg("unsupported option %s", option_str)));
     parameter_str = text_to_cstring(PG_GETARG_TEXT_P(1));
     if ((res = curl_easy_setopt(curl, option, parameter_str)) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_setopt(%s, %s): %s", option_str, parameter_str, curl_easy_strerror(res))));
