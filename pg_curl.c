@@ -136,7 +136,7 @@ Datum pg_curl_easy_getinfo_str(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_ea
     if (!curl) ereport(ERROR, (errmsg("call pg_curl_easy_init before!")));
     info_str = text_to_cstring(PG_GETARG_TEXT_P(0));
     if (!pg_strncasecmp(info_str, "CURLINFO_RESPONSE", sizeof("CURLINFO_RESPONSE") - 1)) { str = data.data; goto ret; }
-    if (!pg_strncasecmp(info_str, "CURLINFO_CONTENT_TYPE", sizeof("CURLINFO_CONTENT_TYPE") - 1)) info = CURLINFO_CONTENT_TYPE;
+    else if (!pg_strncasecmp(info_str, "CURLINFO_CONTENT_TYPE", sizeof("CURLINFO_CONTENT_TYPE") - 1)) info = CURLINFO_CONTENT_TYPE;
     else ereport(ERROR, (errmsg("unsupported option %s", info_str)));
     if ((res = curl_easy_getinfo(curl, info, &str)) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_getinfo(%s): %s", info_str, curl_easy_strerror(res))));
     ret: if (!str) PG_RETURN_NULL();
