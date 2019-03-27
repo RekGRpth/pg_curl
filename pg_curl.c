@@ -55,6 +55,11 @@ Datum pg_curl_easy_init(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_init
     PG_RETURN_BOOL(curl != NULL);
 }
 
+Datum pg_curl_easy_reset(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_reset); Datum pg_curl_easy_reset(PG_FUNCTION_ARGS) {
+    if (curl) (void)curl_easy_reset(curl);
+    PG_RETURN_VOID();
+}
+
 Datum pg_curl_easy_setopt(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_setopt); Datum pg_curl_easy_setopt(PG_FUNCTION_ARGS) {
     PG_RETURN_BOOL(true);
 }
