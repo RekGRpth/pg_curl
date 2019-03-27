@@ -38,7 +38,7 @@ int pg_curl_interrupt_requested = 0;
 static inline void pg_curl_interrupt_handler(int sig) { pg_curl_interrupt_requested = sig; }
 
 void _PG_init(void) {
-    if (curl_global_init(CURL_GLOBAL_ALL)) elog(FATAL, "curl_global_init %s %i", __FILE__, __LINE__);
+    if (curl_global_init(CURL_GLOBAL_ALL)) ereport(ERROR, (errmsg("curl_global_init")));
     pgsql_interrupt_handler = pqsignal(SIGINT, pg_curl_interrupt_handler);
     pg_curl_interrupt_requested = 0;
 }
