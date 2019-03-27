@@ -103,7 +103,7 @@ Datum pg_curl_easy_setopt_long(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_ea
     }
     if (option == CURLOPT_LASTENTRY) ereport(ERROR, (errmsg("pg_curl_easy_setopt_long: option == CURLOPT_LASTENTRY"), errhint("unsupported option %s", option_str)));
     parameter_long = PG_GETARG_INT64(1);
-    if ((res = curl_easy_setopt(curl, option, parameter_long)) != CURLE_OK) ereport(ERROR, (errmsg("pg_curl_easy_setopt_long(%s, %li): %s", option_str, parameter_long, curl_easy_strerror(res))));
+    if ((res = curl_easy_setopt(curl, option, parameter_long)) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_setopt(%s, %li): %s", option_str, parameter_long, curl_easy_strerror(res))));
     PG_RETURN_BOOL(res == CURLE_OK);
 }
 
@@ -128,38 +128,36 @@ Datum pg_curl_easy_perform(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_p
 
 Datum pg_curl_easy_getinfo_str(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_getinfo_str); Datum pg_curl_easy_getinfo_str(PG_FUNCTION_ARGS) {
     CURLcode res = CURL_LAST;
-/*    CURLoption option = CURLOPT_LASTENTRY;
     CURLINFO info = CURLINFO_NONE;
     char *info_str;
-    int len = sizeof("CURLINFO_") - 1;
+    char *str = NULL;
     if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("pg_curl_easy_getinfo_str: PG_ARGISNULL(0)"), errhint("arg info must not null!")));
     if (!curl) ereport(ERROR, (errmsg("pg_curl_easy_getinfo_str: !curl"), errhint("call pg_curl_easy_init before!")));
     info_str = text_to_cstring(PG_GETARG_TEXT_P(0));
-    if (strlen(info_str) <= len) ereport(ERROR, (errmsg("pg_curl_easy_getinfo_str: strlen"), errhint("arg option length must greater!")));
-    if (pg_strncasecmp(info_str, "CURLINFO_", len)) ereport(ERROR, (errmsg("pg_curl_easy_getinfo_str: pg_strncasecmp"), errhint("arg option must starts with CURLOPT_")));
-    switch (info_str[len++]) {
-        case 'c':
-        case 'C': {
-            switch (info_str[len++]) {
-                case 'o':
-                case 'O': {
-                    switch (info_str[len++]) {
-                        case 'l':
-                        case 'L': {
-                            info = CURLINFO_CONTENT_TYPE;
-                        } break;
-                    }
-                } break;
-            }
-        } break;
+    if (!pg_strncasecmp(info_str, "CURLINFO_CONTENT_TYPE", sizeof("CURLINFO_CONTENT_TYPE") - 1)) {
+        info = CURLINFO_CONTENT_TYPE;
     }
-    if (option == CURLOPT_LASTENTRY) ereport(ERROR, (errmsg("pg_curl_easy_getinfo_str: option == CURLOPT_LASTENTRY"), errhint("unsupported option %s", option_str)));
-    if (parameter_str) {
-        if ((res = curl_easy_setopt(curl, option, parameter_str)) != CURLE_OK) ereport(ERROR, (errmsg("pg_curl_easy_getinfo_str(%s, %s): %s", option_str, parameter_str, curl_easy_strerror(res))));
-    } else {
-        if ((res = curl_easy_setopt(curl, option, parameter_long)) != CURLE_OK) ereport(ERROR, (errmsg("pg_curl_easy_getinfo_str(%s, %li): %s", option_str, parameter_long, curl_easy_strerror(res))));
-    }*/
-    PG_RETURN_BOOL(res == CURLE_OK);
+    if (info == CURLINFO_NONE) ereport(ERROR, (errmsg("pg_curl_easy_getinfo_str: option == CURLOPT_LASTENTRY"), errhint("unsupported option %s", info_str)));
+    if ((res = curl_easy_getinfo(curl, info, &str)) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_getinfo(%s): %s", info_str, curl_easy_strerror(res))));
+    if (!str) PG_RETURN_NULL();
+    PG_RETURN_TEXT_P(str);
+}
+
+Datum pg_curl_easy_getinfo_long(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_getinfo_long); Datum pg_curl_easy_getinfo_long(PG_FUNCTION_ARGS) {
+    CURLcode res = CURL_LAST;
+    CURLINFO info = CURLINFO_NONE;
+    char *info_str;
+    char *str = NULL;
+    if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("pg_curl_easy_getinfo_long: PG_ARGISNULL(0)"), errhint("arg info must not null!")));
+    if (!curl) ereport(ERROR, (errmsg("pg_curl_easy_getinfo_long: !curl"), errhint("call pg_curl_easy_init before!")));
+    info_str = text_to_cstring(PG_GETARG_TEXT_P(0));
+    if (!pg_strncasecmp(info_str, "CURLINFO_CONTENT_TYPE", sizeof("CURLINFO_CONTENT_TYPE") - 1)) {
+        info = CURLINFO_CONTENT_TYPE;
+    }
+    if (info == CURLINFO_NONE) ereport(ERROR, (errmsg("pg_curl_easy_getinfo_long: option == CURLOPT_LASTENTRY"), errhint("unsupported option %s", info_str)));
+    if ((res = curl_easy_getinfo(curl, info, &str)) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_getinfo(%s): %s", info_str, curl_easy_strerror(res))));
+    if (!str) PG_RETURN_NULL();
+    PG_RETURN_TEXT_P(str);
 }
 
 Datum pg_curl_easy_cleanup(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_cleanup); Datum pg_curl_easy_cleanup(PG_FUNCTION_ARGS) {
