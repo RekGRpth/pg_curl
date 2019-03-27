@@ -2,6 +2,7 @@ MODULES = pg_curl
 EXTENSION = pg_curl
 CURL_CONFIG = curl-config
 PG_CONFIG = pg_config
+DATA = pg_curl.sql
 
 CFLAGS += $(shell $(CURL_CONFIG) --cflags)
 LIBS += $(shell $(CURL_CONFIG) --libs)
