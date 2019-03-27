@@ -61,14 +61,14 @@ Datum pg_curl_easy_reset(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_res
 }
 
 Datum pg_curl_easy_setopt(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_setopt); Datum pg_curl_easy_setopt(PG_FUNCTION_ARGS) {
-    if (!curl) elog(FATAL, "!curl %s %i", __FILE__, __LINE__);
+    if (!curl) ereport(LOG, (errmsg("pg_curl_easy_setopt: !curl"), errhint("call pg_curl_easy_init before!")));
     PG_RETURN_BOOL(true);
 }
 
 Datum pg_curl_easy_perform(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_perform); Datum pg_curl_easy_perform(PG_FUNCTION_ARGS) {
     CURLcode res;
-    if (!curl) elog(FATAL, "!curl %s %i", __FILE__, __LINE__);
-    if ((res = curl_easy_perform(curl)) != CURLE_OK) elog(FATAL, "curl_easy_perform: %s %s %i", curl_easy_strerror(res), __FILE__, __LINE__);
+    if (!curl) ereport(LOG, (errmsg("pg_curl_easy_perform: !curl"), errhint("call pg_curl_easy_init before!")));
+    if ((res = curl_easy_perform(curl)) != CURLE_OK) ereport(LOG, (errmsg("curl_easy_perform: %s", curl_easy_strerror(res))));
     PG_RETURN_BOOL(res == CURLE_OK);
 }
 
