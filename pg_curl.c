@@ -50,6 +50,7 @@ Datum pg_curl_easy_init(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_init
 
 Datum pg_curl_easy_reset(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_reset); Datum pg_curl_easy_reset(PG_FUNCTION_ARGS) {
     if (curl) (void)curl_easy_reset(curl);
+    (void)curl_mime_free(mime);
     (void)curl_slist_free_all(slist);
     PG_RETURN_VOID();
 }
@@ -231,6 +232,7 @@ Datum pg_curl_easy_getinfo_long(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_e
 
 Datum pg_curl_easy_cleanup(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_cleanup); Datum pg_curl_easy_cleanup(PG_FUNCTION_ARGS) {
     if (curl) { (void)curl_easy_cleanup(curl); curl = NULL; }
+    (void)curl_mime_free(mime);
     (void)curl_slist_free_all(slist);
     PG_RETURN_VOID();
 }
