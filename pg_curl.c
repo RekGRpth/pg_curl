@@ -119,6 +119,28 @@ Datum pg_curl_slist_append(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_slist_
     PG_RETURN_BOOL(temp != NULL);
 }
 
+Datum pg_curl_mime_append(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_mime_append); Datum pg_curl_mime_append(PG_FUNCTION_ARGS) {
+    CURLcode res = CURL_LAST;
+    char *name, *value;
+    curl_mimepart *part;
+//    StringInfoData buf;
+//    struct curl_slist *temp = slist;
+    if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("first argument option must not null!")));
+    name = TextDatumGetCString(PG_GETARG_DATUM(0));
+    if (PG_ARGISNULL(1)) ereport(ERROR, (errmsg("second argument parameter must not null!")));
+    value = TextDatumGetCString(PG_GETARG_DATUM(1));
+    part = curl_mime_addpart(mime);
+    if ((res = curl_mime_data(part, value, CURL_ZERO_TERMINATED)) != CURLE_OK) ereport(ERROR, (errmsg("curl_mime_data(%s): %s", value, curl_easy_strerror(res))));
+    if ((res = curl_mime_name(part, name)) != CURLE_OK) ereport(ERROR, (errmsg("curl_mime_name(%s): %s", name, curl_easy_strerror(res))));
+//    (void)initStringInfo(&buf);
+//    (void)appendStringInfo(&buf, "%s: %s", name, value);
+//    if ((temp = curl_slist_append(temp, buf.data))) slist = temp;
+    (void)pfree(name);
+    (void)pfree(value);
+//    (void)pfree(buf.data);
+    PG_RETURN_BOOL(res == CURLE_OK);
+}
+
 Datum pg_curl_easy_setopt_char(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_setopt_char); Datum pg_curl_easy_setopt_char(PG_FUNCTION_ARGS) {
     CURLcode res = CURL_LAST;
     CURLoption option;
