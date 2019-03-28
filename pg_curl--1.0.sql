@@ -6,7 +6,7 @@ CREATE OR REPLACE FUNCTION pg_curl_easy_init() RETURNS boolean AS 'MODULE_PATHNA
 CREATE OR REPLACE FUNCTION pg_curl_easy_reset() RETURNS void AS 'MODULE_PATHNAME', 'pg_curl_easy_reset' LANGUAGE 'c';
 
 CREATE OR REPLACE FUNCTION pg_curl_slist_append(name text, value text) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_slist_append' LANGUAGE 'c';
-CREATE OR REPLACE FUNCTION pg_curl_mime_append(name text, value text) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_mime_append' LANGUAGE 'c';
+CREATE OR REPLACE FUNCTION pg_curl_mime_name_data(name text, data text) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_mime_name_data' LANGUAGE 'c';
 
 --CREATE OR REPLACE FUNCTION pg_curl_easy_setopt_char_array(option text, parameter text[]) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_char_array' LANGUAGE 'c';
 CREATE OR REPLACE FUNCTION pg_curl_easy_setopt_char(option text, parameter text) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_char' LANGUAGE 'c';
