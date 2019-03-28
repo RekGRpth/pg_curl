@@ -18,7 +18,7 @@ pqsigfunc pgsql_interrupt_handler = NULL;
 int pg_curl_interrupt_requested = 0;
 struct curl_slist *slist = NULL;
 curl_mime *mime;
-bool has_mime = false;
+bool has_mime;
 
 static inline void pg_curl_interrupt_handler(int sig) { pg_curl_interrupt_requested = sig; }
 
@@ -46,6 +46,7 @@ Datum pg_curl_easy_init(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_init
     if (!curl) ereport(ERROR, (errmsg("!curl")));
     mime = curl_mime_init(curl);
     if (!mime) ereport(ERROR, (errmsg("!mime")));
+    has_mime = false;
     PG_RETURN_BOOL(curl != NULL);
 }
 
@@ -55,6 +56,8 @@ Datum pg_curl_easy_reset(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_res
     (void)curl_slist_free_all(slist);
     (void)curl_mime_free(mime);
     mime = curl_mime_init(curl);
+    if (!mime) ereport(ERROR, (errmsg("!mime")));
+    has_mime = false;
     PG_RETURN_VOID();
 }
 
