@@ -82,10 +82,10 @@ Datum pg_curl_easy_setopt_char(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_ea
     char *option_char;
     char *parameter_char;
     if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("first argument option must not null!")));
-    if (PG_ARGISNULL(1)) ereport(ERROR, (errmsg("second argument parameter must not null!")));
-    if (!curl) curl = curl_easy_init();
-//    option_char = text_to_cstring(PG_GETARG_TEXT_P(0));
     option_char = TextDatumGetCString(PG_GETARG_DATUM(0));
+    if (PG_ARGISNULL(1)) ereport(ERROR, (errmsg("second argument parameter must not null!")));
+    parameter_char = TextDatumGetCString(PG_GETARG_DATUM(1));
+    if (!curl) curl = curl_easy_init();
     if (!pg_strncasecmp(option_char, "CURLOPT_READDATA", sizeof("CURLOPT_READDATA") - 1)) {
 /*			appendBinaryStringInfo(&si_read, VARDATA(content_text), content_size);
 			CURL_SETOPT(g_http_handle, CURLOPT_UPLOAD, 1);
@@ -98,8 +98,6 @@ Datum pg_curl_easy_setopt_char(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_ea
     else if (!pg_strncasecmp(option_char, "CURLOPT_ACCEPT_ENCODING", sizeof("CURLOPT_ACCEPT_ENCODING") - 1)) option = CURLOPT_ACCEPT_ENCODING;
     else if (!pg_strncasecmp(option_char, "CURLOPT_CUSTOMREQUEST", sizeof("CURLOPT_CUSTOMREQUEST") - 1)) option = CURLOPT_CUSTOMREQUEST;
     else ereport(ERROR, (errmsg("unsupported option %s", option_char)));
-//    parameter_char = text_to_cstring(PG_GETARG_TEXT_P(1));
-    parameter_char = TextDatumGetCString(PG_GETARG_DATUM(1));
     if ((res = curl_easy_setopt(curl, option, parameter_char)) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_setopt(%s, %s): %s", option_char, parameter_char, curl_easy_strerror(res))));
     (void)pfree(option_char);
     (void)pfree(parameter_char);
@@ -112,10 +110,10 @@ Datum pg_curl_easy_setopt_long(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_ea
     char *option_char;
     long parameter_long;
     if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("first argument option must not null!")));
-    if (PG_ARGISNULL(1)) ereport(ERROR, (errmsg("second argument parameter must not null!")));
-    if (!curl) curl = curl_easy_init();
-//    option_char = text_to_cstring(PG_GETARG_TEXT_P(0));
     option_char = TextDatumGetCString(PG_GETARG_DATUM(0));
+    if (PG_ARGISNULL(1)) ereport(ERROR, (errmsg("second argument parameter must not null!")));
+    parameter_long = PG_GETARG_INT64(1);
+    if (!curl) curl = curl_easy_init();
     if (!pg_strncasecmp(option_char, "CURLOPT_CONNECTTIMEOUT", sizeof("CURLOPT_CONNECTTIMEOUT") - 1)) option = CURLOPT_CONNECTTIMEOUT;
     else if (!pg_strncasecmp(option_char, "CURLOPT_TIMEOUT_MS", sizeof("CURLOPT_TIMEOUT_MS") - 1)) option = CURLOPT_TIMEOUT_MS;
     else if (!pg_strncasecmp(option_char, "CURLOPT_FORBID_REUSE", sizeof("CURLOPT_FORBID_REUSE") - 1)) option = CURLOPT_FORBID_REUSE;
@@ -126,7 +124,6 @@ Datum pg_curl_easy_setopt_long(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_ea
     else if (!pg_strncasecmp(option_char, "CURLOPT_INFILESIZE", sizeof("CURLOPT_INFILESIZE") - 1)) option = CURLOPT_INFILESIZE;
     else if (!pg_strncasecmp(option_char, "CURLOPT_NOBODY", sizeof("CURLOPT_NOBODY") - 1)) option = CURLOPT_NOBODY;
     else ereport(ERROR, (errmsg("unsupported option %s", option_char)));
-    parameter_long = PG_GETARG_INT64(1);
     if ((res = curl_easy_setopt(curl, option, parameter_long)) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_setopt(%s, %li): %s", option_char, parameter_long, curl_easy_strerror(res))));
     (void)pfree(option_char);
     PG_RETURN_BOOL(res == CURLE_OK);
@@ -159,9 +156,8 @@ Datum pg_curl_easy_getinfo_char(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_e
     char *info_char;
     char *str = NULL;
     if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("argument info must not null!")));
-    if (!curl) ereport(ERROR, (errmsg("call pg_curl_easy_init before!")));
-//    info_char = text_to_cstring(PG_GETARG_TEXT_P(0));
     info_char = TextDatumGetCString(PG_GETARG_DATUM(0));
+    if (!curl) ereport(ERROR, (errmsg("call pg_curl_easy_init before!")));
     if (!pg_strncasecmp(info_char, "CURLINFO_RESPONSE", sizeof("CURLINFO_RESPONSE") - 1)) { str = write.data; goto ret; }
     else if (!pg_strncasecmp(info_char, "CURLINFO_CONTENT_TYPE", sizeof("CURLINFO_CONTENT_TYPE") - 1)) info = CURLINFO_CONTENT_TYPE;
     else ereport(ERROR, (errmsg("unsupported option %s", info_char)));
@@ -178,9 +174,8 @@ Datum pg_curl_easy_getinfo_long(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_e
     char *info_char;
     long lon;
     if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("argument info must not null!")));
-    if (!curl) ereport(ERROR, (errmsg("call pg_curl_easy_init before!")));
-//    info_char = text_to_cstring(PG_GETARG_TEXT_P(0));
     info_char = TextDatumGetCString(PG_GETARG_DATUM(0));
+    if (!curl) ereport(ERROR, (errmsg("call pg_curl_easy_init before!")));
     if (!pg_strncasecmp(info_char, "CURLINFO_RESPONSE_CODE", sizeof("CURLINFO_RESPONSE_CODE") - 1)) info = CURLINFO_RESPONSE_CODE;
     else ereport(ERROR, (errmsg("unsupported option %s", info_char)));
     if ((res = curl_easy_getinfo(curl, info, &lon)) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_getinfo(%s): %s", info_char, curl_easy_strerror(res))));
