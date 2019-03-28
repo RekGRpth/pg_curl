@@ -18,6 +18,7 @@ pqsigfunc pgsql_interrupt_handler = NULL;
 int pg_curl_interrupt_requested = 0;
 struct curl_slist *slist = NULL;
 curl_mime *mime;
+bool has_mime = false;
 
 static inline void pg_curl_interrupt_handler(int sig) { pg_curl_interrupt_requested = sig; }
 
@@ -31,10 +32,7 @@ void _PG_init(void) {
 
 void _PG_fini(void) {
     (pqsigfunc)pqsignal(SIGINT, pgsql_interrupt_handler);
-    if (curl) {
-        (void)curl_easy_cleanup(curl);
-        curl = NULL;
-    }
+    if (curl) (void)curl_easy_cleanup(curl);
     (void)curl_mime_free(mime);
     (void)curl_slist_free_all(slist);
     (void)curl_global_cleanup();
@@ -43,17 +41,20 @@ void _PG_fini(void) {
 }
 
 Datum pg_curl_easy_init(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_init); Datum pg_curl_easy_init(PG_FUNCTION_ARGS) {
-    if (curl) (void)curl_easy_cleanup(curl);
+    if (curl) ereport(ERROR, (errmsg("already init!")));
     curl = curl_easy_init();
-    if (curl) mime = curl_mime_init(curl);
+    if (!curl) ereport(ERROR, (errmsg("!curl")));
+    mime = curl_mime_init(curl);
+    if (!mime) ereport(ERROR, (errmsg("!mime")));
     PG_RETURN_BOOL(curl != NULL);
 }
 
 Datum pg_curl_easy_reset(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_reset); Datum pg_curl_easy_reset(PG_FUNCTION_ARGS) {
-    if (curl) (void)curl_easy_reset(curl);
-    (void)curl_mime_free(mime);
-    if (curl) mime = curl_mime_init(curl);
+    if (!curl) ereport(ERROR, (errmsg("!curl")));
+    (void)curl_easy_reset(curl);
     (void)curl_slist_free_all(slist);
+    (void)curl_mime_free(mime);
+    mime = curl_mime_init(curl);
     PG_RETURN_VOID();
 }
 
@@ -140,6 +141,7 @@ Datum pg_curl_mime_append(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_mime_ap
     (void)pfree(name);
     (void)pfree(value);
 //    (void)pfree(buf.data);
+    has_mime = true;
     PG_RETURN_BOOL(res == CURLE_OK);
 }
 
@@ -154,7 +156,7 @@ Datum pg_curl_easy_setopt_char(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_ea
     parameter_char = TextDatumGetCString(PG_GETARG_DATUM(1));
     if (!pg_strncasecmp(option_char, "CURLOPT_READDATA", sizeof("CURLOPT_READDATA") - 1)) {
         long parameter_len = strlen(parameter_char);
-        (void)resetStringInfo(&read_buf);
+//        (void)resetStringInfo(&read_buf);
         (void)appendBinaryStringInfo(&read_buf, parameter_char, parameter_len);
         if ((res = curl_easy_setopt(curl, CURLOPT_UPLOAD, 1L)) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_setopt(CURLOPT_UPLOAD): %s", curl_easy_strerror(res))));
         if ((res = curl_easy_setopt(curl, CURLOPT_READFUNCTION, read_callback)) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_setopt(CURLOPT_READFUNCTION): %s", curl_easy_strerror(res))));
@@ -210,14 +212,14 @@ inline static int progress_callback(void *clientp, curl_off_t dltotal, curl_off_
 Datum pg_curl_easy_perform(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_perform); Datum pg_curl_easy_perform(PG_FUNCTION_ARGS) {
     CURLcode res = CURL_LAST;
     if (!curl) ereport(ERROR, (errmsg("call pg_curl_easy_init before!")));
-    (void)resetStringInfo(&write_buf);
+//    (void)resetStringInfo(&write_buf);
     if ((res = curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback)) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_setopt(CURLOPT_WRITEFUNCTION): %s", curl_easy_strerror(res))));
     if ((res = curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)(&write_buf))) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_setopt(CURLOPT_WRITEDATA): %s", curl_easy_strerror(res))));
     if ((res = curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION, progress_callback)) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_setopt(CURLOPT_XFERINFOFUNCTION): %s", curl_easy_strerror(res))));
     if ((res = curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L)) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_setopt(CURLOPT_NOPROGRESS): %s", curl_easy_strerror(res))));
     if ((res = curl_easy_setopt(curl, CURLOPT_PROTOCOLS, CURLPROTO_HTTP | CURLPROTO_HTTPS)) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_setopt(CURLOPT_PROTOCOLS): %s", curl_easy_strerror(res))));
     if (slist && ((res = curl_easy_setopt(curl, CURLOPT_HTTPHEADER, slist)) != CURLE_OK)) ereport(ERROR, (errmsg("curl_easy_setopt(CURLOPT_HTTPHEADER): %s", curl_easy_strerror(res))));
-    if (mime && ((res = curl_easy_setopt(curl, CURLOPT_MIMEPOST, mime)) != CURLE_OK)) ereport(ERROR, (errmsg("curl_easy_setopt(CURLOPT_MIMEPOST): %s", curl_easy_strerror(res))));
+    if (has_mime && ((res = curl_easy_setopt(curl, CURLOPT_MIMEPOST, mime)) != CURLE_OK)) ereport(ERROR, (errmsg("curl_easy_setopt(CURLOPT_MIMEPOST): %s", curl_easy_strerror(res))));
     if ((res = curl_easy_perform(curl)) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_perform: %s", curl_easy_strerror(res))));
     PG_RETURN_BOOL(res == CURLE_OK);
 }
@@ -256,8 +258,13 @@ Datum pg_curl_easy_getinfo_long(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_e
 }
 
 Datum pg_curl_easy_cleanup(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_cleanup); Datum pg_curl_easy_cleanup(PG_FUNCTION_ARGS) {
-    if (curl) { (void)curl_easy_cleanup(curl); curl = NULL; }
+    if (curl) {
+        (void)curl_easy_cleanup(curl);
+        curl = NULL;
+    }
     (void)curl_mime_free(mime);
     (void)curl_slist_free_all(slist);
+    (void)resetStringInfo(&read_buf);
+    (void)resetStringInfo(&write_buf);
     PG_RETURN_VOID();
 }
