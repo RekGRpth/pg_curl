@@ -45,12 +45,14 @@ void _PG_fini(void) {
 Datum pg_curl_easy_init(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_init); Datum pg_curl_easy_init(PG_FUNCTION_ARGS) {
     if (curl) (void)curl_easy_cleanup(curl);
     curl = curl_easy_init();
+    if (curl) mime = curl_mime_init(curl);
     PG_RETURN_BOOL(curl != NULL);
 }
 
 Datum pg_curl_easy_reset(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_reset); Datum pg_curl_easy_reset(PG_FUNCTION_ARGS) {
     if (curl) (void)curl_easy_reset(curl);
     (void)curl_mime_free(mime);
+    if (curl) mime = curl_mime_init(curl);
     (void)curl_slist_free_all(slist);
     PG_RETURN_VOID();
 }
@@ -130,8 +132,8 @@ Datum pg_curl_mime_append(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_mime_ap
     if (PG_ARGISNULL(1)) ereport(ERROR, (errmsg("second argument parameter must not null!")));
     value = TextDatumGetCString(PG_GETARG_DATUM(1));
     part = curl_mime_addpart(mime);
-    if ((res = curl_mime_data(part, value, CURL_ZERO_TERMINATED)) != CURLE_OK) ereport(ERROR, (errmsg("curl_mime_data(%s): %s", value, curl_easy_strerror(res))));
     if ((res = curl_mime_name(part, name)) != CURLE_OK) ereport(ERROR, (errmsg("curl_mime_name(%s): %s", name, curl_easy_strerror(res))));
+    if ((res = curl_mime_data(part, value, CURL_ZERO_TERMINATED)) != CURLE_OK) ereport(ERROR, (errmsg("curl_mime_data(%s): %s", value, curl_easy_strerror(res))));
 //    (void)initStringInfo(&buf);
 //    (void)appendStringInfo(&buf, "%s: %s", name, value);
 //    if ((temp = curl_slist_append(temp, buf.data))) slist = temp;
@@ -145,11 +147,11 @@ Datum pg_curl_easy_setopt_char(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_ea
     CURLcode res = CURL_LAST;
     CURLoption option;
     char *option_char, *parameter_char;
+    if (!curl) ereport(ERROR, (errmsg("call pg_curl_easy_init before!")));
     if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("first argument option must not null!")));
     option_char = TextDatumGetCString(PG_GETARG_DATUM(0));
     if (PG_ARGISNULL(1)) ereport(ERROR, (errmsg("second argument parameter must not null!")));
     parameter_char = TextDatumGetCString(PG_GETARG_DATUM(1));
-    if (!curl) curl = curl_easy_init();
     if (!pg_strncasecmp(option_char, "CURLOPT_READDATA", sizeof("CURLOPT_READDATA") - 1)) {
         long parameter_len = strlen(parameter_char);
         (void)resetStringInfo(&read_buf);
@@ -177,11 +179,11 @@ Datum pg_curl_easy_setopt_long(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_ea
     CURLoption option;
     char *option_char;
     long parameter_long;
+    if (!curl) ereport(ERROR, (errmsg("call pg_curl_easy_init before!")));
     if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("first argument option must not null!")));
     option_char = TextDatumGetCString(PG_GETARG_DATUM(0));
     if (PG_ARGISNULL(1)) ereport(ERROR, (errmsg("second argument parameter must not null!")));
     parameter_long = PG_GETARG_INT64(1);
-    if (!curl) curl = curl_easy_init();
     if (!pg_strncasecmp(option_char, "CURLOPT_CONNECTTIMEOUT", sizeof("CURLOPT_CONNECTTIMEOUT") - 1)) option = CURLOPT_CONNECTTIMEOUT;
     else if (!pg_strncasecmp(option_char, "CURLOPT_TIMEOUT_MS", sizeof("CURLOPT_TIMEOUT_MS") - 1)) option = CURLOPT_TIMEOUT_MS;
     else if (!pg_strncasecmp(option_char, "CURLOPT_FORBID_REUSE", sizeof("CURLOPT_FORBID_REUSE") - 1)) option = CURLOPT_FORBID_REUSE;
@@ -207,7 +209,7 @@ inline static int progress_callback(void *clientp, curl_off_t dltotal, curl_off_
 
 Datum pg_curl_easy_perform(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_perform); Datum pg_curl_easy_perform(PG_FUNCTION_ARGS) {
     CURLcode res = CURL_LAST;
-    if (!curl) curl = curl_easy_init();
+    if (!curl) ereport(ERROR, (errmsg("call pg_curl_easy_init before!")));
     (void)resetStringInfo(&write_buf);
     if ((res = curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback)) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_setopt(CURLOPT_WRITEFUNCTION): %s", curl_easy_strerror(res))));
     if ((res = curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)(&write_buf))) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_setopt(CURLOPT_WRITEDATA): %s", curl_easy_strerror(res))));
@@ -225,9 +227,9 @@ Datum pg_curl_easy_getinfo_char(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_e
     CURLINFO info;
     char *info_char;
     char *str = NULL;
+    if (!curl) ereport(ERROR, (errmsg("call pg_curl_easy_init before!")));
     if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("argument info must not null!")));
     info_char = TextDatumGetCString(PG_GETARG_DATUM(0));
-    if (!curl) ereport(ERROR, (errmsg("call pg_curl_easy_init before!")));
     if (!pg_strncasecmp(info_char, "CURLINFO_RESPONSE", sizeof("CURLINFO_RESPONSE") - 1)) { str = write_buf.data; goto ret; }
     else if (!pg_strncasecmp(info_char, "CURLINFO_CONTENT_TYPE", sizeof("CURLINFO_CONTENT_TYPE") - 1)) info = CURLINFO_CONTENT_TYPE;
     else ereport(ERROR, (errmsg("unsupported option %s", info_char)));
@@ -243,9 +245,9 @@ Datum pg_curl_easy_getinfo_long(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_e
     CURLINFO info;
     char *info_char;
     long lon;
+    if (!curl) ereport(ERROR, (errmsg("call pg_curl_easy_init before!")));
     if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("argument info must not null!")));
     info_char = TextDatumGetCString(PG_GETARG_DATUM(0));
-    if (!curl) ereport(ERROR, (errmsg("call pg_curl_easy_init before!")));
     if (!pg_strncasecmp(info_char, "CURLINFO_RESPONSE_CODE", sizeof("CURLINFO_RESPONSE_CODE") - 1)) info = CURLINFO_RESPONSE_CODE;
     else ereport(ERROR, (errmsg("unsupported option %s", info_char)));
     if ((res = curl_easy_getinfo(curl, info, &lon)) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_getinfo(%s): %s", info_char, curl_easy_strerror(res))));
