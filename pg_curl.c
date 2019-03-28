@@ -79,8 +79,7 @@ inline static size_t read_callback(void *buffer, size_t size, size_t nitems, voi
 Datum pg_curl_easy_setopt_char(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_setopt_char); Datum pg_curl_easy_setopt_char(PG_FUNCTION_ARGS) {
     CURLcode res = CURL_LAST;
     CURLoption option;
-    char *option_char;
-    char *parameter_char;
+    char *option_char, *parameter_char;
     if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("first argument option must not null!")));
     option_char = TextDatumGetCString(PG_GETARG_DATUM(0));
     if (PG_ARGISNULL(1)) ereport(ERROR, (errmsg("second argument parameter must not null!")));
