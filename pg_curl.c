@@ -1,30 +1,10 @@
 #include <postgres.h>
 #include <fmgr.h>
 
-#include <access/htup_details.h>
-#include <access/htup.h>
-#include <catalog/dependency.h>
-#include <catalog/namespace.h>
 #include <catalog/pg_type.h>
-#include <commands/extension.h>
 #include <curl/curl.h>
-#include <funcapi.h>
-#include <lib/stringinfo.h>
-#include <limits.h>	/* INT_MAX */
-#include <mb/pg_wchar.h>
-#include <nodes/pg_list.h>
-#include <regex.h>
-#include <signal.h> /* SIGINT */
-#include <stdlib.h>
-#include <string.h>
-#include <utils/array.h>
+#include <signal.h>
 #include <utils/builtins.h>
-#include <utils/catcache.h>
-#include <utils/guc.h>
-#include <utils/lsyscache.h>
-#include <utils/syscache.h>
-#include <utils/typcache.h>
-#include <utils/varlena.h>
 
 PG_MODULE_MAGIC;
 
@@ -34,9 +14,9 @@ void _PG_fini(void);
 CURL *curl = NULL;
 StringInfoData read_buf;
 StringInfoData write_buf;
-//struct curl_slist *slist = NULL;
 pqsigfunc pgsql_interrupt_handler = NULL;
 int pg_curl_interrupt_requested = 0;
+struct curl_slist *slist = NULL;
 
 static inline void pg_curl_interrupt_handler(int sig) { pg_curl_interrupt_requested = sig; }
 
@@ -50,11 +30,14 @@ void _PG_init(void) {
 
 void _PG_fini(void) {
     (pqsigfunc)pqsignal(SIGINT, pgsql_interrupt_handler);
-    if (curl) { (void)curl_easy_cleanup(curl); curl = NULL; }
+    if (curl) {
+        (void)curl_slist_free_all(slist);
+        (void)curl_easy_cleanup(curl);
+        curl = NULL;
+    }
     (void)curl_global_cleanup();
     (void)pfree(read_buf.data);
     (void)pfree(write_buf.data);
-//    if (slist) (void)pfree(slist);
 }
 
 Datum pg_curl_easy_init(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_init); Datum pg_curl_easy_init(PG_FUNCTION_ARGS) {
@@ -78,20 +61,6 @@ inline static size_t read_callback(void *buffer, size_t size, size_t nitems, voi
     return readsize;
 }
 
-/*Datum pg_curl_slist_append(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_slist_append); Datum pg_curl_slist_append(PG_FUNCTION_ARGS) {
-    CURLcode res = CURL_LAST;
-    char *name, *value;
-    if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("first argument option must not null!")));
-    name = TextDatumGetCString(PG_GETARG_DATUM(0));
-    if (PG_ARGISNULL(1)) ereport(ERROR, (errmsg("second argument parameter must not null!")));
-    value = TextDatumGetCString(PG_GETARG_DATUM(1));
-    if (!curl) curl = curl_easy_init();
-    if ((res = curl_easy_setopt(curl, CURLOPT_HTTPHEADER, slist)) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_setopt(CURLOPT_HTTPHEADER): %s", curl_easy_strerror(res))));
-    (void)pfree(name);
-    (void)pfree(value);
-    PG_RETURN_BOOL(res == CURLE_OK);
-}*/
-
 Datum pg_curl_easy_setopt_char_array(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_setopt_char_array); Datum pg_curl_easy_setopt_char_array(PG_FUNCTION_ARGS) {
     CURLcode res = CURL_LAST;
     CURLoption option;
@@ -99,18 +68,20 @@ Datum pg_curl_easy_setopt_char_array(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_c
     Datum *elemsp;
     bool *nullsp;
     int nelems;
-    struct curl_slist *slist = NULL, *temp;
+    struct curl_slist *temp;
     ArrayType *parameter_char_array;
     if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("first argument option must not null!")));
     option_char = TextDatumGetCString(PG_GETARG_DATUM(0));
     if (PG_ARGISNULL(1)) ereport(ERROR, (errmsg("second argument parameter must not null!")));
     parameter_char_array = DatumGetArrayTypeP(PG_GETARG_DATUM(1));
     (void)deconstruct_array(parameter_char_array, TEXTOID, -1, false, 'i', &elemsp, &nullsp, &nelems);
+    (void)curl_slist_free_all(slist);
     for (int i = 0; i < nelems; i++) {
         char *value;
         if (nullsp[i]) ereport(ERROR, (errmsg("nulls")));
         temp = slist;
         value = TextDatumGetCString(elemsp[i]);
+        elog(LOG, "value=%s", value);
         temp = curl_slist_append(temp, value);
         if (!temp) ereport(ERROR, (errmsg("!temp")));
         slist = temp;
@@ -124,7 +95,6 @@ Datum pg_curl_easy_setopt_char_array(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_c
     (void)pfree(parameter_char_array);
     (void)pfree(elemsp);
     (void)pfree(nullsp);
-    (void)curl_slist_free_all(slist);
     PG_RETURN_BOOL(res == CURLE_OK);
 }
 
