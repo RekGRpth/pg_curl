@@ -341,6 +341,7 @@ Datum pg_curl_easy_setopt_long(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_ea
     else if (!pg_strncasecmp(option_char, "CURLOPT_SERVER_RESPONSE_TIMEOUT", sizeof("CURLOPT_SERVER_RESPONSE_TIMEOUT") - 1)) option = CURLOPT_SERVER_RESPONSE_TIMEOUT;
     else if (!pg_strncasecmp(option_char, "CURLOPT_SOCKS5_AUTH", sizeof("CURLOPT_SOCKS5_AUTH") - 1)) option = CURLOPT_SOCKS5_AUTH;
     else if (!pg_strncasecmp(option_char, "CURLOPT_SOCKS5_GSSAPI_NEC", sizeof("CURLOPT_SOCKS5_GSSAPI_NEC") - 1)) option = CURLOPT_SOCKS5_GSSAPI_NEC;
+    else if (!pg_strncasecmp(option_char, "CURLOPT_SSL_FALSESTART", sizeof("CURLOPT_SSL_FALSESTART") - 1)) option = CURLOPT_SSL_FALSESTART;
     else if (!pg_strncasecmp(option_char, "CURLOPT_SSL_VERIFYHOST", sizeof("CURLOPT_SSL_VERIFYHOST") - 1)) option = CURLOPT_SSL_VERIFYHOST;
     else if (!pg_strncasecmp(option_char, "CURLOPT_SSL_VERIFYPEER", sizeof("CURLOPT_SSL_VERIFYPEER") - 1)) option = CURLOPT_SSL_VERIFYPEER;
     else if (!pg_strncasecmp(option_char, "CURLOPT_SSL_VERIFYSTATUS", sizeof("CURLOPT_SSL_VERIFYSTATUS") - 1)) option = CURLOPT_SSL_VERIFYSTATUS;
