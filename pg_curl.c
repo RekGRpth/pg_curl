@@ -354,6 +354,7 @@ Datum pg_curl_easy_setopt_long(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_ea
     else if (!pg_strncasecmp(option_char, "CURLOPT_PORT", sizeof("CURLOPT_PORT") - 1)) option = CURLOPT_PORT;
     else if (!pg_strncasecmp(option_char, "CURLOPT_POSTREDIR", sizeof("CURLOPT_POSTREDIR") - 1)) option = CURLOPT_POSTREDIR;
     else if (!pg_strncasecmp(option_char, "CURLOPT_POST", sizeof("CURLOPT_POST") - 1)) option = CURLOPT_POST;
+    else if (!pg_strncasecmp(option_char, "CURLOPT_PROTOCOLS", sizeof("CURLOPT_PROTOCOLS") - 1)) option = CURLOPT_PROTOCOLS;
     else if (!pg_strncasecmp(option_char, "CURLOPT_PROXYAUTH", sizeof("CURLOPT_PROXYAUTH") - 1)) option = CURLOPT_PROXYAUTH;
     else if (!pg_strncasecmp(option_char, "CURLOPT_PROXYPORT", sizeof("CURLOPT_PROXYPORT") - 1)) option = CURLOPT_PROXYPORT;
     else if (!pg_strncasecmp(option_char, "CURLOPT_PROXY_SSL_OPTIONS", sizeof("CURLOPT_PROXY_SSL_OPTIONS") - 1)) option = CURLOPT_PROXY_SSL_OPTIONS;
