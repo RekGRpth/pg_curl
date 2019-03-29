@@ -287,6 +287,7 @@ Datum pg_curl_easy_setopt_long(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_ea
     else if (!pg_strncasecmp(option_char, "CURLOPT_ACCEPTTIMEOUT_MS", sizeof("CURLOPT_ACCEPTTIMEOUT_MS") - 1)) option = CURLOPT_ACCEPTTIMEOUT_MS;
     else if (!pg_strncasecmp(option_char, "CURLOPT_APPEND", sizeof("CURLOPT_APPEND") - 1)) option = CURLOPT_APPEND;
     else if (!pg_strncasecmp(option_char, "CURLOPT_AUTOREFERER", sizeof("CURLOPT_AUTOREFERER") - 1)) option = CURLOPT_AUTOREFERER;
+    else if (!pg_strncasecmp(option_char, "CURLOPT_CERTINFO", sizeof("CURLOPT_CERTINFO") - 1)) option = CURLOPT_CERTINFO;
     else if (!pg_strncasecmp(option_char, "CURLOPT_CONNECTTIMEOUT_MS", sizeof("CURLOPT_CONNECTTIMEOUT_MS") - 1)) option = CURLOPT_CONNECTTIMEOUT_MS;
     else if (!pg_strncasecmp(option_char, "CURLOPT_CONNECTTIMEOUT", sizeof("CURLOPT_CONNECTTIMEOUT") - 1)) option = CURLOPT_CONNECTTIMEOUT;
     else if (!pg_strncasecmp(option_char, "CURLOPT_COOKIESESSION", sizeof("CURLOPT_COOKIESESSION") - 1)) option = CURLOPT_COOKIESESSION;
