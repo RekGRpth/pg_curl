@@ -289,6 +289,7 @@ Datum pg_curl_easy_setopt_long(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_ea
     else if (!pg_strncasecmp(option_char, "CURLOPT_TFTP_NO_OPTIONS", sizeof("CURLOPT_TFTP_NO_OPTIONS") - 1)) option = CURLOPT_TFTP_NO_OPTIONS;
     else if (!pg_strncasecmp(option_char, "CURLOPT_TIMEOUT_MS", sizeof("CURLOPT_TIMEOUT_MS") - 1)) option = CURLOPT_TIMEOUT_MS;
     else if (!pg_strncasecmp(option_char, "CURLOPT_TIMEOUT", sizeof("CURLOPT_TIMEOUT") - 1)) option = CURLOPT_TIMEOUT;
+    else if (!pg_strncasecmp(option_char, "CURLOPT_TRANSFERTEXT", sizeof("CURLOPT_TRANSFERTEXT") - 1)) option = CURLOPT_TRANSFERTEXT;
 //    else if (!pg_strncasecmp(option_char, "CURLOPT_UPLOAD", sizeof("CURLOPT_UPLOAD") - 1)) option = CURLOPT_UPLOAD;
     else if (!pg_strncasecmp(option_char, "CURLOPT_VERBOSE", sizeof("CURLOPT_VERBOSE") - 1)) option = CURLOPT_VERBOSE;
     else ereport(ERROR, (errmsg("unsupported option %s", option_char)));
