@@ -343,6 +343,7 @@ Datum pg_curl_easy_setopt_long(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_ea
     else if (!pg_strncasecmp(option_char, "CURLOPT_SOCKS5_GSSAPI_NEC", sizeof("CURLOPT_SOCKS5_GSSAPI_NEC") - 1)) option = CURLOPT_SOCKS5_GSSAPI_NEC;
     else if (!pg_strncasecmp(option_char, "CURLOPT_SSL_VERIFYHOST", sizeof("CURLOPT_SSL_VERIFYHOST") - 1)) option = CURLOPT_SSL_VERIFYHOST;
     else if (!pg_strncasecmp(option_char, "CURLOPT_SSL_VERIFYPEER", sizeof("CURLOPT_SSL_VERIFYPEER") - 1)) option = CURLOPT_SSL_VERIFYPEER;
+    else if (!pg_strncasecmp(option_char, "CURLOPT_SSL_VERIFYSTATUS", sizeof("CURLOPT_SSL_VERIFYSTATUS") - 1)) option = CURLOPT_SSL_VERIFYSTATUS;
     else if (!pg_strncasecmp(option_char, "CURLOPT_SSLVERSION", sizeof("CURLOPT_SSLVERSION") - 1)) option = CURLOPT_SSLVERSION;
     else if (!pg_strncasecmp(option_char, "CURLOPT_TCP_KEEPALIVE", sizeof("CURLOPT_TCP_KEEPALIVE") - 1)) option = CURLOPT_TCP_KEEPALIVE;
     else if (!pg_strncasecmp(option_char, "CURLOPT_TCP_KEEPIDLE", sizeof("CURLOPT_TCP_KEEPIDLE") - 1)) option = CURLOPT_TCP_KEEPIDLE;
