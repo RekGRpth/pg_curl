@@ -381,6 +381,8 @@ Datum pg_curl_easy_setopt_long(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_ea
     else if (!pg_strncasecmp(option_char, "CURLOPT_SOCKS5_AUTH", sizeof("CURLOPT_SOCKS5_AUTH") - 1)) option = CURLOPT_SOCKS5_AUTH;
     else if (!pg_strncasecmp(option_char, "CURLOPT_SOCKS5_GSSAPI_NEC", sizeof("CURLOPT_SOCKS5_GSSAPI_NEC") - 1)) option = CURLOPT_SOCKS5_GSSAPI_NEC;
     else if (!pg_strncasecmp(option_char, "CURLOPT_SSH_AUTH_TYPES", sizeof("CURLOPT_SSH_AUTH_TYPES") - 1)) option = CURLOPT_SSH_AUTH_TYPES;
+    else if (!pg_strncasecmp(option_char, "CURLOPT_SSL_ENABLE_ALPN", sizeof("CURLOPT_SSL_ENABLE_ALPN") - 1)) option = CURLOPT_SSL_ENABLE_ALPN;
+    else if (!pg_strncasecmp(option_char, "CURLOPT_SSL_ENABLE_NPN", sizeof("CURLOPT_SSL_ENABLE_NPN") - 1)) option = CURLOPT_SSL_ENABLE_NPN;
     else if (!pg_strncasecmp(option_char, "CURLOPT_SSL_FALSESTART", sizeof("CURLOPT_SSL_FALSESTART") - 1)) option = CURLOPT_SSL_FALSESTART;
     else if (!pg_strncasecmp(option_char, "CURLOPT_SSL_OPTIONS", sizeof("CURLOPT_SSL_OPTIONS") - 1)) option = CURLOPT_SSL_OPTIONS;
     else if (!pg_strncasecmp(option_char, "CURLOPT_SSL_SESSIONID_CACHE", sizeof("CURLOPT_SSL_SESSIONID_CACHE") - 1)) option = CURLOPT_SSL_SESSIONID_CACHE;
