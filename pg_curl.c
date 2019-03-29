@@ -16,7 +16,7 @@ StringInfoData read_buf;
 StringInfoData write_buf;
 pqsigfunc pgsql_interrupt_handler = NULL;
 int pg_curl_interrupt_requested = 0;
-struct curl_slist *slist = NULL;
+struct curl_slist *header = NULL;
 curl_mime *mime;
 bool has_mime;
 
@@ -34,7 +34,7 @@ void _PG_fini(void) {
     (pqsigfunc)pqsignal(SIGINT, pgsql_interrupt_handler);
     if (curl) (void)curl_easy_cleanup(curl);
     (void)curl_mime_free(mime);
-    (void)curl_slist_free_all(slist);
+    (void)curl_slist_free_all(header);
     (void)curl_global_cleanup();
     (void)pfree(read_buf.data);
     (void)pfree(write_buf.data);
@@ -53,7 +53,7 @@ Datum pg_curl_easy_init(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_init
 Datum pg_curl_easy_reset(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_reset); Datum pg_curl_easy_reset(PG_FUNCTION_ARGS) {
     if (!curl) ereport(ERROR, (errmsg("!curl")));
     (void)curl_easy_reset(curl);
-    (void)curl_slist_free_all(slist);
+    (void)curl_slist_free_all(header);
     (void)curl_mime_free(mime);
     mime = curl_mime_init(curl);
     if (!mime) ereport(ERROR, (errmsg("!mime")));
@@ -71,54 +71,17 @@ inline static size_t read_callback(void *buffer, size_t size, size_t nitems, voi
     return readsize;
 }
 
-/*Datum pg_curl_easy_setopt_char_array(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_setopt_char_array); Datum pg_curl_easy_setopt_char_array(PG_FUNCTION_ARGS) {
-    CURLcode res = CURL_LAST;
-    CURLoption option;
-    char *option_char;
-    Datum *elemsp;
-    bool *nullsp;
-    int nelems;
-    struct curl_slist *temp;
-    ArrayType *parameter_char_array;
-    if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("first argument option must not null!")));
-    option_char = TextDatumGetCString(PG_GETARG_DATUM(0));
-    if (PG_ARGISNULL(1)) ereport(ERROR, (errmsg("second argument parameter must not null!")));
-    parameter_char_array = DatumGetArrayTypeP(PG_GETARG_DATUM(1));
-    (void)deconstruct_array(parameter_char_array, TEXTOID, -1, false, 'i', &elemsp, &nullsp, &nelems);
-    (void)curl_slist_free_all(slist);
-    for (int i = 0; i < nelems; i++) {
-        char *value;
-        if (nullsp[i]) ereport(ERROR, (errmsg("nulls")));
-        temp = slist;
-        value = TextDatumGetCString(elemsp[i]);
-        elog(LOG, "value=%s", value);
-        temp = curl_slist_append(temp, value);
-        if (!temp) ereport(ERROR, (errmsg("!temp")));
-        slist = temp;
-        (void)pfree(value);
-    }
-    if (!curl) curl = curl_easy_init();
-    if (!pg_strncasecmp(option_char, "CURLOPT_HTTPHEADER", sizeof("CURLOPT_HTTPHEADER") - 1)) option = CURLOPT_HTTPHEADER;
-    else ereport(ERROR, (errmsg("unsupported option %s", option_char)));
-    if ((res = curl_easy_setopt(curl, option, slist)) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_setopt(%s): %s", option_char, curl_easy_strerror(res))));
-    (void)pfree(option_char);
-    (void)pfree(parameter_char_array);
-    (void)pfree(elemsp);
-    (void)pfree(nullsp);
-    PG_RETURN_BOOL(res == CURLE_OK);
-}*/
-
 Datum pg_curl_header_append(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_header_append); Datum pg_curl_header_append(PG_FUNCTION_ARGS) {
     char *name, *value;
     StringInfoData buf;
-    struct curl_slist *temp = slist;
+    struct curl_slist *temp = header;
     if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("first argument option must not null!")));
     name = TextDatumGetCString(PG_GETARG_DATUM(0));
     if (PG_ARGISNULL(1)) ereport(ERROR, (errmsg("second argument parameter must not null!")));
     value = TextDatumGetCString(PG_GETARG_DATUM(1));
     (void)initStringInfo(&buf);
     (void)appendStringInfo(&buf, "%s: %s", name, value);
-    if ((temp = curl_slist_append(temp, buf.data))) slist = temp;
+    if ((temp = curl_slist_append(temp, buf.data))) header = temp;
     (void)pfree(name);
     (void)pfree(value);
     (void)pfree(buf.data);
@@ -240,7 +203,7 @@ Datum pg_curl_easy_perform(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_p
     if ((res = curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)(&write_buf))) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_setopt(CURLOPT_WRITEDATA): %s", curl_easy_strerror(res))));
     if ((res = curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback)) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_setopt(CURLOPT_WRITEFUNCTION): %s", curl_easy_strerror(res))));
     if ((res = curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION, progress_callback)) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_setopt(CURLOPT_XFERINFOFUNCTION): %s", curl_easy_strerror(res))));
-    if (slist && ((res = curl_easy_setopt(curl, CURLOPT_HTTPHEADER, slist)) != CURLE_OK)) ereport(ERROR, (errmsg("curl_easy_setopt(CURLOPT_HTTPHEADER): %s", curl_easy_strerror(res))));
+    if (header && ((res = curl_easy_setopt(curl, CURLOPT_HTTPHEADER, header)) != CURLE_OK)) ereport(ERROR, (errmsg("curl_easy_setopt(CURLOPT_HTTPHEADER): %s", curl_easy_strerror(res))));
     if (has_mime && ((res = curl_easy_setopt(curl, CURLOPT_MIMEPOST, mime)) != CURLE_OK)) ereport(ERROR, (errmsg("curl_easy_setopt(CURLOPT_MIMEPOST): %s", curl_easy_strerror(res))));
     if ((res = curl_easy_perform(curl)) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_perform: %s", curl_easy_strerror(res))));
     PG_RETURN_BOOL(res == CURLE_OK);
@@ -287,7 +250,7 @@ Datum pg_curl_easy_cleanup(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_c
         curl = NULL;
     }
     (void)curl_mime_free(mime);
-    (void)curl_slist_free_all(slist);
+    (void)curl_slist_free_all(header);
     (void)resetStringInfo(&read_buf);
     (void)resetStringInfo(&write_buf);
     PG_RETURN_VOID();
