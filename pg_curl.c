@@ -209,6 +209,7 @@ Datum pg_curl_easy_setopt_char(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_ea
     if (false);
     else if (!pg_strncasecmp(option_char, "CURLOPT_ABSTRACT_UNIX_SOCKET", sizeof("CURLOPT_ABSTRACT_UNIX_SOCKET") - 1)) option = CURLOPT_ABSTRACT_UNIX_SOCKET;
     else if (!pg_strncasecmp(option_char, "CURLOPT_ACCEPT_ENCODING", sizeof("CURLOPT_ACCEPT_ENCODING") - 1)) option = CURLOPT_ACCEPT_ENCODING;
+    else if (!pg_strncasecmp(option_char, "CURLOPT_ALTSVC", sizeof("CURLOPT_ALTSVC") - 1)) option = CURLOPT_ALTSVC;
     else if (!pg_strncasecmp(option_char, "CURLOPT_CAINFO", sizeof("CURLOPT_CAINFO") - 1)) option = CURLOPT_CAINFO;
     else if (!pg_strncasecmp(option_char, "CURLOPT_CAPATH", sizeof("CURLOPT_CAPATH") - 1)) option = CURLOPT_CAPATH;
     else if (!pg_strncasecmp(option_char, "CURLOPT_COOKIEFILE", sizeof("CURLOPT_COOKIEFILE") - 1)) option = CURLOPT_COOKIEFILE;
