@@ -332,6 +332,7 @@ Datum pg_curl_easy_setopt_long(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_ea
     else if (!pg_strncasecmp(option_char, "CURLOPT_LOW_SPEED_LIMIT", sizeof("CURLOPT_LOW_SPEED_LIMIT") - 1)) option = CURLOPT_LOW_SPEED_LIMIT;
     else if (!pg_strncasecmp(option_char, "CURLOPT_LOW_SPEED_TIME", sizeof("CURLOPT_LOW_SPEED_TIME") - 1)) option = CURLOPT_LOW_SPEED_TIME;
     else if (!pg_strncasecmp(option_char, "CURLOPT_MAXCONNECTS", sizeof("CURLOPT_MAXCONNECTS") - 1)) option = CURLOPT_MAXCONNECTS;
+    else if (!pg_strncasecmp(option_char, "CURLOPT_MAXFILESIZE", sizeof("CURLOPT_MAXFILESIZE") - 1)) option = CURLOPT_MAXFILESIZE;
     else if (!pg_strncasecmp(option_char, "CURLOPT_MAXREDIRS", sizeof("CURLOPT_MAXREDIRS") - 1)) option = CURLOPT_MAXREDIRS;
     else if (!pg_strncasecmp(option_char, "CURLOPT_NETRC", sizeof("CURLOPT_NETRC") - 1)) option = CURLOPT_NETRC;
     else if (!pg_strncasecmp(option_char, "CURLOPT_NOBODY", sizeof("CURLOPT_NOBODY") - 1)) option = CURLOPT_NOBODY;
