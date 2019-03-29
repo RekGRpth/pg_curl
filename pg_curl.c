@@ -260,6 +260,7 @@ Datum pg_curl_easy_setopt_char(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_ea
     else if (!pg_strncasecmp(option_char, "CURLOPT_REQUEST_TARGET", sizeof("CURLOPT_REQUEST_TARGET") - 1)) option = CURLOPT_REQUEST_TARGET;
     else if (!pg_strncasecmp(option_char, "CURLOPT_RTSP_SESSION_ID", sizeof("CURLOPT_RTSP_SESSION_ID") - 1)) option = CURLOPT_RTSP_SESSION_ID;
     else if (!pg_strncasecmp(option_char, "CURLOPT_RTSP_STREAM_URI", sizeof("CURLOPT_RTSP_STREAM_URI") - 1)) option = CURLOPT_RTSP_STREAM_URI;
+    else if (!pg_strncasecmp(option_char, "CURLOPT_RTSP_TRANSPORT", sizeof("CURLOPT_RTSP_TRANSPORT") - 1)) option = CURLOPT_RTSP_TRANSPORT;
     else if (!pg_strncasecmp(option_char, "CURLOPT_SERVICE_NAME", sizeof("CURLOPT_SERVICE_NAME") - 1)) option = CURLOPT_SERVICE_NAME;
     else if (!pg_strncasecmp(option_char, "CURLOPT_SOCKS5_GSSAPI_SERVICE", sizeof("CURLOPT_SOCKS5_GSSAPI_SERVICE") - 1)) option = CURLOPT_SOCKS5_GSSAPI_SERVICE;
     else if (!pg_strncasecmp(option_char, "CURLOPT_SSH_HOST_PUBLIC_KEY_MD5", sizeof("CURLOPT_SSH_HOST_PUBLIC_KEY_MD5") - 1)) option = CURLOPT_SSH_HOST_PUBLIC_KEY_MD5;
