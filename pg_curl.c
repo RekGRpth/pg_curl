@@ -20,6 +20,7 @@ struct curl_slist *header = NULL;
 struct curl_slist *recipient = NULL;
 curl_mime *mime;
 bool has_mime;
+char *encoding = NULL;
 
 static inline void pg_curl_interrupt_handler(int sig) { pg_curl_interrupt_requested = sig; }
 
@@ -40,6 +41,7 @@ void _PG_fini(void) {
     (void)curl_global_cleanup();
     (void)pfree(read_buf.data);
     (void)pfree(write_buf.data);
+    (void)pfree(encoding);
 }
 
 Datum pg_curl_easy_init(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_init); Datum pg_curl_easy_init(PG_FUNCTION_ARGS) {
@@ -58,6 +60,8 @@ Datum pg_curl_easy_reset(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_res
     (void)curl_slist_free_all(header);
     (void)curl_slist_free_all(recipient);
     (void)curl_mime_free(mime);
+    (void)pfree(encoding);
+    encoding = NULL;
     mime = curl_mime_init(curl);
     if (!mime) ereport(ERROR, (errmsg("!mime")));
     has_mime = false;
@@ -99,6 +103,13 @@ Datum pg_curl_recipient_append(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_re
     if ((temp = curl_slist_append(temp, name))) recipient = temp;
     (void)pfree(name);
     PG_RETURN_BOOL(temp != NULL);
+}
+
+Datum pg_curl_mime_encoder(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_mime_encoder); Datum pg_curl_mime_encoder(PG_FUNCTION_ARGS) {
+    CURLcode res = CURL_LAST;
+    if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("first argument encoding must not null!")));
+    encoding = TextDatumGetCString(PG_GETARG_DATUM(0));
+    PG_RETURN_BOOL(res == CURLE_OK);
 }
 
 Datum pg_curl_mime_data(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_mime_data); Datum pg_curl_mime_data(PG_FUNCTION_ARGS) {
@@ -311,5 +322,6 @@ Datum pg_curl_easy_cleanup(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_c
     (void)curl_slist_free_all(recipient);
     (void)resetStringInfo(&read_buf);
     (void)resetStringInfo(&write_buf);
+    (void)pfree(encoding);
     PG_RETURN_VOID();
 }
