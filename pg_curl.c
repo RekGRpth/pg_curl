@@ -362,6 +362,7 @@ Datum pg_curl_easy_setopt_long(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_ea
     else if (!pg_strncasecmp(option_char, "CURLOPT_SSLVERSION", sizeof("CURLOPT_SSLVERSION") - 1)) option = CURLOPT_SSLVERSION;
     else if (!pg_strncasecmp(option_char, "CURLOPT_TCP_KEEPALIVE", sizeof("CURLOPT_TCP_KEEPALIVE") - 1)) option = CURLOPT_TCP_KEEPALIVE;
     else if (!pg_strncasecmp(option_char, "CURLOPT_TCP_KEEPIDLE", sizeof("CURLOPT_TCP_KEEPIDLE") - 1)) option = CURLOPT_TCP_KEEPIDLE;
+    else if (!pg_strncasecmp(option_char, "CURLOPT_TCP_NODELAY", sizeof("CURLOPT_TCP_NODELAY") - 1)) option = CURLOPT_TCP_NODELAY;
     else if (!pg_strncasecmp(option_char, "CURLOPT_TFTP_BLKSIZE", sizeof("CURLOPT_TFTP_BLKSIZE") - 1)) option = CURLOPT_TFTP_BLKSIZE;
     else if (!pg_strncasecmp(option_char, "CURLOPT_TFTP_NO_OPTIONS", sizeof("CURLOPT_TFTP_NO_OPTIONS") - 1)) option = CURLOPT_TFTP_NO_OPTIONS;
     else if (!pg_strncasecmp(option_char, "CURLOPT_TIMECONDITION", sizeof("CURLOPT_TIMECONDITION") - 1)) option = CURLOPT_TIMECONDITION;
