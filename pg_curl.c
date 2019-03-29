@@ -260,6 +260,7 @@ Datum pg_curl_easy_setopt_char(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_ea
     else if (!pg_strncasecmp(option_char, "CURLOPT_SERVICE_NAME", sizeof("CURLOPT_SERVICE_NAME") - 1)) option = CURLOPT_SERVICE_NAME;
     else if (!pg_strncasecmp(option_char, "CURLOPT_SOCKS5_GSSAPI_SERVICE", sizeof("CURLOPT_SOCKS5_GSSAPI_SERVICE") - 1)) option = CURLOPT_SOCKS5_GSSAPI_SERVICE;
     else if (!pg_strncasecmp(option_char, "CURLOPT_SSH_HOST_PUBLIC_KEY_MD5", sizeof("CURLOPT_SSH_HOST_PUBLIC_KEY_MD5") - 1)) option = CURLOPT_SSH_HOST_PUBLIC_KEY_MD5;
+    else if (!pg_strncasecmp(option_char, "CURLOPT_SSH_KNOWNHOSTS", sizeof("CURLOPT_SSH_KNOWNHOSTS") - 1)) option = CURLOPT_SSH_KNOWNHOSTS;
     else if (!pg_strncasecmp(option_char, "CURLOPT_SSH_PRIVATE_KEYFILE", sizeof("CURLOPT_SSH_PRIVATE_KEYFILE") - 1)) option = CURLOPT_SSH_PRIVATE_KEYFILE;
     else if (!pg_strncasecmp(option_char, "CURLOPT_SSH_PUBLIC_KEYFILE", sizeof("CURLOPT_SSH_PUBLIC_KEYFILE") - 1)) option = CURLOPT_SSH_PUBLIC_KEYFILE;
     else if (!pg_strncasecmp(option_char, "CURLOPT_SSLCERT", sizeof("CURLOPT_SSLCERT") - 1)) option = CURLOPT_SSLCERT;
