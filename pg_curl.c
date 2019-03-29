@@ -271,6 +271,7 @@ Datum pg_curl_easy_setopt_long(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_ea
     else if (!pg_strncasecmp(option_char, "CURLOPT_DIRLISTONLY", sizeof("CURLOPT_DIRLISTONLY") - 1)) option = CURLOPT_DIRLISTONLY;
     else if (!pg_strncasecmp(option_char, "CURLOPT_DNS_CACHE_TIMEOUT", sizeof("CURLOPT_DNS_CACHE_TIMEOUT") - 1)) option = CURLOPT_DNS_CACHE_TIMEOUT;
     else if (!pg_strncasecmp(option_char, "CURLOPT_DNS_USE_GLOBAL_CACHE", sizeof("CURLOPT_DNS_USE_GLOBAL_CACHE") - 1)) option = CURLOPT_DNS_USE_GLOBAL_CACHE;
+    else if (!pg_strncasecmp(option_char, "CURLOPT_EXPECT_100_TIMEOUT_MS", sizeof("CURLOPT_EXPECT_100_TIMEOUT_MS") - 1)) option = CURLOPT_EXPECT_100_TIMEOUT_MS;
     else if (!pg_strncasecmp(option_char, "CURLOPT_FAILONERROR", sizeof("CURLOPT_FAILONERROR") - 1)) option = CURLOPT_FAILONERROR;
     else if (!pg_strncasecmp(option_char, "CURLOPT_FILETIME", sizeof("CURLOPT_FILETIME") - 1)) option = CURLOPT_FILETIME;
     else if (!pg_strncasecmp(option_char, "CURLOPT_FOLLOWLOCATION", sizeof("CURLOPT_FOLLOWLOCATION") - 1)) option = CURLOPT_FOLLOWLOCATION;
