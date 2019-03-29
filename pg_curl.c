@@ -220,6 +220,7 @@ Datum pg_curl_easy_setopt_char(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_ea
     else if (!pg_strncasecmp(option_char, "CURLOPT_FTPPORT", sizeof("CURLOPT_FTPPORT") - 1)) option = CURLOPT_FTPPORT;
     else if (!pg_strncasecmp(option_char, "CURLOPT_INTERFACE", sizeof("CURLOPT_INTERFACE") - 1)) option = CURLOPT_INTERFACE;
     else if (!pg_strncasecmp(option_char, "CURLOPT_KEYPASSWD", sizeof("CURLOPT_KEYPASSWD") - 1)) option = CURLOPT_KEYPASSWD;
+    else if (!pg_strncasecmp(option_char, "CURLOPT_KRBLEVEL", sizeof("CURLOPT_KRBLEVEL") - 1)) option = CURLOPT_KRBLEVEL;
     else if (!pg_strncasecmp(option_char, "CURLOPT_LOGIN_OPTIONS", sizeof("CURLOPT_LOGIN_OPTIONS") - 1)) option = CURLOPT_LOGIN_OPTIONS;
     else if (!pg_strncasecmp(option_char, "CURLOPT_MAIL_AUTH", sizeof("CURLOPT_MAIL_AUTH") - 1)) option = CURLOPT_MAIL_AUTH;
     else if (!pg_strncasecmp(option_char, "CURLOPT_MAIL_FROM", sizeof("CURLOPT_MAIL_FROM") - 1)) option = CURLOPT_MAIL_FROM;
