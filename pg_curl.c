@@ -232,6 +232,7 @@ Datum pg_curl_easy_setopt_char(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_ea
     else if (!pg_strncasecmp(option_char, "CURLOPT_PROXY_CAINFO", sizeof("CURLOPT_PROXY_CAINFO") - 1)) option = CURLOPT_PROXY_CAINFO;
     else if (!pg_strncasecmp(option_char, "CURLOPT_PROXY_KEYPASSWD", sizeof("CURLOPT_PROXY_KEYPASSWD") - 1)) option = CURLOPT_PROXY_KEYPASSWD;
     else if (!pg_strncasecmp(option_char, "CURLOPT_PROXYPASSWORD", sizeof("CURLOPT_PROXYPASSWORD") - 1)) option = CURLOPT_PROXYPASSWORD;
+    else if (!pg_strncasecmp(option_char, "CURLOPT_PROXY_PINNEDPUBLICKEY", sizeof("CURLOPT_PROXY_PINNEDPUBLICKEY") - 1)) option = CURLOPT_PROXY_PINNEDPUBLICKEY;
     else if (!pg_strncasecmp(option_char, "CURLOPT_PROXY_SERVICE_NAME", sizeof("CURLOPT_PROXY_SERVICE_NAME") - 1)) option = CURLOPT_PROXY_SERVICE_NAME;
     else if (!pg_strncasecmp(option_char, "CURLOPT_PROXY", sizeof("CURLOPT_PROXY") - 1)) option = CURLOPT_PROXY;
     else if (!pg_strncasecmp(option_char, "CURLOPT_PROXY_SSLCERT", sizeof("CURLOPT_PROXY_SSLCERT") - 1)) option = CURLOPT_PROXY_SSLCERT;
