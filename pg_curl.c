@@ -235,6 +235,7 @@ Datum pg_curl_easy_setopt_char(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_ea
     else if (!pg_strncasecmp(option_char, "CURLOPT_RANDOM_FILE", sizeof("CURLOPT_RANDOM_FILE") - 1)) option = CURLOPT_RANDOM_FILE;
     else if (!pg_strncasecmp(option_char, "CURLOPT_REFERER", sizeof("CURLOPT_REFERER") - 1)) option = CURLOPT_REFERER;
     else if (!pg_strncasecmp(option_char, "CURLOPT_REQUEST_TARGET", sizeof("CURLOPT_REQUEST_TARGET") - 1)) option = CURLOPT_REQUEST_TARGET;
+    else if (!pg_strncasecmp(option_char, "CURLOPT_SERVICE_NAME", sizeof("CURLOPT_SERVICE_NAME") - 1)) option = CURLOPT_SERVICE_NAME;
     else if (!pg_strncasecmp(option_char, "CURLOPT_SOCKS5_GSSAPI_SERVICE", sizeof("CURLOPT_SOCKS5_GSSAPI_SERVICE") - 1)) option = CURLOPT_SOCKS5_GSSAPI_SERVICE;
     else if (!pg_strncasecmp(option_char, "CURLOPT_SSLCERT", sizeof("CURLOPT_SSLCERT") - 1)) option = CURLOPT_SSLCERT;
     else if (!pg_strncasecmp(option_char, "CURLOPT_SSLCERTTYPE", sizeof("CURLOPT_SSLCERTTYPE") - 1)) option = CURLOPT_SSLCERTTYPE;
