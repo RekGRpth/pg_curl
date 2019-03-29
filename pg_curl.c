@@ -283,6 +283,7 @@ Datum pg_curl_easy_setopt_long(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_ea
     else if (!pg_strncasecmp(option_char, "CURLOPT_HTTP09_ALLOWED", sizeof("CURLOPT_HTTP09_ALLOWED") - 1)) option = CURLOPT_HTTP09_ALLOWED;
     else if (!pg_strncasecmp(option_char, "CURLOPT_HTTPAUTH", sizeof("CURLOPT_HTTPAUTH") - 1)) option = CURLOPT_HTTPAUTH;
     else if (!pg_strncasecmp(option_char, "CURLOPT_HTTPGET", sizeof("CURLOPT_HTTPGET") - 1)) option = CURLOPT_HTTPGET;
+    else if (!pg_strncasecmp(option_char, "CURLOPT_HTTPPROXYTUNNEL", sizeof("CURLOPT_HTTPPROXYTUNNEL") - 1)) option = CURLOPT_HTTPPROXYTUNNEL;
     else if (!pg_strncasecmp(option_char, "CURLOPT_HTTP_VERSION", sizeof("CURLOPT_HTTP_VERSION") - 1)) option = CURLOPT_HTTP_VERSION;
     else if (!pg_strncasecmp(option_char, "CURLOPT_INFILESIZE", sizeof("CURLOPT_INFILESIZE") - 1)) option = CURLOPT_INFILESIZE;
     else if (!pg_strncasecmp(option_char, "CURLOPT_IPRESOLVE", sizeof("CURLOPT_IPRESOLVE") - 1)) option = CURLOPT_IPRESOLVE;
