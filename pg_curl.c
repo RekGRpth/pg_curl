@@ -366,6 +366,7 @@ Datum pg_curl_easy_setopt_long(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_ea
     else if (!pg_strncasecmp(option_char, "CURLOPT_TRANSFER_ENCODING", sizeof("CURLOPT_TRANSFER_ENCODING") - 1)) option = CURLOPT_TRANSFER_ENCODING;
     else if (!pg_strncasecmp(option_char, "CURLOPT_TRANSFERTEXT", sizeof("CURLOPT_TRANSFERTEXT") - 1)) option = CURLOPT_TRANSFERTEXT;
     else if (!pg_strncasecmp(option_char, "CURLOPT_UNRESTRICTED_AUTH", sizeof("CURLOPT_UNRESTRICTED_AUTH") - 1)) option = CURLOPT_UNRESTRICTED_AUTH;
+    else if (!pg_strncasecmp(option_char, "CURLOPT_UPLOAD_BUFFERSIZE", sizeof("CURLOPT_UPLOAD_BUFFERSIZE") - 1)) option = CURLOPT_UPLOAD_BUFFERSIZE;
 //    else if (!pg_strncasecmp(option_char, "CURLOPT_UPLOAD", sizeof("CURLOPT_UPLOAD") - 1)) option = CURLOPT_UPLOAD;
     else if (!pg_strncasecmp(option_char, "CURLOPT_VERBOSE", sizeof("CURLOPT_VERBOSE") - 1)) option = CURLOPT_VERBOSE;
     else ereport(ERROR, (errmsg("unsupported option %s", option_char)));
