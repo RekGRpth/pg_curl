@@ -335,6 +335,7 @@ Datum pg_curl_easy_setopt_long(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_ea
     else if (!pg_strncasecmp(option_char, "CURLOPT_FTP_USE_EPSV", sizeof("CURLOPT_FTP_USE_EPSV") - 1)) option = CURLOPT_FTP_USE_EPSV;
     else if (!pg_strncasecmp(option_char, "CURLOPT_FTP_USE_PRET", sizeof("CURLOPT_FTP_USE_PRET") - 1)) option = CURLOPT_FTP_USE_PRET;
     else if (!pg_strncasecmp(option_char, "CURLOPT_GSSAPI_DELEGATION", sizeof("CURLOPT_GSSAPI_DELEGATION") - 1)) option = CURLOPT_GSSAPI_DELEGATION;
+    else if (!pg_strncasecmp(option_char, "CURLOPT_HAPPY_EYEBALLS_TIMEOUT_MS", sizeof("CURLOPT_HAPPY_EYEBALLS_TIMEOUT_MS") - 1)) option = CURLOPT_HAPPY_EYEBALLS_TIMEOUT_MS;
     else if (!pg_strncasecmp(option_char, "CURLOPT_HAPROXYPROTOCOL", sizeof("CURLOPT_HAPROXYPROTOCOL") - 1)) option = CURLOPT_HAPROXYPROTOCOL;
     else if (!pg_strncasecmp(option_char, "CURLOPT_HEADER", sizeof("CURLOPT_HEADER") - 1)) option = CURLOPT_HEADER;
     else if (!pg_strncasecmp(option_char, "CURLOPT_HTTP09_ALLOWED", sizeof("CURLOPT_HTTP09_ALLOWED") - 1)) option = CURLOPT_HTTP09_ALLOWED;
