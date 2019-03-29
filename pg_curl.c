@@ -469,6 +469,7 @@ Datum pg_curl_easy_getinfo_char(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_e
     else if (!pg_strncasecmp(info_char, "CURLINFO_PRIVATE", sizeof("CURLINFO_PRIVATE") - 1)) info = CURLINFO_PRIVATE;
     else if (!pg_strncasecmp(info_char, "CURLINFO_REDIRECT_URL", sizeof("CURLINFO_REDIRECT_URL") - 1)) info = CURLINFO_REDIRECT_URL;
     else if (!pg_strncasecmp(info_char, "CURLINFO_RESPONSE", sizeof("CURLINFO_RESPONSE") - 1)) { str = write_buf.data; goto ret; }
+    else if (!pg_strncasecmp(info_char, "CURLINFO_RTSP_SESSION_ID", sizeof("CURLINFO_RTSP_SESSION_ID") - 1)) info = CURLINFO_RTSP_SESSION_ID;
     else ereport(ERROR, (errmsg("unsupported option %s", info_char)));
     if ((res = curl_easy_getinfo(curl, info, &str)) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_getinfo(%s): %s", info_char, curl_easy_strerror(res))));
 ret:
