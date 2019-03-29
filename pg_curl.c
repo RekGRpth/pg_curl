@@ -128,17 +128,20 @@ Datum pg_curl_mime_data(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_mime_data
 
 Datum pg_curl_mime_filedata(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_mime_filedata); Datum pg_curl_mime_filedata(PG_FUNCTION_ARGS) {
     CURLcode res = CURL_LAST;
-    char *filename, *base = NULL;
+    char *filename, *base = NULL, *type = NULL;
     curl_mimepart *part;
     if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("first argument filename must not null!")));
     filename = TextDatumGetCString(PG_GETARG_DATUM(0));
     if (!PG_ARGISNULL(1)) base = TextDatumGetCString(PG_GETARG_DATUM(1));
+    if (!PG_ARGISNULL(2)) type = TextDatumGetCString(PG_GETARG_DATUM(2));
     part = curl_mime_addpart(mime);
     if ((res = curl_mime_filedata(part, filename)) != CURLE_OK) ereport(ERROR, (errmsg("curl_mime_filedata(%s): %s", filename, curl_easy_strerror(res))));
     if (base && ((res = curl_mime_filename(part, base)) != CURLE_OK)) ereport(ERROR, (errmsg("curl_mime_filename(%s): %s", base, curl_easy_strerror(res))));
+    if (type && ((res = curl_mime_type(part, type)) != CURLE_OK)) ereport(ERROR, (errmsg("curl_mime_type(%s): %s", type, curl_easy_strerror(res))));
     if (encoding && ((res = curl_mime_encoder(part, encoding)) != CURLE_OK)) ereport(ERROR, (errmsg("curl_mime_encoder(%s): %s", encoding, curl_easy_strerror(res))));
     (void)pfree(filename);
     if (base) (void)pfree(base);
+    if (type) (void)pfree(type);
     has_mime = true;
     PG_RETURN_BOOL(res == CURLE_OK);
 }
