@@ -318,6 +318,7 @@ Datum pg_curl_easy_setopt_long(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_ea
     else if (!pg_strncasecmp(option_char, "CURLOPT_COOKIESESSION", sizeof("CURLOPT_COOKIESESSION") - 1)) option = CURLOPT_COOKIESESSION;
     else if (!pg_strncasecmp(option_char, "CURLOPT_CRLF", sizeof("CURLOPT_CRLF") - 1)) option = CURLOPT_CRLF;
     else if (!pg_strncasecmp(option_char, "CURLOPT_DIRLISTONLY", sizeof("CURLOPT_DIRLISTONLY") - 1)) option = CURLOPT_DIRLISTONLY;
+    else if (!pg_strncasecmp(option_char, "CURLOPT_DISALLOW_USERNAME_IN_URL", sizeof("CURLOPT_DISALLOW_USERNAME_IN_URL") - 1)) option = CURLOPT_DISALLOW_USERNAME_IN_URL;
     else if (!pg_strncasecmp(option_char, "CURLOPT_DNS_CACHE_TIMEOUT", sizeof("CURLOPT_DNS_CACHE_TIMEOUT") - 1)) option = CURLOPT_DNS_CACHE_TIMEOUT;
     else if (!pg_strncasecmp(option_char, "CURLOPT_DNS_SHUFFLE_ADDRESSES", sizeof("CURLOPT_DNS_SHUFFLE_ADDRESSES") - 1)) option = CURLOPT_DNS_SHUFFLE_ADDRESSES;
     else if (!pg_strncasecmp(option_char, "CURLOPT_DNS_USE_GLOBAL_CACHE", sizeof("CURLOPT_DNS_USE_GLOBAL_CACHE") - 1)) option = CURLOPT_DNS_USE_GLOBAL_CACHE;
