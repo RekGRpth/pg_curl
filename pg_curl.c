@@ -488,6 +488,7 @@ Datum pg_curl_easy_getinfo_long(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_e
     if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("argument info must not null!")));
     info_char = TextDatumGetCString(PG_GETARG_DATUM(0));
     if (false);
+    else if (!pg_strncasecmp(info_char, "CURLINFO_CONDITION_UNMET", sizeof("CURLINFO_CONDITION_UNMET") - 1)) info = CURLINFO_CONDITION_UNMET;
     else if (!pg_strncasecmp(info_char, "CURLINFO_FILETIME", sizeof("CURLINFO_FILETIME") - 1)) info = CURLINFO_FILETIME;
     else if (!pg_strncasecmp(info_char, "CURLINFO_HEADER_SIZE", sizeof("CURLINFO_HEADER_SIZE") - 1)) info = CURLINFO_HEADER_SIZE;
     else if (!pg_strncasecmp(info_char, "CURLINFO_HTTPAUTH_AVAIL", sizeof("CURLINFO_HTTPAUTH_AVAIL") - 1)) info = CURLINFO_HTTPAUTH_AVAIL;
