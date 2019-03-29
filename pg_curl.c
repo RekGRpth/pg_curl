@@ -218,6 +218,7 @@ Datum pg_curl_easy_setopt_char(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_ea
     else if (!pg_strncasecmp(option_char, "CURLOPT_CRLFILE", sizeof("CURLOPT_CRLFILE") - 1)) option = CURLOPT_CRLFILE;
     else if (!pg_strncasecmp(option_char, "CURLOPT_CUSTOMREQUEST", sizeof("CURLOPT_CUSTOMREQUEST") - 1)) option = CURLOPT_CUSTOMREQUEST;
     else if (!pg_strncasecmp(option_char, "CURLOPT_DEFAULT_PROTOCOL", sizeof("CURLOPT_DEFAULT_PROTOCOL") - 1)) option = CURLOPT_DEFAULT_PROTOCOL;
+    else if (!pg_strncasecmp(option_char, "CURLOPT_DNS_INTERFACE", sizeof("CURLOPT_DNS_INTERFACE") - 1)) option = CURLOPT_DNS_INTERFACE;
     else if (!pg_strncasecmp(option_char, "CURLOPT_DNS_SERVERS", sizeof("CURLOPT_DNS_SERVERS") - 1)) option = CURLOPT_DNS_SERVERS;
     else if (!pg_strncasecmp(option_char, "CURLOPT_EGDSOCKET", sizeof("CURLOPT_EGDSOCKET") - 1)) option = CURLOPT_EGDSOCKET;
     else if (!pg_strncasecmp(option_char, "CURLOPT_FTP_ACCOUNT", sizeof("CURLOPT_FTP_ACCOUNT") - 1)) option = CURLOPT_FTP_ACCOUNT;
