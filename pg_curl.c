@@ -231,8 +231,9 @@ Datum pg_curl_easy_setopt_char(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_ea
     else if (!pg_strncasecmp(option_char, "CURLOPT_PROXY", sizeof("CURLOPT_PROXY") - 1)) option = CURLOPT_PROXY;
     else if (!pg_strncasecmp(option_char, "CURLOPT_PROXY_SSLCERT", sizeof("CURLOPT_PROXY_SSLCERT") - 1)) option = CURLOPT_PROXY_SSLCERT;
     else if (!pg_strncasecmp(option_char, "CURLOPT_PROXY_SSLCERTTYPE", sizeof("CURLOPT_PROXY_SSLCERTTYPE") - 1)) option = CURLOPT_PROXY_SSLCERTTYPE;
-    else if (!pg_strncasecmp(option_char, "CURLOPT_PROXY_SSLKEY", sizeof("CURLOPT_PROXY_SSLKEY") - 1)) option = CURLOPT_PROXY_SSLKEY;
     else if (!pg_strncasecmp(option_char, "CURLOPT_PROXY_SSL_CIPHER_LIST", sizeof("CURLOPT_PROXY_SSL_CIPHER_LIST") - 1)) option = CURLOPT_PROXY_SSL_CIPHER_LIST;
+    else if (!pg_strncasecmp(option_char, "CURLOPT_PROXY_SSLKEY", sizeof("CURLOPT_PROXY_SSLKEY") - 1)) option = CURLOPT_PROXY_SSLKEY;
+    else if (!pg_strncasecmp(option_char, "CURLOPT_PROXY_SSLKEYTYPE", sizeof("CURLOPT_PROXY_SSLKEYTYPE") - 1)) option = CURLOPT_PROXY_SSLKEYTYPE;
     else if (!pg_strncasecmp(option_char, "CURLOPT_PROXY_TLS13_CIPHERS", sizeof("CURLOPT_PROXY_TLS13_CIPHERS") - 1)) option = CURLOPT_PROXY_TLS13_CIPHERS;
     else if (!pg_strncasecmp(option_char, "CURLOPT_PROXY_TLSAUTH_PASSWORD", sizeof("CURLOPT_PROXY_TLSAUTH_PASSWORD") - 1)) option = CURLOPT_PROXY_TLSAUTH_PASSWORD;
     else if (!pg_strncasecmp(option_char, "CURLOPT_PROXY_TLSAUTH_TYPE", sizeof("CURLOPT_PROXY_TLSAUTH_TYPE") - 1)) option = CURLOPT_PROXY_TLSAUTH_TYPE;
@@ -249,6 +250,7 @@ Datum pg_curl_easy_setopt_char(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_ea
     else if (!pg_strncasecmp(option_char, "CURLOPT_SSLCERTTYPE", sizeof("CURLOPT_SSLCERTTYPE") - 1)) option = CURLOPT_SSLCERTTYPE;
     else if (!pg_strncasecmp(option_char, "CURLOPT_SSL_CIPHER_LIST", sizeof("CURLOPT_SSL_CIPHER_LIST") - 1)) option = CURLOPT_SSL_CIPHER_LIST;
     else if (!pg_strncasecmp(option_char, "CURLOPT_SSLKEY", sizeof("CURLOPT_SSLKEY") - 1)) option = CURLOPT_SSLKEY;
+    else if (!pg_strncasecmp(option_char, "CURLOPT_SSLKEYTYPE", sizeof("CURLOPT_SSLKEYTYPE") - 1)) option = CURLOPT_SSLKEYTYPE;
     else if (!pg_strncasecmp(option_char, "CURLOPT_TLS13_CIPHERS", sizeof("CURLOPT_TLS13_CIPHERS") - 1)) option = CURLOPT_TLS13_CIPHERS;
     else if (!pg_strncasecmp(option_char, "CURLOPT_TLSAUTH_PASSWORD", sizeof("CURLOPT_TLSAUTH_PASSWORD") - 1)) option = CURLOPT_TLSAUTH_PASSWORD;
     else if (!pg_strncasecmp(option_char, "CURLOPT_TLSAUTH_TYPE", sizeof("CURLOPT_TLSAUTH_TYPE") - 1)) option = CURLOPT_TLSAUTH_TYPE;
