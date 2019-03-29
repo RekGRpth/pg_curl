@@ -499,6 +499,7 @@ Datum pg_curl_easy_getinfo_long(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_e
     else if (!pg_strncasecmp(info_char, "CURLINFO_NUM_CONNECTS", sizeof("CURLINFO_NUM_CONNECTS") - 1)) info = CURLINFO_NUM_CONNECTS;
     else if (!pg_strncasecmp(info_char, "CURLINFO_OS_ERRNO", sizeof("CURLINFO_OS_ERRNO") - 1)) info = CURLINFO_OS_ERRNO;
     else if (!pg_strncasecmp(info_char, "CURLINFO_PRIMARY_PORT", sizeof("CURLINFO_PRIMARY_PORT") - 1)) info = CURLINFO_PRIMARY_PORT;
+    else if (!pg_strncasecmp(info_char, "CURLINFO_PROTOCOL", sizeof("CURLINFO_PROTOCOL") - 1)) info = CURLINFO_PROTOCOL;
     else if (!pg_strncasecmp(info_char, "CURLINFO_PROXYAUTH_AVAIL", sizeof("CURLINFO_PROXYAUTH_AVAIL") - 1)) info = CURLINFO_PROXYAUTH_AVAIL;
     else if (!pg_strncasecmp(info_char, "CURLINFO_PROXY_SSL_VERIFYRESULT", sizeof("CURLINFO_PROXY_SSL_VERIFYRESULT") - 1)) info = CURLINFO_PROXY_SSL_VERIFYRESULT;
     else if (!pg_strncasecmp(info_char, "CURLINFO_REDIRECT_COUNT", sizeof("CURLINFO_REDIRECT_COUNT") - 1)) info = CURLINFO_REDIRECT_COUNT;
