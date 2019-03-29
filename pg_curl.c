@@ -209,6 +209,7 @@ Datum pg_curl_easy_setopt_char(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_ea
     if (false);
     else if (!pg_strncasecmp(option_char, "CURLOPT_ACCEPT_ENCODING", sizeof("CURLOPT_ACCEPT_ENCODING") - 1)) option = CURLOPT_ACCEPT_ENCODING;
     else if (!pg_strncasecmp(option_char, "CURLOPT_CAINFO", sizeof("CURLOPT_CAINFO") - 1)) option = CURLOPT_CAINFO;
+    else if (!pg_strncasecmp(option_char, "CURLOPT_CAPATH", sizeof("CURLOPT_CAPATH") - 1)) option = CURLOPT_CAPATH;
     else if (!pg_strncasecmp(option_char, "CURLOPT_COOKIEFILE", sizeof("CURLOPT_COOKIEFILE") - 1)) option = CURLOPT_COOKIEFILE;
     else if (!pg_strncasecmp(option_char, "CURLOPT_COOKIEJAR", sizeof("CURLOPT_COOKIEJAR") - 1)) option = CURLOPT_COOKIEJAR;
     else if (!pg_strncasecmp(option_char, "CURLOPT_COOKIELIST", sizeof("CURLOPT_COOKIELIST") - 1)) option = CURLOPT_COOKIELIST;
@@ -230,6 +231,7 @@ Datum pg_curl_easy_setopt_char(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_ea
     else if (!pg_strncasecmp(option_char, "CURLOPT_POSTFIELDS", sizeof("CURLOPT_POSTFIELDS") - 1)) option = CURLOPT_POSTFIELDS;
     else if (!pg_strncasecmp(option_char, "CURLOPT_PRE_PROXY", sizeof("CURLOPT_PRE_PROXY") - 1)) option = CURLOPT_PRE_PROXY;
     else if (!pg_strncasecmp(option_char, "CURLOPT_PROXY_CAINFO", sizeof("CURLOPT_PROXY_CAINFO") - 1)) option = CURLOPT_PROXY_CAINFO;
+    else if (!pg_strncasecmp(option_char, "CURLOPT_PROXY_CAPATH", sizeof("CURLOPT_PROXY_CAPATH") - 1)) option = CURLOPT_PROXY_CAPATH;
     else if (!pg_strncasecmp(option_char, "CURLOPT_PROXY_KEYPASSWD", sizeof("CURLOPT_PROXY_KEYPASSWD") - 1)) option = CURLOPT_PROXY_KEYPASSWD;
     else if (!pg_strncasecmp(option_char, "CURLOPT_PROXYPASSWORD", sizeof("CURLOPT_PROXYPASSWORD") - 1)) option = CURLOPT_PROXYPASSWORD;
     else if (!pg_strncasecmp(option_char, "CURLOPT_PROXY_PINNEDPUBLICKEY", sizeof("CURLOPT_PROXY_PINNEDPUBLICKEY") - 1)) option = CURLOPT_PROXY_PINNEDPUBLICKEY;
