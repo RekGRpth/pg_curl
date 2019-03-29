@@ -24,8 +24,14 @@ char *encoding = NULL;
 
 static inline void pg_curl_interrupt_handler(int sig) { pg_curl_interrupt_requested = sig; }
 
+static inline void *custom_calloc(size_t nmemb, size_t size) { return ((nmemb > 0) && (size > 0)) ? (palloc0)(nmemb * size) : NULL; }
+static inline void *custom_malloc(size_t size) { return size ? (palloc)(size) : NULL; }
+static inline char *custom_strdup(const char *ptr) { return (pstrdup)(ptr); }
+static inline void *custom_realloc(void *ptr, size_t size) { return size ? ptr ? (repalloc)(ptr, size) : palloc(size) : ptr; }
+static inline void custom_free(void *ptr) { if (ptr) (void)(pfree)(ptr); }
+
 void _PG_init(void) {
-    if (curl_global_init(CURL_GLOBAL_ALL)) ereport(ERROR, (errmsg("curl_global_init")));
+    if (curl_global_init_mem(CURL_GLOBAL_ALL, custom_malloc, custom_free, custom_realloc, custom_strdup, custom_calloc)) ereport(ERROR, (errmsg("curl_global_init")));
     pgsql_interrupt_handler = pqsignal(SIGINT, pg_curl_interrupt_handler);
     pg_curl_interrupt_requested = 0;
     (void)initStringInfo(&read_buf);
