@@ -107,6 +107,7 @@ Datum pg_curl_recipient_append(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_re
 
 Datum pg_curl_mime_encoder(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_mime_encoder); Datum pg_curl_mime_encoder(PG_FUNCTION_ARGS) {
     if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("first argument encoding must not null!")));
+    if (encoding) (void)pfree(encoding);
     encoding = TextDatumGetCString(PG_GETARG_DATUM(0));
     PG_RETURN_BOOL(true);
 }
