@@ -491,8 +491,10 @@ Datum pg_curl_easy_getinfo_long(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_e
     else if (!pg_strncasecmp(info_char, "CURLINFO_FILETIME", sizeof("CURLINFO_FILETIME") - 1)) info = CURLINFO_FILETIME;
     else if (!pg_strncasecmp(info_char, "CURLINFO_HEADER_SIZE", sizeof("CURLINFO_HEADER_SIZE") - 1)) info = CURLINFO_HEADER_SIZE;
     else if (!pg_strncasecmp(info_char, "CURLINFO_HTTP_CONNECTCODE", sizeof("CURLINFO_HTTP_CONNECTCODE") - 1)) info = CURLINFO_HTTP_CONNECTCODE;
+    else if (!pg_strncasecmp(info_char, "CURLINFO_PROXY_SSL_VERIFYRESULT", sizeof("CURLINFO_PROXY_SSL_VERIFYRESULT") - 1)) info = CURLINFO_PROXY_SSL_VERIFYRESULT;
     else if (!pg_strncasecmp(info_char, "CURLINFO_REQUEST_SIZE", sizeof("CURLINFO_REQUEST_SIZE") - 1)) info = CURLINFO_REQUEST_SIZE;
     else if (!pg_strncasecmp(info_char, "CURLINFO_RESPONSE_CODE", sizeof("CURLINFO_RESPONSE_CODE") - 1)) info = CURLINFO_RESPONSE_CODE;
+    else if (!pg_strncasecmp(info_char, "CURLINFO_SSL_VERIFYRESULT", sizeof("CURLINFO_SSL_VERIFYRESULT") - 1)) info = CURLINFO_SSL_VERIFYRESULT;
     else ereport(ERROR, (errmsg("unsupported option %s", info_char)));
     if ((res = curl_easy_getinfo(curl, info, &lon)) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_getinfo(%s): %s", info_char, curl_easy_strerror(res))));
     (void)pfree(info_char);
