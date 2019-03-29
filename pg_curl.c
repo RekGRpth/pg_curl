@@ -364,6 +364,7 @@ Datum pg_curl_easy_setopt_long(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_ea
     else if (!pg_strncasecmp(option_char, "CURLOPT_PROXY_TRANSFER_MODE", sizeof("CURLOPT_PROXY_TRANSFER_MODE") - 1)) option = CURLOPT_PROXY_TRANSFER_MODE;
     else if (!pg_strncasecmp(option_char, "CURLOPT_PROXYTYPE", sizeof("CURLOPT_PROXYTYPE") - 1)) option = CURLOPT_PROXYTYPE;
 //    else if (!pg_strncasecmp(option_char, "CURLOPT_PUT", sizeof("CURLOPT_PUT") - 1)) option = CURLOPT_PUT;
+    else if (!pg_strncasecmp(option_char, "CURLOPT_REDIR_PROTOCOLS", sizeof("CURLOPT_REDIR_PROTOCOLS") - 1)) option = CURLOPT_REDIR_PROTOCOLS;
     else if (!pg_strncasecmp(option_char, "CURLOPT_RESUME_FROM", sizeof("CURLOPT_RESUME_FROM") - 1)) option = CURLOPT_RESUME_FROM;
     else if (!pg_strncasecmp(option_char, "CURLOPT_SERVER_RESPONSE_TIMEOUT", sizeof("CURLOPT_SERVER_RESPONSE_TIMEOUT") - 1)) option = CURLOPT_SERVER_RESPONSE_TIMEOUT;
     else if (!pg_strncasecmp(option_char, "CURLOPT_SOCKS5_AUTH", sizeof("CURLOPT_SOCKS5_AUTH") - 1)) option = CURLOPT_SOCKS5_AUTH;
