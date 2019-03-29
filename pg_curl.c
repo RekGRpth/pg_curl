@@ -215,6 +215,7 @@ Datum pg_curl_easy_setopt_char(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_ea
     else if (!pg_strncasecmp(option_char, "CURLOPT_COOKIELIST", sizeof("CURLOPT_COOKIELIST") - 1)) option = CURLOPT_COOKIELIST;
     else if (!pg_strncasecmp(option_char, "CURLOPT_COOKIE", sizeof("CURLOPT_COOKIE") - 1)) option = CURLOPT_COOKIE;
     else if (!pg_strncasecmp(option_char, "CURLOPT_COPYPOSTFIELDS", sizeof("CURLOPT_COPYPOSTFIELDS") - 1)) option = CURLOPT_COPYPOSTFIELDS;
+    else if (!pg_strncasecmp(option_char, "CURLOPT_CRLFILE", sizeof("CURLOPT_CRLFILE") - 1)) option = CURLOPT_CRLFILE;
     else if (!pg_strncasecmp(option_char, "CURLOPT_CUSTOMREQUEST", sizeof("CURLOPT_CUSTOMREQUEST") - 1)) option = CURLOPT_CUSTOMREQUEST;
     else if (!pg_strncasecmp(option_char, "CURLOPT_DNS_SERVERS", sizeof("CURLOPT_DNS_SERVERS") - 1)) option = CURLOPT_DNS_SERVERS;
     else if (!pg_strncasecmp(option_char, "CURLOPT_EGDSOCKET", sizeof("CURLOPT_EGDSOCKET") - 1)) option = CURLOPT_EGDSOCKET;
@@ -232,6 +233,7 @@ Datum pg_curl_easy_setopt_char(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_ea
     else if (!pg_strncasecmp(option_char, "CURLOPT_PRE_PROXY", sizeof("CURLOPT_PRE_PROXY") - 1)) option = CURLOPT_PRE_PROXY;
     else if (!pg_strncasecmp(option_char, "CURLOPT_PROXY_CAINFO", sizeof("CURLOPT_PROXY_CAINFO") - 1)) option = CURLOPT_PROXY_CAINFO;
     else if (!pg_strncasecmp(option_char, "CURLOPT_PROXY_CAPATH", sizeof("CURLOPT_PROXY_CAPATH") - 1)) option = CURLOPT_PROXY_CAPATH;
+    else if (!pg_strncasecmp(option_char, "CURLOPT_PROXY_CRLFILE", sizeof("CURLOPT_PROXY_CRLFILE") - 1)) option = CURLOPT_PROXY_CRLFILE;
     else if (!pg_strncasecmp(option_char, "CURLOPT_PROXY_KEYPASSWD", sizeof("CURLOPT_PROXY_KEYPASSWD") - 1)) option = CURLOPT_PROXY_KEYPASSWD;
     else if (!pg_strncasecmp(option_char, "CURLOPT_PROXYPASSWORD", sizeof("CURLOPT_PROXYPASSWORD") - 1)) option = CURLOPT_PROXYPASSWORD;
     else if (!pg_strncasecmp(option_char, "CURLOPT_PROXY_PINNEDPUBLICKEY", sizeof("CURLOPT_PROXY_PINNEDPUBLICKEY") - 1)) option = CURLOPT_PROXY_PINNEDPUBLICKEY;
