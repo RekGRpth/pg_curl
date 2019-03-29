@@ -101,6 +101,19 @@ Datum pg_curl_recipient_append(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_re
     PG_RETURN_BOOL(temp != NULL);
 }
 
+Datum pg_curl_mime_data(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_mime_data); Datum pg_curl_mime_data(PG_FUNCTION_ARGS) {
+    CURLcode res = CURL_LAST;
+    char *data;
+    curl_mimepart *part;
+    if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("first argument name must not null!")));
+    data = TextDatumGetCString(PG_GETARG_DATUM(0));
+    part = curl_mime_addpart(mime);
+    if ((res = curl_mime_data(part, data, CURL_ZERO_TERMINATED)) != CURLE_OK) ereport(ERROR, (errmsg("curl_mime_data(%s): %s", data, curl_easy_strerror(res))));
+    (void)pfree(data);
+    has_mime = true;
+    PG_RETURN_BOOL(res == CURLE_OK);
+}
+
 Datum pg_curl_mime_name_data(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_mime_name_data); Datum pg_curl_mime_name_data(PG_FUNCTION_ARGS) {
     CURLcode res = CURL_LAST;
     char *name, *data;
