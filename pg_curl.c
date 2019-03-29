@@ -310,6 +310,7 @@ Datum pg_curl_easy_setopt_long(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_ea
     if (false);
     else if (!pg_strncasecmp(option_char, "CURLOPT_ACCEPTTIMEOUT_MS", sizeof("CURLOPT_ACCEPTTIMEOUT_MS") - 1)) option = CURLOPT_ACCEPTTIMEOUT_MS;
     else if (!pg_strncasecmp(option_char, "CURLOPT_ADDRESS_SCOPE", sizeof("CURLOPT_ADDRESS_SCOPE") - 1)) option = CURLOPT_ADDRESS_SCOPE;
+    else if (!pg_strncasecmp(option_char, "CURLOPT_ALTSVC_CTRL", sizeof("CURLOPT_ALTSVC_CTRL") - 1)) option = CURLOPT_ALTSVC_CTRL;
     else if (!pg_strncasecmp(option_char, "CURLOPT_APPEND", sizeof("CURLOPT_APPEND") - 1)) option = CURLOPT_APPEND;
     else if (!pg_strncasecmp(option_char, "CURLOPT_AUTOREFERER", sizeof("CURLOPT_AUTOREFERER") - 1)) option = CURLOPT_AUTOREFERER;
     else if (!pg_strncasecmp(option_char, "CURLOPT_BUFFERSIZE", sizeof("CURLOPT_BUFFERSIZE") - 1)) option = CURLOPT_BUFFERSIZE;
