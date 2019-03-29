@@ -226,6 +226,7 @@ Datum pg_curl_easy_setopt_char(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_ea
     else if (!pg_strncasecmp(option_char, "CURLOPT_MAIL_FROM", sizeof("CURLOPT_MAIL_FROM") - 1)) option = CURLOPT_MAIL_FROM;
     else if (!pg_strncasecmp(option_char, "CURLOPT_NOPROXY", sizeof("CURLOPT_NOPROXY") - 1)) option = CURLOPT_NOPROXY;
     else if (!pg_strncasecmp(option_char, "CURLOPT_PASSWORD", sizeof("CURLOPT_PASSWORD") - 1)) option = CURLOPT_PASSWORD;
+    else if (!pg_strncasecmp(option_char, "CURLOPT_PINNEDPUBLICKEY", sizeof("CURLOPT_PINNEDPUBLICKEY") - 1)) option = CURLOPT_PINNEDPUBLICKEY;
     else if (!pg_strncasecmp(option_char, "CURLOPT_POSTFIELDS", sizeof("CURLOPT_POSTFIELDS") - 1)) option = CURLOPT_POSTFIELDS;
     else if (!pg_strncasecmp(option_char, "CURLOPT_PRE_PROXY", sizeof("CURLOPT_PRE_PROXY") - 1)) option = CURLOPT_PRE_PROXY;
     else if (!pg_strncasecmp(option_char, "CURLOPT_PROXY_CAINFO", sizeof("CURLOPT_PROXY_CAINFO") - 1)) option = CURLOPT_PROXY_CAINFO;
