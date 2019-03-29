@@ -249,6 +249,7 @@ Datum pg_curl_easy_setopt_char(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_ea
     else if (!pg_strncasecmp(option_char, "CURLOPT_URL", sizeof("CURLOPT_URL") - 1)) option = CURLOPT_URL;
     else if (!pg_strncasecmp(option_char, "CURLOPT_USERAGENT", sizeof("CURLOPT_USERAGENT") - 1)) option = CURLOPT_USERAGENT;
     else if (!pg_strncasecmp(option_char, "CURLOPT_USERNAME", sizeof("CURLOPT_USERNAME") - 1)) option = CURLOPT_USERNAME;
+    else if (!pg_strncasecmp(option_char, "CURLOPT_USERPWD", sizeof("CURLOPT_USERPWD") - 1)) option = CURLOPT_USERPWD;
     else ereport(ERROR, (errmsg("unsupported option %s", option_char)));
     if ((res = curl_easy_setopt(curl, option, parameter_char)) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_setopt(%s, %s): %s", option_char, parameter_char, curl_easy_strerror(res))));
 ret:
