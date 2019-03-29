@@ -464,6 +464,7 @@ Datum pg_curl_easy_getinfo_char(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_e
     else if (!pg_strncasecmp(info_char, "CURLINFO_CONTENT_TYPE", sizeof("CURLINFO_CONTENT_TYPE") - 1)) info = CURLINFO_CONTENT_TYPE;
     else if (!pg_strncasecmp(info_char, "CURLINFO_EFFECTIVE_URL", sizeof("CURLINFO_EFFECTIVE_URL") - 1)) info = CURLINFO_EFFECTIVE_URL;
     else if (!pg_strncasecmp(info_char, "CURLINFO_FTP_ENTRY_PATH", sizeof("CURLINFO_FTP_ENTRY_PATH") - 1)) info = CURLINFO_FTP_ENTRY_PATH;
+    else if (!pg_strncasecmp(info_char, "CURLINFO_PRIMARY_IP", sizeof("CURLINFO_PRIMARY_IP") - 1)) info = CURLINFO_PRIMARY_IP;
     else if (!pg_strncasecmp(info_char, "CURLINFO_PRIVATE", sizeof("CURLINFO_PRIVATE") - 1)) info = CURLINFO_PRIVATE;
     else if (!pg_strncasecmp(info_char, "CURLINFO_REDIRECT_URL", sizeof("CURLINFO_REDIRECT_URL") - 1)) info = CURLINFO_REDIRECT_URL;
     else if (!pg_strncasecmp(info_char, "CURLINFO_RESPONSE", sizeof("CURLINFO_RESPONSE") - 1)) { str = write_buf.data; goto ret; }
