@@ -283,6 +283,7 @@ Datum pg_curl_easy_setopt_long(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_ea
     else if (!pg_strncasecmp(option_char, "CURLOPT_FRESH_CONNECT", sizeof("CURLOPT_FRESH_CONNECT") - 1)) option = CURLOPT_FRESH_CONNECT;
     else if (!pg_strncasecmp(option_char, "CURLOPT_FTP_CREATE_MISSING_DIRS", sizeof("CURLOPT_FTP_CREATE_MISSING_DIRS") - 1)) option = CURLOPT_FTP_CREATE_MISSING_DIRS;
     else if (!pg_strncasecmp(option_char, "CURLOPT_FTP_FILEMETHOD", sizeof("CURLOPT_FTP_FILEMETHOD") - 1)) option = CURLOPT_FTP_FILEMETHOD;
+    else if (!pg_strncasecmp(option_char, "CURLOPT_FTP_SKIP_PASV_IP", sizeof("CURLOPT_FTP_SKIP_PASV_IP") - 1)) option = CURLOPT_FTP_SKIP_PASV_IP;
     else if (!pg_strncasecmp(option_char, "CURLOPT_FTP_SSL_CCC", sizeof("CURLOPT_FTP_SSL_CCC") - 1)) option = CURLOPT_FTP_SSL_CCC;
     else if (!pg_strncasecmp(option_char, "CURLOPT_FTP_USE_EPRT", sizeof("CURLOPT_FTP_USE_EPRT") - 1)) option = CURLOPT_FTP_USE_EPRT;
     else if (!pg_strncasecmp(option_char, "CURLOPT_FTP_USE_EPSV", sizeof("CURLOPT_FTP_USE_EPSV") - 1)) option = CURLOPT_FTP_USE_EPSV;
