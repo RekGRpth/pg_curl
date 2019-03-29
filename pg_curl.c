@@ -372,6 +372,7 @@ Datum pg_curl_easy_setopt_long(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_ea
     else if (!pg_strncasecmp(option_char, "CURLOPT_RESUME_FROM", sizeof("CURLOPT_RESUME_FROM") - 1)) option = CURLOPT_RESUME_FROM;
     else if (!pg_strncasecmp(option_char, "CURLOPT_RTSP_CLIENT_CSEQ", sizeof("CURLOPT_RTSP_CLIENT_CSEQ") - 1)) option = CURLOPT_RTSP_CLIENT_CSEQ;
     else if (!pg_strncasecmp(option_char, "CURLOPT_RTSP_REQUEST", sizeof("CURLOPT_RTSP_REQUEST") - 1)) option = CURLOPT_RTSP_REQUEST;
+    else if (!pg_strncasecmp(option_char, "CURLOPT_RTSP_SERVER_CSEQ", sizeof("CURLOPT_RTSP_SERVER_CSEQ") - 1)) option = CURLOPT_RTSP_SERVER_CSEQ;
     else if (!pg_strncasecmp(option_char, "CURLOPT_SASL_IR", sizeof("CURLOPT_SASL_IR") - 1)) option = CURLOPT_SASL_IR;
     else if (!pg_strncasecmp(option_char, "CURLOPT_SERVER_RESPONSE_TIMEOUT", sizeof("CURLOPT_SERVER_RESPONSE_TIMEOUT") - 1)) option = CURLOPT_SERVER_RESPONSE_TIMEOUT;
     else if (!pg_strncasecmp(option_char, "CURLOPT_SOCKS5_AUTH", sizeof("CURLOPT_SOCKS5_AUTH") - 1)) option = CURLOPT_SOCKS5_AUTH;
