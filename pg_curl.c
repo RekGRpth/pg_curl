@@ -316,6 +316,7 @@ Datum pg_curl_easy_setopt_long(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_ea
 //    else if (!pg_strncasecmp(option_char, "CURLOPT_INFILESIZE", sizeof("CURLOPT_INFILESIZE") - 1)) option = CURLOPT_INFILESIZE;
     else if (!pg_strncasecmp(option_char, "CURLOPT_IPRESOLVE", sizeof("CURLOPT_IPRESOLVE") - 1)) option = CURLOPT_IPRESOLVE;
     else if (!pg_strncasecmp(option_char, "CURLOPT_KEEP_SENDING_ON_ERROR", sizeof("CURLOPT_KEEP_SENDING_ON_ERROR") - 1)) option = CURLOPT_KEEP_SENDING_ON_ERROR;
+    else if (!pg_strncasecmp(option_char, "CURLOPT_LOCALPORT", sizeof("CURLOPT_LOCALPORT") - 1)) option = CURLOPT_LOCALPORT;
     else if (!pg_strncasecmp(option_char, "CURLOPT_LOW_SPEED_LIMIT", sizeof("CURLOPT_LOW_SPEED_LIMIT") - 1)) option = CURLOPT_LOW_SPEED_LIMIT;
     else if (!pg_strncasecmp(option_char, "CURLOPT_LOW_SPEED_TIME", sizeof("CURLOPT_LOW_SPEED_TIME") - 1)) option = CURLOPT_LOW_SPEED_TIME;
     else if (!pg_strncasecmp(option_char, "CURLOPT_MAXCONNECTS", sizeof("CURLOPT_MAXCONNECTS") - 1)) option = CURLOPT_MAXCONNECTS;
