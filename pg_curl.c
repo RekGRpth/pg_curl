@@ -251,6 +251,7 @@ Datum pg_curl_easy_setopt_char(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_ea
     else if (!pg_strncasecmp(option_char, "CURLOPT_SSLCERT", sizeof("CURLOPT_SSLCERT") - 1)) option = CURLOPT_SSLCERT;
     else if (!pg_strncasecmp(option_char, "CURLOPT_SSLCERTTYPE", sizeof("CURLOPT_SSLCERTTYPE") - 1)) option = CURLOPT_SSLCERTTYPE;
     else if (!pg_strncasecmp(option_char, "CURLOPT_SSL_CIPHER_LIST", sizeof("CURLOPT_SSL_CIPHER_LIST") - 1)) option = CURLOPT_SSL_CIPHER_LIST;
+    else if (!pg_strncasecmp(option_char, "CURLOPT_SSLENGINE", sizeof("CURLOPT_SSLENGINE") - 1)) option = CURLOPT_SSLENGINE;
     else if (!pg_strncasecmp(option_char, "CURLOPT_SSLKEY", sizeof("CURLOPT_SSLKEY") - 1)) option = CURLOPT_SSLKEY;
     else if (!pg_strncasecmp(option_char, "CURLOPT_SSLKEYTYPE", sizeof("CURLOPT_SSLKEYTYPE") - 1)) option = CURLOPT_SSLKEYTYPE;
     else if (!pg_strncasecmp(option_char, "CURLOPT_TLS13_CIPHERS", sizeof("CURLOPT_TLS13_CIPHERS") - 1)) option = CURLOPT_TLS13_CIPHERS;
