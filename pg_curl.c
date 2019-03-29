@@ -108,7 +108,7 @@ inline static size_t read_callback(void *buffer, size_t size, size_t nitems, voi
     PG_RETURN_BOOL(res == CURLE_OK);
 }*/
 
-Datum pg_curl_slist_append(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_slist_append); Datum pg_curl_slist_append(PG_FUNCTION_ARGS) {
+Datum pg_curl_header_append(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_header_append); Datum pg_curl_header_append(PG_FUNCTION_ARGS) {
     char *name, *value;
     StringInfoData buf;
     struct curl_slist *temp = slist;
