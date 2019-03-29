@@ -280,6 +280,7 @@ Datum pg_curl_easy_setopt_long(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_ea
     else if (!pg_strncasecmp(option_char, "CURLOPT_FTP_CREATE_MISSING_DIRS", sizeof("CURLOPT_FTP_CREATE_MISSING_DIRS") - 1)) option = CURLOPT_FTP_CREATE_MISSING_DIRS;
     else if (!pg_strncasecmp(option_char, "CURLOPT_FTP_FILEMETHOD", sizeof("CURLOPT_FTP_FILEMETHOD") - 1)) option = CURLOPT_FTP_FILEMETHOD;
     else if (!pg_strncasecmp(option_char, "CURLOPT_HEADER", sizeof("CURLOPT_HEADER") - 1)) option = CURLOPT_HEADER;
+    else if (!pg_strncasecmp(option_char, "CURLOPT_HTTP09_ALLOWED", sizeof("CURLOPT_HTTP09_ALLOWED") - 1)) option = CURLOPT_HTTP09_ALLOWED;
     else if (!pg_strncasecmp(option_char, "CURLOPT_HTTPGET", sizeof("CURLOPT_HTTPGET") - 1)) option = CURLOPT_HTTPGET;
     else if (!pg_strncasecmp(option_char, "CURLOPT_HTTP_VERSION", sizeof("CURLOPT_HTTP_VERSION") - 1)) option = CURLOPT_HTTP_VERSION;
     else if (!pg_strncasecmp(option_char, "CURLOPT_INFILESIZE", sizeof("CURLOPT_INFILESIZE") - 1)) option = CURLOPT_INFILESIZE;
