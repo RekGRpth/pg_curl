@@ -20,7 +20,7 @@ struct curl_slist *header = NULL;
 struct curl_slist *recipient = NULL;
 curl_mime *mime;
 bool has_mime;
-char *encoding = NULL;
+//char *encoding = NULL;
 
 static inline void pg_curl_interrupt_handler(int sig) { pg_curl_interrupt_requested = sig; }
 
@@ -47,7 +47,7 @@ void _PG_fini(void) {
     (void)curl_global_cleanup();
     (void)pfree(header_buf.data);
     (void)pfree(write_buf.data);
-    if (encoding) (void)pfree(encoding);
+//    if (encoding) (void)pfree(encoding);
 }
 
 Datum pg_curl_easy_init(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_init); Datum pg_curl_easy_init(PG_FUNCTION_ARGS) {
@@ -66,8 +66,8 @@ Datum pg_curl_easy_reset(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_res
     (void)curl_slist_free_all(header);
     (void)curl_slist_free_all(recipient);
     (void)curl_mime_free(mime);
-    if (encoding) (void)pfree(encoding);
-    encoding = NULL;
+//    if (encoding) (void)pfree(encoding);
+//    encoding = NULL;
     mime = curl_mime_init(curl);
     if (!mime) ereport(ERROR, (errmsg("!mime")));
     has_mime = false;
@@ -127,35 +127,38 @@ Datum pg_curl_recipient_append(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_re
     PG_RETURN_BOOL(temp != NULL);
 }
 
-Datum pg_curl_mime_encoder(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_mime_encoder); Datum pg_curl_mime_encoder(PG_FUNCTION_ARGS) {
+/*Datum pg_curl_mime_encoder(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_mime_encoder); Datum pg_curl_mime_encoder(PG_FUNCTION_ARGS) {
     if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("first argument encoding must not null!")));
     if (encoding) (void)pfree(encoding);
     encoding = TextDatumGetCString(PG_GETARG_DATUM(0));
     PG_RETURN_BOOL(true);
-}
+}*/
 
 Datum pg_curl_mime_data(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_mime_data); Datum pg_curl_mime_data(PG_FUNCTION_ARGS) {
     CURLcode res = CURL_LAST;
-    char *data;
+    char *data, *encoding = NULL;
     curl_mimepart *part;
     if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("first argument name must not null!")));
     data = TextDatumGetCString(PG_GETARG_DATUM(0));
+    if (!PG_ARGISNULL(1)) encoding = TextDatumGetCString(PG_GETARG_DATUM(1));
     part = curl_mime_addpart(mime);
     if ((res = curl_mime_data(part, data, CURL_ZERO_TERMINATED)) != CURLE_OK) ereport(ERROR, (errmsg("curl_mime_data(%s): %s", data, curl_easy_strerror(res))));
     if (encoding && ((res = curl_mime_encoder(part, encoding)) != CURLE_OK)) ereport(ERROR, (errmsg("curl_mime_encoder(%s): %s", encoding, curl_easy_strerror(res))));
     (void)pfree(data);
+    if (encoding) (void)pfree(encoding);
     has_mime = true;
     PG_RETURN_BOOL(res == CURLE_OK);
 }
 
 Datum pg_curl_mime_filedata(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_mime_filedata); Datum pg_curl_mime_filedata(PG_FUNCTION_ARGS) {
     CURLcode res = CURL_LAST;
-    char *filename, *base = NULL, *type = NULL;
+    char *filename, *base = NULL, *type = NULL, *encoding = NULL;
     curl_mimepart *part;
     if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("first argument filename must not null!")));
     filename = TextDatumGetCString(PG_GETARG_DATUM(0));
     if (!PG_ARGISNULL(1)) base = TextDatumGetCString(PG_GETARG_DATUM(1));
     if (!PG_ARGISNULL(2)) type = TextDatumGetCString(PG_GETARG_DATUM(2));
+    if (!PG_ARGISNULL(3)) encoding = TextDatumGetCString(PG_GETARG_DATUM(3));
     part = curl_mime_addpart(mime);
     if ((res = curl_mime_filedata(part, filename)) != CURLE_OK) ereport(ERROR, (errmsg("curl_mime_filedata(%s): %s", filename, curl_easy_strerror(res))));
     if (base && ((res = curl_mime_filename(part, base)) != CURLE_OK)) ereport(ERROR, (errmsg("curl_mime_filename(%s): %s", base, curl_easy_strerror(res))));
@@ -164,42 +167,47 @@ Datum pg_curl_mime_filedata(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_mime_
     (void)pfree(filename);
     if (base) (void)pfree(base);
     if (type) (void)pfree(type);
+    if (encoding) (void)pfree(encoding);
     has_mime = true;
     PG_RETURN_BOOL(res == CURLE_OK);
 }
 
 Datum pg_curl_mime_data_name(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_mime_data_name); Datum pg_curl_mime_data_name(PG_FUNCTION_ARGS) {
     CURLcode res = CURL_LAST;
-    char *data, *name;
+    char *data, *name, *encoding = NULL;
     curl_mimepart *part;
-    if (PG_ARGISNULL(1)) ereport(ERROR, (errmsg("first argument data must not null!")));
+    if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("first argument data must not null!")));
     data = TextDatumGetCString(PG_GETARG_DATUM(0));
-    if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("second argument name must not null!")));
+    if (PG_ARGISNULL(1)) ereport(ERROR, (errmsg("second argument name must not null!")));
     name = TextDatumGetCString(PG_GETARG_DATUM(1));
+    if (!PG_ARGISNULL(2)) encoding = TextDatumGetCString(PG_GETARG_DATUM(2));
     part = curl_mime_addpart(mime);
     if ((res = curl_mime_data(part, data, CURL_ZERO_TERMINATED)) != CURLE_OK) ereport(ERROR, (errmsg("curl_mime_data(%s): %s", data, curl_easy_strerror(res))));
     if ((res = curl_mime_name(part, name)) != CURLE_OK) ereport(ERROR, (errmsg("curl_mime_name(%s): %s", name, curl_easy_strerror(res))));
     if (encoding && ((res = curl_mime_encoder(part, encoding)) != CURLE_OK)) ereport(ERROR, (errmsg("curl_mime_encoder(%s): %s", encoding, curl_easy_strerror(res))));
     (void)pfree(data);
     (void)pfree(name);
+    if (encoding) (void)pfree(encoding);
     has_mime = true;
     PG_RETURN_BOOL(res == CURLE_OK);
 }
 
 Datum pg_curl_mime_data_type(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_mime_data_type); Datum pg_curl_mime_data_type(PG_FUNCTION_ARGS) {
     CURLcode res = CURL_LAST;
-    char *data, *type;
+    char *data, *type, *encoding = NULL;
     curl_mimepart *part;
-    if (PG_ARGISNULL(1)) ereport(ERROR, (errmsg("first argument data must not null!")));
+    if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("first argument data must not null!")));
     data = TextDatumGetCString(PG_GETARG_DATUM(0));
-    if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("second argument type must not null!")));
+    if (PG_ARGISNULL(1)) ereport(ERROR, (errmsg("second argument type must not null!")));
     type = TextDatumGetCString(PG_GETARG_DATUM(1));
+    if (!PG_ARGISNULL(2)) encoding = TextDatumGetCString(PG_GETARG_DATUM(2));
     part = curl_mime_addpart(mime);
     if ((res = curl_mime_data(part, data, CURL_ZERO_TERMINATED)) != CURLE_OK) ereport(ERROR, (errmsg("curl_mime_data(%s): %s", data, curl_easy_strerror(res))));
     if ((res = curl_mime_type(part, type)) != CURLE_OK) ereport(ERROR, (errmsg("curl_mime_type(%s): %s", type, curl_easy_strerror(res))));
     if (encoding && ((res = curl_mime_encoder(part, encoding)) != CURLE_OK)) ereport(ERROR, (errmsg("curl_mime_encoder(%s): %s", encoding, curl_easy_strerror(res))));
     (void)pfree(data);
     (void)pfree(type);
+    if (encoding) (void)pfree(encoding);
     has_mime = true;
     PG_RETURN_BOOL(res == CURLE_OK);
 }
@@ -545,6 +553,6 @@ Datum pg_curl_easy_cleanup(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_c
     (void)curl_slist_free_all(recipient);
 //    (void)resetStringInfo(&header_buf);
 //    (void)resetStringInfo(&write_buf);
-    if (encoding) (void)pfree(encoding);
+//    if (encoding) (void)pfree(encoding);
     PG_RETURN_VOID();
 }
