@@ -62,11 +62,15 @@ Datum pg_curl_easy_reset(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_res
     if (!curl) ereport(ERROR, (errmsg("call pg_curl_easy_init before!")));
     (void)curl_easy_reset(curl);
     (void)curl_slist_free_all(header);
+    header = NULL;
     (void)curl_slist_free_all(recipient);
+    recipient = NULL;
     (void)curl_mime_free(mime);
     mime = curl_mime_init(curl);
     if (!mime) ereport(ERROR, (errmsg("!mime")));
     has_mime = false;
+    (void)resetStringInfo(&header_buf);
+    (void)resetStringInfo(&write_buf);
     PG_RETURN_VOID();
 }
 
