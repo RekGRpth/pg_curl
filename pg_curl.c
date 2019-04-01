@@ -462,15 +462,15 @@ Datum pg_curl_easy_setopt_long(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_ea
 
 inline static size_t header_callback(void *buffer, size_t size, size_t nitems, void *outstream) {
     size_t realsize = size * nitems;
-    elog(LOG, "buffer=%s, size=%lu, nitems=%lu, outstream=%s", (const char *)buffer, size, nitems, ((StringInfo)outstream)->data);
+//    elog(LOG, "buffer=%s, size=%lu, nitems=%lu, outstream=%s", (const char *)buffer, size, nitems, ((StringInfo)outstream)->data);
     (void)appendBinaryStringInfo((StringInfo)outstream, (const char *)buffer, (int)realsize);
     return realsize;
 }
 
-inline static size_t write_callback(void *contents, size_t size, size_t nmemb, void *userp) {
-    size_t realsize = size * nmemb;
-//    elog(LOG, "contents=%s, size=%lu, nmemb=%lu, userp=%s", (const char *)contents, size, nmemb, ((StringInfo)userp)->data);
-    (void)appendBinaryStringInfo((StringInfo)userp, (const char *)contents, (int)realsize);
+inline static size_t write_callback(void *buffer, size_t size, size_t nitems, void *outstream) {
+    size_t realsize = size * nitems;
+//    elog(LOG, "buffer=%s, size=%lu, nitems=%lu, outstream=%s", (const char *)buffer, size, nitems, ((StringInfo)outstream)->data);
+    (void)appendBinaryStringInfo((StringInfo)outstream, (const char *)buffer, (int)realsize);
     return realsize;
 }
 
