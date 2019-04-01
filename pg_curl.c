@@ -118,12 +118,12 @@ Datum pg_curl_header_append(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_heade
 }
 
 Datum pg_curl_recipient_append(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_recipient_append); Datum pg_curl_recipient_append(PG_FUNCTION_ARGS) {
-    char *name;
+    char *email;
     struct curl_slist *temp = recipient;
-    if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("first argument option must not null!")));
-    name = TextDatumGetCString(PG_GETARG_DATUM(0));
-    if ((temp = curl_slist_append(temp, name))) recipient = temp;
-    (void)pfree(name);
+    if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("email is null!")));
+    email = TextDatumGetCString(PG_GETARG_DATUM(0));
+    if ((temp = curl_slist_append(temp, email))) recipient = temp;
+    (void)pfree(email);
     PG_RETURN_BOOL(temp != NULL);
 }
 
