@@ -310,9 +310,9 @@ Datum pg_curl_easy_setopt_long(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_ea
     char *option_char;
     long parameter_long;
     if (!curl) ereport(ERROR, (errmsg("call pg_curl_easy_init before!")));
-    if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("first argument option must not null!")));
+    if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("option is null!")));
     option_char = TextDatumGetCString(PG_GETARG_DATUM(0));
-    if (PG_ARGISNULL(1)) ereport(ERROR, (errmsg("second argument parameter must not null!")));
+    if (PG_ARGISNULL(1)) ereport(ERROR, (errmsg("parameter is null!")));
     parameter_long = PG_GETARG_INT64(1);
     if (false);
     else if (!pg_strncasecmp(option_char, "CURLOPT_ACCEPTTIMEOUT_MS", sizeof("CURLOPT_ACCEPTTIMEOUT_MS") - 1)) option = CURLOPT_ACCEPTTIMEOUT_MS;
@@ -478,7 +478,7 @@ Datum pg_curl_easy_getinfo_char(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_e
     char *info_char;
     char *str = NULL;
     if (!curl) ereport(ERROR, (errmsg("call pg_curl_easy_init before!")));
-    if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("argument info must not null!")));
+    if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("info is null!")));
     info_char = TextDatumGetCString(PG_GETARG_DATUM(0));
     if (false);
     else if (!pg_strncasecmp(info_char, "CURLINFO_CONTENT_TYPE", sizeof("CURLINFO_CONTENT_TYPE") - 1)) info = CURLINFO_CONTENT_TYPE;
@@ -506,7 +506,7 @@ Datum pg_curl_easy_getinfo_long(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_e
     char *info_char;
     long lon;
     if (!curl) ereport(ERROR, (errmsg("call pg_curl_easy_init before!")));
-    if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("argument info must not null!")));
+    if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("info is null!")));
     info_char = TextDatumGetCString(PG_GETARG_DATUM(0));
     if (false);
     else if (!pg_strncasecmp(info_char, "CURLINFO_CONDITION_UNMET", sizeof("CURLINFO_CONDITION_UNMET") - 1)) info = CURLINFO_CONDITION_UNMET;
@@ -537,10 +537,7 @@ Datum pg_curl_easy_getinfo_long(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_e
 }
 
 Datum pg_curl_easy_cleanup(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_cleanup); Datum pg_curl_easy_cleanup(PG_FUNCTION_ARGS) {
-    if (curl) {
-        (void)curl_easy_cleanup(curl);
-        curl = NULL;
-    }
+    if (curl) { (void)curl_easy_cleanup(curl); curl = NULL; }
     (void)curl_mime_free(mime);
     (void)curl_slist_free_all(header);
     (void)curl_slist_free_all(recipient);
