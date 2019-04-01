@@ -10,7 +10,7 @@ CREATE OR REPLACE FUNCTION pg_curl_easy_unescape(url text, length int default 0)
 
 CREATE OR REPLACE FUNCTION pg_curl_header_append(name text, value text) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_header_append' LANGUAGE 'c';
 
-CREATE OR REPLACE FUNCTION pg_curl_recipient_append(name text) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_recipient_append' LANGUAGE 'c';
+CREATE OR REPLACE FUNCTION pg_curl_recipient_append(email text) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_recipient_append' LANGUAGE 'c';
 
 CREATE OR REPLACE FUNCTION pg_curl_mime_data(data text, encoding text default null) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_mime_data' LANGUAGE 'c';
 CREATE OR REPLACE FUNCTION pg_curl_mime_filedata(filename text, base text default null, type text default null, encoding text default null) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_mime_filedata' LANGUAGE 'c';
