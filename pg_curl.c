@@ -61,7 +61,7 @@ Datum pg_curl_easy_init(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_init
 }
 
 Datum pg_curl_easy_reset(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_reset); Datum pg_curl_easy_reset(PG_FUNCTION_ARGS) {
-    if (!curl) ereport(ERROR, (errmsg("!curl")));
+    if (!curl) ereport(ERROR, (errmsg("call pg_curl_easy_init before!")));
     (void)curl_easy_reset(curl);
     (void)curl_slist_free_all(header);
     (void)curl_slist_free_all(recipient);
@@ -455,6 +455,8 @@ inline static int progress_callback(void *clientp, curl_off_t dltotal, curl_off_
 Datum pg_curl_easy_perform(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_perform); Datum pg_curl_easy_perform(PG_FUNCTION_ARGS) {
     CURLcode res = CURL_LAST;
     if (!curl) ereport(ERROR, (errmsg("call pg_curl_easy_init before!")));
+    (void)resetStringInfo(&header_buf);
+    (void)resetStringInfo(&write_buf);
     if ((res = curl_easy_setopt(curl, CURLOPT_HEADERDATA, (void *)(&header_buf))) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_setopt(CURLOPT_HEADERDATA): %s", curl_easy_strerror(res))));
     if ((res = curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, header_callback)) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_setopt(CURLOPT_HEADERFUNCTION): %s", curl_easy_strerror(res))));
     if ((res = curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L)) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_setopt(CURLOPT_NOPROGRESS): %s", curl_easy_strerror(res))));
@@ -541,8 +543,8 @@ Datum pg_curl_easy_cleanup(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_c
     (void)curl_mime_free(mime);
     (void)curl_slist_free_all(header);
     (void)curl_slist_free_all(recipient);
-    (void)resetStringInfo(&header_buf);
-    (void)resetStringInfo(&write_buf);
+//    (void)resetStringInfo(&header_buf);
+//    (void)resetStringInfo(&write_buf);
     if (encoding) (void)pfree(encoding);
     PG_RETURN_VOID();
 }
