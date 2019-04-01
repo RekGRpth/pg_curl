@@ -131,7 +131,7 @@ Datum pg_curl_mime_data(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_mime_data
     CURLcode res = CURL_LAST;
     char *data, *encoding = NULL;
     curl_mimepart *part;
-    if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("first argument name must not null!")));
+    if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("data is null!")));
     data = TextDatumGetCString(PG_GETARG_DATUM(0));
     if (!PG_ARGISNULL(1)) encoding = TextDatumGetCString(PG_GETARG_DATUM(1));
     part = curl_mime_addpart(mime);
@@ -147,7 +147,7 @@ Datum pg_curl_mime_filedata(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_mime_
     CURLcode res = CURL_LAST;
     char *filename, *base = NULL, *type = NULL, *encoding = NULL;
     curl_mimepart *part;
-    if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("first argument filename must not null!")));
+    if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("filename is null!")));
     filename = TextDatumGetCString(PG_GETARG_DATUM(0));
     if (!PG_ARGISNULL(1)) base = TextDatumGetCString(PG_GETARG_DATUM(1));
     if (!PG_ARGISNULL(2)) type = TextDatumGetCString(PG_GETARG_DATUM(2));
