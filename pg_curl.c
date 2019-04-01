@@ -13,7 +13,6 @@ void _PG_fini(void);
 
 CURL *curl = NULL;
 StringInfoData header_buf;
-StringInfoData read_buf;
 StringInfoData write_buf;
 pqsigfunc pgsql_interrupt_handler = NULL;
 int pg_curl_interrupt_requested = 0;
@@ -36,7 +35,6 @@ void _PG_init(void) {
     pgsql_interrupt_handler = pqsignal(SIGINT, pg_curl_interrupt_handler);
     pg_curl_interrupt_requested = 0;
     (void)initStringInfo(&header_buf);
-    (void)initStringInfo(&read_buf);
     (void)initStringInfo(&write_buf);
 }
 
@@ -48,7 +46,6 @@ void _PG_fini(void) {
     (void)curl_slist_free_all(recipient);
     (void)curl_global_cleanup();
     (void)pfree(header_buf.data);
-    (void)pfree(read_buf.data);
     (void)pfree(write_buf.data);
     if (encoding) (void)pfree(encoding);
 }
@@ -101,17 +98,6 @@ Datum pg_curl_easy_unescape(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_
     (void)pfree(url);
     if (!unescape) PG_RETURN_NULL();
     PG_RETURN_TEXT_P(cstring_to_text(unescape));
-}
-
-inline static size_t read_callback(void *buffer, size_t size, size_t nitems, void *instream) {
-    size_t reqsize = size * nitems;
-    StringInfo si = (StringInfo)instream;
-    size_t remaining = si->len - si->cursor;
-    size_t readsize = reqsize < remaining ? reqsize : remaining;
-//    elog(LOG, "buffer=%s, size=%lu, nitems=%lu, instream=%s", (const char *)buffer, size, nitems, ((StringInfo)instream)->data);
-    memcpy(buffer, si->data + si->cursor, readsize);
-    si->cursor += readsize;
-    return readsize;
 }
 
 Datum pg_curl_header_append(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_header_append); Datum pg_curl_header_append(PG_FUNCTION_ARGS) {
@@ -227,15 +213,6 @@ Datum pg_curl_easy_setopt_char(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_ea
     option_char = TextDatumGetCString(PG_GETARG_DATUM(0));
     if (PG_ARGISNULL(1)) ereport(ERROR, (errmsg("second argument parameter must not null!")));
     parameter_char = TextDatumGetCString(PG_GETARG_DATUM(1));
-    if (!pg_strncasecmp(option_char, "CURLOPT_READDATA", sizeof("CURLOPT_READDATA") - 1)) {
-        long parameter_len = strlen(parameter_char);
-        (void)appendBinaryStringInfo(&read_buf, parameter_char, parameter_len);
-        if ((res = curl_easy_setopt(curl, CURLOPT_INFILESIZE, parameter_len)) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_setopt(CURLOPT_INFILESIZE): %s", curl_easy_strerror(res))));
-        if ((res = curl_easy_setopt(curl, CURLOPT_READDATA, (void *)&read_buf)) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_setopt(CURLOPT_READDATA): %s", curl_easy_strerror(res))));
-        if ((res = curl_easy_setopt(curl, CURLOPT_READFUNCTION, read_callback)) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_setopt(CURLOPT_READFUNCTION): %s", curl_easy_strerror(res))));
-        if ((res = curl_easy_setopt(curl, CURLOPT_UPLOAD, 1L)) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_setopt(CURLOPT_UPLOAD): %s", curl_easy_strerror(res))));
-        goto ret;
-    }
     if (false);
     else if (!pg_strncasecmp(option_char, "CURLOPT_ABSTRACT_UNIX_SOCKET", sizeof("CURLOPT_ABSTRACT_UNIX_SOCKET") - 1)) option = CURLOPT_ABSTRACT_UNIX_SOCKET;
     else if (!pg_strncasecmp(option_char, "CURLOPT_ACCEPT_ENCODING", sizeof("CURLOPT_ACCEPT_ENCODING") - 1)) option = CURLOPT_ACCEPT_ENCODING;
@@ -321,7 +298,6 @@ Datum pg_curl_easy_setopt_char(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_ea
     else if (!pg_strncasecmp(option_char, "CURLOPT_XOAUTH2_BEARER", sizeof("CURLOPT_XOAUTH2_BEARER") - 1)) option = CURLOPT_XOAUTH2_BEARER;
     else ereport(ERROR, (errmsg("unsupported option %s", option_char)));
     if ((res = curl_easy_setopt(curl, option, parameter_char)) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_setopt(%s, %s): %s", option_char, parameter_char, curl_easy_strerror(res))));
-ret:
     (void)pfree(option_char);
     (void)pfree(parameter_char);
     PG_RETURN_BOOL(res == CURLE_OK);
@@ -565,7 +541,6 @@ Datum pg_curl_easy_cleanup(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_c
     (void)curl_slist_free_all(header);
     (void)curl_slist_free_all(recipient);
     (void)resetStringInfo(&header_buf);
-    (void)resetStringInfo(&read_buf);
     (void)resetStringInfo(&write_buf);
     if (encoding) (void)pfree(encoding);
     PG_RETURN_VOID();
