@@ -252,7 +252,7 @@ Datum pg_curl_easy_setopt_char(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_ea
     else if (!pg_strncasecmp(option_char, "CURLOPT_NOPROXY", sizeof("CURLOPT_NOPROXY") - 1)) option = CURLOPT_NOPROXY;
     else if (!pg_strncasecmp(option_char, "CURLOPT_PASSWORD", sizeof("CURLOPT_PASSWORD") - 1)) option = CURLOPT_PASSWORD;
     else if (!pg_strncasecmp(option_char, "CURLOPT_PINNEDPUBLICKEY", sizeof("CURLOPT_PINNEDPUBLICKEY") - 1)) option = CURLOPT_PINNEDPUBLICKEY;
-    else if (!pg_strncasecmp(option_char, "CURLOPT_POSTFIELDS", sizeof("CURLOPT_POSTFIELDS") - 1)) option = CURLOPT_POSTFIELDS;
+//    else if (!pg_strncasecmp(option_char, "CURLOPT_POSTFIELDS", sizeof("CURLOPT_POSTFIELDS") - 1)) option = CURLOPT_POSTFIELDS;
     else if (!pg_strncasecmp(option_char, "CURLOPT_PRE_PROXY", sizeof("CURLOPT_PRE_PROXY") - 1)) option = CURLOPT_PRE_PROXY;
     else if (!pg_strncasecmp(option_char, "CURLOPT_PROXY_CAINFO", sizeof("CURLOPT_PROXY_CAINFO") - 1)) option = CURLOPT_PROXY_CAINFO;
     else if (!pg_strncasecmp(option_char, "CURLOPT_PROXY_CAPATH", sizeof("CURLOPT_PROXY_CAPATH") - 1)) option = CURLOPT_PROXY_CAPATH;
@@ -382,7 +382,7 @@ Datum pg_curl_easy_setopt_long(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_ea
     else if (!pg_strncasecmp(option_char, "CURLOPT_PATH_AS_IS", sizeof("CURLOPT_PATH_AS_IS") - 1)) option = CURLOPT_PATH_AS_IS;
     else if (!pg_strncasecmp(option_char, "CURLOPT_PIPEWAIT", sizeof("CURLOPT_PIPEWAIT") - 1)) option = CURLOPT_PIPEWAIT;
     else if (!pg_strncasecmp(option_char, "CURLOPT_PORT", sizeof("CURLOPT_PORT") - 1)) option = CURLOPT_PORT;
-    else if (!pg_strncasecmp(option_char, "CURLOPT_POSTFIELDSIZE", sizeof("CURLOPT_POSTFIELDSIZE") - 1)) option = CURLOPT_POSTFIELDSIZE;
+//    else if (!pg_strncasecmp(option_char, "CURLOPT_POSTFIELDSIZE", sizeof("CURLOPT_POSTFIELDSIZE") - 1)) option = CURLOPT_POSTFIELDSIZE;
     else if (!pg_strncasecmp(option_char, "CURLOPT_POSTREDIR", sizeof("CURLOPT_POSTREDIR") - 1)) option = CURLOPT_POSTREDIR;
     else if (!pg_strncasecmp(option_char, "CURLOPT_POST", sizeof("CURLOPT_POST") - 1)) option = CURLOPT_POST;
 //    else if (!pg_strncasecmp(option_char, "CURLOPT_PROTOCOLS", sizeof("CURLOPT_PROTOCOLS") - 1)) option = CURLOPT_PROTOCOLS;
