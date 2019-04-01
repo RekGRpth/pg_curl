@@ -12,7 +12,6 @@ CREATE OR REPLACE FUNCTION pg_curl_header_append(name text, value text) RETURNS 
 
 CREATE OR REPLACE FUNCTION pg_curl_recipient_append(name text) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_recipient_append' LANGUAGE 'c';
 
---CREATE OR REPLACE FUNCTION pg_curl_mime_encoder(encoding text) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_mime_encoder' LANGUAGE 'c';
 CREATE OR REPLACE FUNCTION pg_curl_mime_data(data text, encoding text default null) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_mime_data' LANGUAGE 'c';
 CREATE OR REPLACE FUNCTION pg_curl_mime_filedata(filename text, base text default null, type text default null, encoding text default null) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_mime_filedata' LANGUAGE 'c';
 CREATE OR REPLACE FUNCTION pg_curl_mime_data_name(data text, name text, encoding text default null) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_mime_data_name' LANGUAGE 'c';
