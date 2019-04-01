@@ -74,6 +74,19 @@ Datum pg_curl_easy_reset(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_res
     PG_RETURN_VOID();
 }
 
+Datum pg_curl_easy_escape(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_escape); Datum pg_curl_easy_escape(PG_FUNCTION_ARGS) {
+    int length;
+    char *string, *escape;
+    if (!curl) ereport(ERROR, (errmsg("call pg_curl_easy_init before!")));
+    if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("argument string must not null!")));
+    string = TextDatumGetCString(PG_GETARG_DATUM(0));
+    length = PG_GETARG_INT32(0);
+    escape = curl_easy_escape(curl, string, length);
+    (void)pfree(string);
+    if (!escape) PG_RETURN_NULL();
+    PG_RETURN_TEXT_P(cstring_to_text(escape));
+}
+
 inline static size_t read_callback(void *buffer, size_t size, size_t nitems, void *instream) {
     size_t reqsize = size * nitems;
     StringInfo si = (StringInfo)instream;
