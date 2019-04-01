@@ -169,9 +169,9 @@ Datum pg_curl_mime_data_name(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_mime
     CURLcode res = CURL_LAST;
     char *data, *name, *encoding = NULL;
     curl_mimepart *part;
-    if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("first argument data must not null!")));
+    if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("data is null!")));
     data = TextDatumGetCString(PG_GETARG_DATUM(0));
-    if (PG_ARGISNULL(1)) ereport(ERROR, (errmsg("second argument name must not null!")));
+    if (PG_ARGISNULL(1)) ereport(ERROR, (errmsg("name is null!")));
     name = TextDatumGetCString(PG_GETARG_DATUM(1));
     if (!PG_ARGISNULL(2)) encoding = TextDatumGetCString(PG_GETARG_DATUM(2));
     part = curl_mime_addpart(mime);
@@ -189,9 +189,9 @@ Datum pg_curl_mime_data_type(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_mime
     CURLcode res = CURL_LAST;
     char *data, *type, *encoding = NULL;
     curl_mimepart *part;
-    if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("first argument data must not null!")));
+    if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("data is null!")));
     data = TextDatumGetCString(PG_GETARG_DATUM(0));
-    if (PG_ARGISNULL(1)) ereport(ERROR, (errmsg("second argument type must not null!")));
+    if (PG_ARGISNULL(1)) ereport(ERROR, (errmsg("type is null!")));
     type = TextDatumGetCString(PG_GETARG_DATUM(1));
     if (!PG_ARGISNULL(2)) encoding = TextDatumGetCString(PG_GETARG_DATUM(2));
     part = curl_mime_addpart(mime);
@@ -210,9 +210,9 @@ Datum pg_curl_easy_setopt_char(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_ea
     CURLoption option;
     char *option_char, *parameter_char;
     if (!curl) ereport(ERROR, (errmsg("call pg_curl_easy_init before!")));
-    if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("first argument option must not null!")));
+    if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("option is null!")));
     option_char = TextDatumGetCString(PG_GETARG_DATUM(0));
-    if (PG_ARGISNULL(1)) ereport(ERROR, (errmsg("second argument parameter must not null!")));
+    if (PG_ARGISNULL(1)) ereport(ERROR, (errmsg("parameter is null!")));
     parameter_char = TextDatumGetCString(PG_GETARG_DATUM(1));
     if (false);
     else if (!pg_strncasecmp(option_char, "CURLOPT_ABSTRACT_UNIX_SOCKET", sizeof("CURLOPT_ABSTRACT_UNIX_SOCKET") - 1)) option = CURLOPT_ABSTRACT_UNIX_SOCKET;
