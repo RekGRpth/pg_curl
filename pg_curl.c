@@ -78,13 +78,26 @@ Datum pg_curl_easy_escape(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_es
     int length;
     char *string, *escape;
     if (!curl) ereport(ERROR, (errmsg("call pg_curl_easy_init before!")));
-    if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("argument string must not null!")));
+    if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("first argument string must not null!")));
     string = TextDatumGetCString(PG_GETARG_DATUM(0));
     length = PG_GETARG_INT32(1);
     escape = curl_easy_escape(curl, string, length);
     (void)pfree(string);
     if (!escape) PG_RETURN_NULL();
     PG_RETURN_TEXT_P(cstring_to_text(escape));
+}
+
+Datum pg_curl_easy_unescape(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_unescape); Datum pg_curl_easy_unescape(PG_FUNCTION_ARGS) {
+    int length;
+    char *url, *unescape;
+    if (!curl) ereport(ERROR, (errmsg("call pg_curl_easy_init before!")));
+    if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("first argument url must not null!")));
+    url = TextDatumGetCString(PG_GETARG_DATUM(0));
+    length = PG_GETARG_INT32(1);
+    unescape = curl_easy_unescape(curl, url, length, NULL);
+    (void)pfree(url);
+    if (!unescape) PG_RETURN_NULL();
+    PG_RETURN_TEXT_P(cstring_to_text(unescape));
 }
 
 inline static size_t read_callback(void *buffer, size_t size, size_t nitems, void *instream) {
