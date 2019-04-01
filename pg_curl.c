@@ -12,6 +12,7 @@ void _PG_init(void);
 void _PG_fini(void);
 
 CURL *curl = NULL;
+StringInfoData header_buf;
 StringInfoData read_buf;
 StringInfoData write_buf;
 pqsigfunc pgsql_interrupt_handler = NULL;
@@ -34,6 +35,7 @@ void _PG_init(void) {
     if (curl_global_init_mem(CURL_GLOBAL_ALL, custom_malloc, custom_free, custom_realloc, custom_strdup, custom_calloc)) ereport(ERROR, (errmsg("curl_global_init")));
     pgsql_interrupt_handler = pqsignal(SIGINT, pg_curl_interrupt_handler);
     pg_curl_interrupt_requested = 0;
+    (void)initStringInfo(&header_buf);
     (void)initStringInfo(&read_buf);
     (void)initStringInfo(&write_buf);
 }
@@ -45,6 +47,7 @@ void _PG_fini(void) {
     (void)curl_slist_free_all(header);
     (void)curl_slist_free_all(recipient);
     (void)curl_global_cleanup();
+    (void)pfree(header_buf.data);
     (void)pfree(read_buf.data);
     (void)pfree(write_buf.data);
     if (encoding) (void)pfree(encoding);
@@ -457,6 +460,13 @@ Datum pg_curl_easy_setopt_long(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_ea
     PG_RETURN_BOOL(res == CURLE_OK);
 }
 
+inline static size_t header_callback(void *buffer, size_t size, size_t nitems, void *outstream) {
+    size_t realsize = size * nitems;
+    elog(LOG, "buffer=%s, size=%lu, nitems=%lu, outstream=%s", (const char *)buffer, size, nitems, ((StringInfo)outstream)->data);
+    (void)appendBinaryStringInfo((StringInfo)outstream, (const char *)buffer, (int)realsize);
+    return realsize;
+}
+
 inline static size_t write_callback(void *contents, size_t size, size_t nmemb, void *userp) {
     size_t realsize = size * nmemb;
 //    elog(LOG, "contents=%s, size=%lu, nmemb=%lu, userp=%s", (const char *)contents, size, nmemb, ((StringInfo)userp)->data);
@@ -469,6 +479,8 @@ inline static int progress_callback(void *clientp, curl_off_t dltotal, curl_off_
 Datum pg_curl_easy_perform(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_perform); Datum pg_curl_easy_perform(PG_FUNCTION_ARGS) {
     CURLcode res = CURL_LAST;
     if (!curl) ereport(ERROR, (errmsg("call pg_curl_easy_init before!")));
+    if ((res = curl_easy_setopt(curl, CURLOPT_HEADERDATA, (void *)(&header_buf))) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_setopt(CURLOPT_HEADERDATA): %s", curl_easy_strerror(res))));
+    if ((res = curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, header_callback)) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_setopt(CURLOPT_HEADERFUNCTION): %s", curl_easy_strerror(res))));
     if ((res = curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L)) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_setopt(CURLOPT_NOPROGRESS): %s", curl_easy_strerror(res))));
 //    if ((res = curl_easy_setopt(curl, CURLOPT_PROTOCOLS, CURLPROTO_HTTP | CURLPROTO_HTTPS)) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_setopt(CURLOPT_PROTOCOLS): %s", curl_easy_strerror(res))));
     if ((res = curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)(&write_buf))) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_setopt(CURLOPT_WRITEDATA): %s", curl_easy_strerror(res))));
@@ -552,6 +564,7 @@ Datum pg_curl_easy_cleanup(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_c
     (void)curl_mime_free(mime);
     (void)curl_slist_free_all(header);
     (void)curl_slist_free_all(recipient);
+    (void)resetStringInfo(&header_buf);
     (void)resetStringInfo(&read_buf);
     (void)resetStringInfo(&write_buf);
     if (encoding) (void)pfree(encoding);
