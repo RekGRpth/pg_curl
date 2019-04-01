@@ -49,7 +49,7 @@ void _PG_fini(void) {
 }
 
 Datum pg_curl_easy_init(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_init); Datum pg_curl_easy_init(PG_FUNCTION_ARGS) {
-    if (curl) ereport(ERROR, (errmsg("already init!")));
+    if (curl) ereport(ERROR, (errmsg("curl already init!")));
     curl = curl_easy_init();
     if (!curl) ereport(ERROR, (errmsg("!curl")));
     mime = curl_mime_init(curl);
@@ -78,7 +78,7 @@ Datum pg_curl_easy_escape(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_es
     int length;
     char *string, *escape;
     if (!curl) ereport(ERROR, (errmsg("call pg_curl_easy_init before!")));
-    if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("first argument string must not null!")));
+    if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("string is null!")));
     string = TextDatumGetCString(PG_GETARG_DATUM(0));
     length = PG_GETARG_INT32(1);
     escape = curl_easy_escape(curl, string, length);
@@ -91,7 +91,7 @@ Datum pg_curl_easy_unescape(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_
     int length;
     char *url, *unescape;
     if (!curl) ereport(ERROR, (errmsg("call pg_curl_easy_init before!")));
-    if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("first argument url must not null!")));
+    if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("url is null!")));
     url = TextDatumGetCString(PG_GETARG_DATUM(0));
     length = PG_GETARG_INT32(1);
     unescape = curl_easy_unescape(curl, url, length, NULL);
@@ -104,9 +104,9 @@ Datum pg_curl_header_append(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_heade
     char *name, *value;
     StringInfoData buf;
     struct curl_slist *temp = header;
-    if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("first argument option must not null!")));
+    if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("name is null!")));
     name = TextDatumGetCString(PG_GETARG_DATUM(0));
-    if (PG_ARGISNULL(1)) ereport(ERROR, (errmsg("second argument parameter must not null!")));
+    if (PG_ARGISNULL(1)) ereport(ERROR, (errmsg("value is null!")));
     value = TextDatumGetCString(PG_GETARG_DATUM(1));
     (void)initStringInfo(&buf);
     (void)appendStringInfo(&buf, "%s: %s", name, value);
