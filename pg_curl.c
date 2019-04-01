@@ -369,6 +369,7 @@ Datum pg_curl_easy_setopt_long(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_ea
     else if (!pg_strncasecmp(option_char, "CURLOPT_PATH_AS_IS", sizeof("CURLOPT_PATH_AS_IS") - 1)) option = CURLOPT_PATH_AS_IS;
     else if (!pg_strncasecmp(option_char, "CURLOPT_PIPEWAIT", sizeof("CURLOPT_PIPEWAIT") - 1)) option = CURLOPT_PIPEWAIT;
     else if (!pg_strncasecmp(option_char, "CURLOPT_PORT", sizeof("CURLOPT_PORT") - 1)) option = CURLOPT_PORT;
+    else if (!pg_strncasecmp(option_char, "CURLOPT_POSTFIELDSIZE", sizeof("CURLOPT_POSTFIELDSIZE") - 1)) option = CURLOPT_POSTFIELDSIZE;
     else if (!pg_strncasecmp(option_char, "CURLOPT_POSTREDIR", sizeof("CURLOPT_POSTREDIR") - 1)) option = CURLOPT_POSTREDIR;
     else if (!pg_strncasecmp(option_char, "CURLOPT_POST", sizeof("CURLOPT_POST") - 1)) option = CURLOPT_POST;
 //    else if (!pg_strncasecmp(option_char, "CURLOPT_PROTOCOLS", sizeof("CURLOPT_PROTOCOLS") - 1)) option = CURLOPT_PROTOCOLS;
