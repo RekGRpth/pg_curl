@@ -378,7 +378,7 @@ Datum pg_curl_easy_setopt_long(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_ea
 //    else if (!pg_strncasecmp(option_char, "CURLOPT_POSTFIELDSIZE", sizeof("CURLOPT_POSTFIELDSIZE") - 1)) option = CURLOPT_POSTFIELDSIZE;
     else if (!pg_strncasecmp(option_char, "CURLOPT_POSTREDIR", sizeof("CURLOPT_POSTREDIR") - 1)) option = CURLOPT_POSTREDIR;
     else if (!pg_strncasecmp(option_char, "CURLOPT_POST", sizeof("CURLOPT_POST") - 1)) option = CURLOPT_POST;
-//    else if (!pg_strncasecmp(option_char, "CURLOPT_PROTOCOLS", sizeof("CURLOPT_PROTOCOLS") - 1)) option = CURLOPT_PROTOCOLS;
+    else if (!pg_strncasecmp(option_char, "CURLOPT_PROTOCOLS", sizeof("CURLOPT_PROTOCOLS") - 1)) option = CURLOPT_PROTOCOLS;
     else if (!pg_strncasecmp(option_char, "CURLOPT_PROXYAUTH", sizeof("CURLOPT_PROXYAUTH") - 1)) option = CURLOPT_PROXYAUTH;
     else if (!pg_strncasecmp(option_char, "CURLOPT_PROXYPORT", sizeof("CURLOPT_PROXYPORT") - 1)) option = CURLOPT_PROXYPORT;
     else if (!pg_strncasecmp(option_char, "CURLOPT_PROXY_SSL_OPTIONS", sizeof("CURLOPT_PROXY_SSL_OPTIONS") - 1)) option = CURLOPT_PROXY_SSL_OPTIONS;
@@ -387,7 +387,7 @@ Datum pg_curl_easy_setopt_long(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_ea
     else if (!pg_strncasecmp(option_char, "CURLOPT_PROXY_SSLVERSION", sizeof("CURLOPT_PROXY_SSLVERSION") - 1)) option = CURLOPT_PROXY_SSLVERSION;
     else if (!pg_strncasecmp(option_char, "CURLOPT_PROXY_TRANSFER_MODE", sizeof("CURLOPT_PROXY_TRANSFER_MODE") - 1)) option = CURLOPT_PROXY_TRANSFER_MODE;
     else if (!pg_strncasecmp(option_char, "CURLOPT_PROXYTYPE", sizeof("CURLOPT_PROXYTYPE") - 1)) option = CURLOPT_PROXYTYPE;
-//    else if (!pg_strncasecmp(option_char, "CURLOPT_PUT", sizeof("CURLOPT_PUT") - 1)) option = CURLOPT_PUT;
+    else if (!pg_strncasecmp(option_char, "CURLOPT_PUT", sizeof("CURLOPT_PUT") - 1)) option = CURLOPT_PUT;
     else if (!pg_strncasecmp(option_char, "CURLOPT_REDIR_PROTOCOLS", sizeof("CURLOPT_REDIR_PROTOCOLS") - 1)) option = CURLOPT_REDIR_PROTOCOLS;
     else if (!pg_strncasecmp(option_char, "CURLOPT_RESUME_FROM", sizeof("CURLOPT_RESUME_FROM") - 1)) option = CURLOPT_RESUME_FROM;
     else if (!pg_strncasecmp(option_char, "CURLOPT_RTSP_CLIENT_CSEQ", sizeof("CURLOPT_RTSP_CLIENT_CSEQ") - 1)) option = CURLOPT_RTSP_CLIENT_CSEQ;
@@ -426,7 +426,7 @@ Datum pg_curl_easy_setopt_long(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_ea
     else if (!pg_strncasecmp(option_char, "CURLOPT_UNRESTRICTED_AUTH", sizeof("CURLOPT_UNRESTRICTED_AUTH") - 1)) option = CURLOPT_UNRESTRICTED_AUTH;
     else if (!pg_strncasecmp(option_char, "CURLOPT_UPKEEP_INTERVAL_MS", sizeof("CURLOPT_UPKEEP_INTERVAL_MS") - 1)) option = CURLOPT_UPKEEP_INTERVAL_MS;
     else if (!pg_strncasecmp(option_char, "CURLOPT_UPLOAD_BUFFERSIZE", sizeof("CURLOPT_UPLOAD_BUFFERSIZE") - 1)) option = CURLOPT_UPLOAD_BUFFERSIZE;
-//    else if (!pg_strncasecmp(option_char, "CURLOPT_UPLOAD", sizeof("CURLOPT_UPLOAD") - 1)) option = CURLOPT_UPLOAD;
+    else if (!pg_strncasecmp(option_char, "CURLOPT_UPLOAD", sizeof("CURLOPT_UPLOAD") - 1)) option = CURLOPT_UPLOAD;
     else if (!pg_strncasecmp(option_char, "CURLOPT_USE_SSL", sizeof("CURLOPT_USE_SSL") - 1)) option = CURLOPT_USE_SSL;
     else if (!pg_strncasecmp(option_char, "CURLOPT_VERBOSE", sizeof("CURLOPT_VERBOSE") - 1)) option = CURLOPT_VERBOSE;
     else if (!pg_strncasecmp(option_char, "CURLOPT_WILDCARDMATCH", sizeof("CURLOPT_WILDCARDMATCH") - 1)) option = CURLOPT_WILDCARDMATCH;
