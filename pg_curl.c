@@ -80,7 +80,7 @@ Datum pg_curl_easy_escape(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_es
     if (!curl) ereport(ERROR, (errmsg("call pg_curl_easy_init before!")));
     if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("argument string must not null!")));
     string = TextDatumGetCString(PG_GETARG_DATUM(0));
-    length = PG_GETARG_INT32(0);
+    length = PG_GETARG_INT32(1);
     escape = curl_easy_escape(curl, string, length);
     (void)pfree(string);
     if (!escape) PG_RETURN_NULL();
