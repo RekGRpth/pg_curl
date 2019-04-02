@@ -13,6 +13,7 @@ void _PG_fini(void);
 
 CURL *curl = NULL;
 StringInfoData header_buf;
+StringInfoData read_buf;
 StringInfoData write_buf;
 pqsigfunc pgsql_interrupt_handler = NULL;
 int pg_curl_interrupt_requested = 0;
@@ -34,6 +35,7 @@ void _PG_init(void) {
     pgsql_interrupt_handler = pqsignal(SIGINT, pg_curl_interrupt_handler);
     pg_curl_interrupt_requested = 0;
     (void)initStringInfo(&header_buf);
+    (void)initStringInfo(&read_buf);
     (void)initStringInfo(&write_buf);
 }
 
@@ -45,6 +47,7 @@ void _PG_fini(void) {
     (void)curl_slist_free_all(recipient);
     (void)curl_global_cleanup();
     (void)pfree(header_buf.data);
+    (void)pfree(read_buf.data);
     (void)pfree(write_buf.data);
 }
 
@@ -70,6 +73,7 @@ Datum pg_curl_easy_reset(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_res
     if (!mime) ereport(ERROR, (errmsg("!mime")));
     has_mime = false;
     (void)resetStringInfo(&header_buf);
+    (void)resetStringInfo(&read_buf);
     (void)resetStringInfo(&write_buf);
     PG_RETURN_VOID();
 }
@@ -205,6 +209,17 @@ Datum pg_curl_mime_data_type(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_mime
     PG_RETURN_BOOL(res == CURLE_OK);
 }
 
+inline static size_t read_callback(void *buffer, size_t size, size_t nitems, void *instream) {	
+    size_t reqsize = size * nitems;
+    StringInfo si = (StringInfo)instream;
+    size_t remaining = si->len - si->cursor;
+    size_t readsize = reqsize < remaining ? reqsize : remaining;
+//    elog(LOG, "buffer=%s, size=%lu, nitems=%lu, instream=%s", (const char *)buffer, size, nitems, ((StringInfo)instream)->data);
+    memcpy(buffer, si->data + si->cursor, readsize);
+    si->cursor += readsize;
+    return readsize;
+}
+
 Datum pg_curl_easy_setopt_char(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_setopt_char); Datum pg_curl_easy_setopt_char(PG_FUNCTION_ARGS) {
     CURLcode res = CURL_LAST;
     CURLoption option;
@@ -270,6 +285,12 @@ Datum pg_curl_easy_setopt_char(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_ea
     else if (!pg_strncasecmp(option_char, "CURLOPT_PROXYUSERPWD", sizeof("CURLOPT_PROXYUSERPWD") - 1)) option = CURLOPT_PROXYUSERPWD;
     else if (!pg_strncasecmp(option_char, "CURLOPT_RANDOM_FILE", sizeof("CURLOPT_RANDOM_FILE") - 1)) option = CURLOPT_RANDOM_FILE;
     else if (!pg_strncasecmp(option_char, "CURLOPT_RANGE", sizeof("CURLOPT_RANGE") - 1)) option = CURLOPT_RANGE;
+    else if (!pg_strncasecmp(option_char, "CURLOPT_READDATA", sizeof("CURLOPT_READDATA") - 1)) {
+        (void)appendStringInfoString(&read_buf, parameter_char);
+        if ((res = curl_easy_setopt(curl, CURLOPT_READDATA, (void *)&read_buf)) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_setopt(CURLOPT_READDATA, %s): %s", read_buf.data, curl_easy_strerror(res))));
+        if ((res = curl_easy_setopt(curl, CURLOPT_READFUNCTION, read_callback)) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_setopt(CURLOPT_READFUNCTION): %s", curl_easy_strerror(res))));
+        goto ret;
+    }
     else if (!pg_strncasecmp(option_char, "CURLOPT_REFERER", sizeof("CURLOPT_REFERER") - 1)) option = CURLOPT_REFERER;
     else if (!pg_strncasecmp(option_char, "CURLOPT_REQUEST_TARGET", sizeof("CURLOPT_REQUEST_TARGET") - 1)) option = CURLOPT_REQUEST_TARGET;
     else if (!pg_strncasecmp(option_char, "CURLOPT_RTSP_SESSION_ID", sizeof("CURLOPT_RTSP_SESSION_ID") - 1)) option = CURLOPT_RTSP_SESSION_ID;
@@ -299,6 +320,7 @@ Datum pg_curl_easy_setopt_char(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_ea
     else if (!pg_strncasecmp(option_char, "CURLOPT_XOAUTH2_BEARER", sizeof("CURLOPT_XOAUTH2_BEARER") - 1)) option = CURLOPT_XOAUTH2_BEARER;
     else ereport(ERROR, (errmsg("unsupported option %s", option_char)));
     if ((res = curl_easy_setopt(curl, option, parameter_char)) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_setopt(%s, %s): %s", option_char, parameter_char, curl_easy_strerror(res))));
+ret:
     (void)pfree(option_char);
     (void)pfree(parameter_char);
     PG_RETURN_BOOL(res == CURLE_OK);
