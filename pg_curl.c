@@ -214,7 +214,7 @@ inline static size_t read_callback(void *buffer, size_t size, size_t nitems, voi
     StringInfo si = (StringInfo)instream;
     size_t remaining = si->len - si->cursor;
     size_t readsize = reqsize < remaining ? reqsize : remaining;
-//    elog(LOG, "buffer=%s, size=%lu, nitems=%lu, instream=%s", (const char *)buffer, size, nitems, ((StringInfo)instream)->data);
+//    elog(LOG, "read_callback: buffer=%s, size=%lu, nitems=%lu, instream=%s", (const char *)buffer, size, nitems, ((StringInfo)instream)->data);
     memcpy(buffer, si->data + si->cursor, readsize);
     si->cursor += readsize;
     return readsize;
@@ -463,14 +463,14 @@ Datum pg_curl_easy_setopt_long(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_ea
 
 inline static size_t header_callback(void *buffer, size_t size, size_t nitems, void *outstream) {
     size_t realsize = size * nitems;
-//    elog(LOG, "buffer=%s, size=%lu, nitems=%lu, outstream=%s", (const char *)buffer, size, nitems, ((StringInfo)outstream)->data);
+//    elog(LOG, "header_callback: buffer=%s, size=%lu, nitems=%lu, outstream=%s", (const char *)buffer, size, nitems, ((StringInfo)outstream)->data);
     (void)appendBinaryStringInfo((StringInfo)outstream, (const char *)buffer, (int)realsize);
     return realsize;
 }
 
 inline static size_t write_callback(void *buffer, size_t size, size_t nitems, void *outstream) {
     size_t realsize = size * nitems;
-//    elog(LOG, "buffer=%s, size=%lu, nitems=%lu, outstream=%s", (const char *)buffer, size, nitems, ((StringInfo)outstream)->data);
+//    elog(LOG, "write_callback: buffer=%s, size=%lu, nitems=%lu, outstream=%s", (const char *)buffer, size, nitems, ((StringInfo)outstream)->data);
     (void)appendBinaryStringInfo((StringInfo)outstream, (const char *)buffer, (int)realsize);
     return realsize;
 }
