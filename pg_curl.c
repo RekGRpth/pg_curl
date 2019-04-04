@@ -31,7 +31,7 @@ static inline char *custom_strdup(const char *ptr) { return (pstrdup)(ptr); }
 static inline void *custom_realloc(void *ptr, size_t size) { return size ? ptr ? (repalloc)(ptr, size) : palloc(size) : ptr; }
 static inline void custom_free(void *ptr) { if (ptr) (void)(pfree)(ptr); }
 
-static inline void init(void) {
+static inline void init_internal(void) {
     if (curl_global_init_mem(CURL_GLOBAL_ALL, custom_malloc, custom_free, custom_realloc, custom_strdup, custom_calloc)) ereport(ERROR, (errmsg("curl_global_init")));
     pgsql_interrupt_handler = pqsignal(SIGINT, pg_curl_interrupt_handler);
     pg_curl_interrupt_requested = 0;
@@ -40,9 +40,9 @@ static inline void init(void) {
     (void)initStringInfo(&write_buf);
 }
 
-INIT { init(); }
+INIT { init_internal(); }
 
-static inline void fini(void) {
+static inline void fini_internal(void) {
     (pqsigfunc)pqsignal(SIGINT, pgsql_interrupt_handler);
     if (curl) (void)curl_easy_cleanup(curl);
     (void)curl_mime_free(mime);
@@ -54,9 +54,9 @@ static inline void fini(void) {
     (void)pfree(write_buf.data);
 }
 
-FINI { fini(); }
+FINI { fini_internal(); }
 
-EXTENSION(pg_curl_easy_init) {
+static inline bool pg_curl_easy_init_internal(void) {
     if (curl) ereport(ERROR, (errmsg("curl already init!")));
     curl = curl_easy_init();
     if (!curl) ereport(ERROR, (errmsg("!curl")));
@@ -64,10 +64,12 @@ EXTENSION(pg_curl_easy_init) {
     if (!mime) ereport(ERROR, (errmsg("!mime")));
     has_mime = false;
     memset(pg_curl_error_buffer, 0, sizeof(pg_curl_error_buffer));
-    PG_RETURN_BOOL(curl != NULL);
+    return curl != NULL;
 }
 
-EXTENSION(pg_curl_easy_reset) {
+EXTENSION(pg_curl_easy_init) { PG_RETURN_BOOL(pg_curl_easy_init_internal()); }
+
+static inline void pg_curl_easy_reset_internal(void) {
     if (!curl) ereport(ERROR, (errmsg("call pg_curl_easy_init before!")));
     (void)curl_easy_reset(curl);
     (void)curl_slist_free_all(header);
@@ -82,8 +84,9 @@ EXTENSION(pg_curl_easy_reset) {
     (void)resetStringInfo(&read_buf);
     (void)resetStringInfo(&write_buf);
     memset(pg_curl_error_buffer, 0, sizeof(pg_curl_error_buffer));
-    PG_RETURN_VOID();
 }
+
+EXTENSION(pg_curl_easy_reset) { pg_curl_easy_reset_internal(); PG_RETURN_VOID(); }
 
 EXTENSION(pg_curl_easy_cleanup) {
     if (curl) { (void)curl_easy_cleanup(curl); curl = NULL; }
