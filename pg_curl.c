@@ -69,13 +69,13 @@ static inline void pg_curl_easy_init_internal(void) {
 EXTENSION(pg_curl_easy_init) { pg_curl_easy_init_internal(); PG_RETURN_BOOL(curl != NULL); }
 
 static inline void pg_curl_easy_reset_internal(void) {
-    if (!curl) pg_curl_easy_init_internal();
+    if (!curl) return;
     (void)curl_easy_reset(curl);
-    if (header) (void)curl_slist_free_all(header);
+    (void)curl_mime_free(mime);
+    (void)curl_slist_free_all(header);
+    (void)curl_slist_free_all(recipient);
     header = NULL;
-    if (recipient) (void)curl_slist_free_all(recipient);
     recipient = NULL;
-    if (mime) (void)curl_mime_free(mime);
     mime = curl_mime_init(curl);
     if (!mime) ereport(ERROR, (errmsg("!mime")));
     has_mime = false;
