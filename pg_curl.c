@@ -56,7 +56,7 @@ static inline void fini_internal(void) {
 
 FINI { fini_internal(); }
 
-static inline bool pg_curl_easy_init_internal(void) {
+static inline void pg_curl_easy_init_internal(void) {
     if (curl) ereport(ERROR, (errmsg("curl already init!")));
     curl = curl_easy_init();
     if (!curl) ereport(ERROR, (errmsg("!curl")));
@@ -64,13 +64,12 @@ static inline bool pg_curl_easy_init_internal(void) {
     if (!mime) ereport(ERROR, (errmsg("!mime")));
     has_mime = false;
 //    memset(pg_curl_error_buffer, 0, sizeof(pg_curl_error_buffer));
-    return curl != NULL;
 }
 
-EXTENSION(pg_curl_easy_init) { PG_RETURN_BOOL(pg_curl_easy_init_internal()); }
+EXTENSION(pg_curl_easy_init) { pg_curl_easy_init_internal(); PG_RETURN_BOOL(curl != NULL); }
 
 static inline void pg_curl_easy_reset_internal(void) {
-    if (!curl) ereport(ERROR, (errmsg("call pg_curl_easy_init before!")));
+    if (!curl) 
     (void)curl_easy_reset(curl);
     (void)curl_slist_free_all(header);
     header = NULL;
