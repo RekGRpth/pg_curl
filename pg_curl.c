@@ -31,7 +31,7 @@ static inline char *custom_strdup(const char *ptr) { return (pstrdup)(ptr); }
 static inline void *custom_realloc(void *ptr, size_t size) { return size ? ptr ? (repalloc)(ptr, size) : palloc(size) : ptr; }
 static inline void custom_free(void *ptr) { if (ptr) (void)(pfree)(ptr); }
 
-INIT {
+static inline void init(void) {
     if (curl_global_init_mem(CURL_GLOBAL_ALL, custom_malloc, custom_free, custom_realloc, custom_strdup, custom_calloc)) ereport(ERROR, (errmsg("curl_global_init")));
     pgsql_interrupt_handler = pqsignal(SIGINT, pg_curl_interrupt_handler);
     pg_curl_interrupt_requested = 0;
@@ -40,7 +40,9 @@ INIT {
     (void)initStringInfo(&write_buf);
 }
 
-FINI {
+INIT { init(); }
+
+static inline void fini(void) {
     (pqsigfunc)pqsignal(SIGINT, pgsql_interrupt_handler);
     if (curl) (void)curl_easy_cleanup(curl);
     (void)curl_mime_free(mime);
@@ -51,6 +53,8 @@ FINI {
     (void)pfree(read_buf.data);
     (void)pfree(write_buf.data);
 }
+
+FINI { fini(); }
 
 EXTENSION(pg_curl_easy_init) {
     if (curl) ereport(ERROR, (errmsg("curl already init!")));
@@ -78,6 +82,14 @@ EXTENSION(pg_curl_easy_reset) {
     (void)resetStringInfo(&read_buf);
     (void)resetStringInfo(&write_buf);
     memset(pg_curl_error_buffer, 0, sizeof(pg_curl_error_buffer));
+    PG_RETURN_VOID();
+}
+
+EXTENSION(pg_curl_easy_cleanup) {
+    if (curl) { (void)curl_easy_cleanup(curl); curl = NULL; }
+    (void)curl_mime_free(mime);
+    (void)curl_slist_free_all(header);
+    (void)curl_slist_free_all(recipient);
     PG_RETURN_VOID();
 }
 
@@ -568,12 +580,4 @@ EXTENSION(pg_curl_easy_getinfo_long) {
     if ((res = curl_easy_getinfo(curl, info, &lon)) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_getinfo(%s): %s", info_char, curl_easy_strerror(res))));
     (void)pfree(info_char);
     PG_RETURN_INT64(lon);
-}
-
-EXTENSION(pg_curl_easy_cleanup) {
-    if (curl) { (void)curl_easy_cleanup(curl); curl = NULL; }
-    (void)curl_mime_free(mime);
-    (void)curl_slist_free_all(header);
-    (void)curl_slist_free_all(recipient);
-    PG_RETURN_VOID();
 }
