@@ -88,13 +88,14 @@ static inline void pg_curl_easy_reset_internal(void) {
 
 EXTENSION(pg_curl_easy_reset) { pg_curl_easy_reset_internal(); PG_RETURN_VOID(); }
 
-EXTENSION(pg_curl_easy_cleanup) {
+static inline void pg_curl_easy_cleanup_internal(void) {
     if (curl) { (void)curl_easy_cleanup(curl); curl = NULL; }
     (void)curl_mime_free(mime);
     (void)curl_slist_free_all(header);
     (void)curl_slist_free_all(recipient);
-    PG_RETURN_VOID();
 }
+
+EXTENSION(pg_curl_easy_cleanup) { pg_curl_easy_cleanup_internal(); PG_RETURN_VOID(); }
 
 EXTENSION(pg_curl_easy_escape) {
     int length;
