@@ -6,6 +6,8 @@
 #include <signal.h>
 #include <utils/builtins.h>
 
+#define EXTENSION(function) Datum (function)(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(function); Datum (function)(PG_FUNCTION_ARGS)
+
 PG_MODULE_MAGIC;
 
 void _PG_init(void);
@@ -52,7 +54,7 @@ void _PG_fini(void) {
     (void)pfree(write_buf.data);
 }
 
-Datum pg_curl_easy_init(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_init); Datum pg_curl_easy_init(PG_FUNCTION_ARGS) {
+EXTENSION(pg_curl_easy_init) {
     if (curl) ereport(ERROR, (errmsg("curl already init!")));
     curl = curl_easy_init();
     if (!curl) ereport(ERROR, (errmsg("!curl")));
@@ -63,7 +65,7 @@ Datum pg_curl_easy_init(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_init
     PG_RETURN_BOOL(curl != NULL);
 }
 
-Datum pg_curl_easy_reset(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_reset); Datum pg_curl_easy_reset(PG_FUNCTION_ARGS) {
+EXTENSION(pg_curl_easy_reset) {
     if (!curl) ereport(ERROR, (errmsg("call pg_curl_easy_init before!")));
     (void)curl_easy_reset(curl);
     (void)curl_slist_free_all(header);
@@ -81,7 +83,7 @@ Datum pg_curl_easy_reset(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_res
     PG_RETURN_VOID();
 }
 
-Datum pg_curl_easy_escape(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_escape); Datum pg_curl_easy_escape(PG_FUNCTION_ARGS) {
+EXTENSION(pg_curl_easy_escape) {
     int length;
     char *string, *escape;
     if (!curl) ereport(ERROR, (errmsg("call pg_curl_easy_init before!")));
@@ -94,7 +96,7 @@ Datum pg_curl_easy_escape(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_es
     PG_RETURN_TEXT_P(cstring_to_text(escape));
 }
 
-Datum pg_curl_easy_unescape(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_unescape); Datum pg_curl_easy_unescape(PG_FUNCTION_ARGS) {
+EXTENSION(pg_curl_easy_unescape) {
     int length;
     char *url, *unescape;
     if (!curl) ereport(ERROR, (errmsg("call pg_curl_easy_init before!")));
@@ -107,7 +109,7 @@ Datum pg_curl_easy_unescape(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_
     PG_RETURN_TEXT_P(cstring_to_text(unescape));
 }
 
-Datum pg_curl_header_append(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_header_append); Datum pg_curl_header_append(PG_FUNCTION_ARGS) {
+EXTENSION(pg_curl_header_append) {
     char *name, *value;
     StringInfoData buf;
     struct curl_slist *temp = header;
@@ -124,7 +126,7 @@ Datum pg_curl_header_append(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_heade
     PG_RETURN_BOOL(temp != NULL);
 }
 
-Datum pg_curl_recipient_append(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_recipient_append); Datum pg_curl_recipient_append(PG_FUNCTION_ARGS) {
+EXTENSION(pg_curl_recipient_append) {
     char *email;
     struct curl_slist *temp = recipient;
     if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("email is null!")));
@@ -134,7 +136,7 @@ Datum pg_curl_recipient_append(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_re
     PG_RETURN_BOOL(temp != NULL);
 }
 
-Datum pg_curl_mime_data(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_mime_data); Datum pg_curl_mime_data(PG_FUNCTION_ARGS) {
+EXTENSION(pg_curl_mime_data) {
     CURLcode res = CURL_LAST;
     char *data, *encoding = NULL;
     curl_mimepart *part;
@@ -150,7 +152,7 @@ Datum pg_curl_mime_data(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_mime_data
     PG_RETURN_BOOL(res == CURLE_OK);
 }
 
-Datum pg_curl_mime_filedata(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_mime_filedata); Datum pg_curl_mime_filedata(PG_FUNCTION_ARGS) {
+EXTENSION(pg_curl_mime_filedata) {
     CURLcode res = CURL_LAST;
     char *filename, *base = NULL, *type = NULL, *encoding = NULL;
     curl_mimepart *part;
@@ -172,7 +174,7 @@ Datum pg_curl_mime_filedata(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_mime_
     PG_RETURN_BOOL(res == CURLE_OK);
 }
 
-Datum pg_curl_mime_data_name(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_mime_data_name); Datum pg_curl_mime_data_name(PG_FUNCTION_ARGS) {
+EXTENSION(pg_curl_mime_data_name) {
     CURLcode res = CURL_LAST;
     char *data, *name, *encoding = NULL;
     curl_mimepart *part;
@@ -192,7 +194,7 @@ Datum pg_curl_mime_data_name(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_mime
     PG_RETURN_BOOL(res == CURLE_OK);
 }
 
-Datum pg_curl_mime_data_type(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_mime_data_type); Datum pg_curl_mime_data_type(PG_FUNCTION_ARGS) {
+EXTENSION(pg_curl_mime_data_type) {
     CURLcode res = CURL_LAST;
     char *data, *type, *encoding = NULL;
     curl_mimepart *part;
@@ -223,7 +225,7 @@ inline static size_t read_callback(void *buffer, size_t size, size_t nitems, voi
     return readsize;
 }
 
-Datum pg_curl_easy_setopt_char(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_setopt_char); Datum pg_curl_easy_setopt_char(PG_FUNCTION_ARGS) {
+EXTENSION(pg_curl_easy_setopt_char) {
     CURLcode res = CURL_LAST;
     CURLoption option;
     char *option_char, *parameter_char;
@@ -332,7 +334,7 @@ ret:
     PG_RETURN_BOOL(res == CURLE_OK);
 }
 
-Datum pg_curl_easy_setopt_long(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_setopt_long); Datum pg_curl_easy_setopt_long(PG_FUNCTION_ARGS) {
+EXTENSION(pg_curl_easy_setopt_long) {
     CURLcode res = CURL_LAST;
     CURLoption option;
     char *option_char;
@@ -481,7 +483,7 @@ inline static size_t write_callback(void *buffer, size_t size, size_t nitems, vo
 
 inline static int progress_callback(void *clientp, curl_off_t dltotal, curl_off_t dlnow, curl_off_t ultotal, curl_off_t ulnow) { return pg_curl_interrupt_requested; }
 
-Datum pg_curl_easy_perform(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_perform); Datum pg_curl_easy_perform(PG_FUNCTION_ARGS) {
+EXTENSION(pg_curl_easy_perform) {
     CURLcode res = CURL_LAST;
     if (!curl) ereport(ERROR, (errmsg("call pg_curl_easy_init before!")));
     (void)resetStringInfo(&header_buf);
@@ -506,7 +508,7 @@ Datum pg_curl_easy_perform(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_p
     PG_RETURN_BOOL(res == CURLE_OK);
 }
 
-Datum pg_curl_easy_getinfo_char(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_getinfo_char); Datum pg_curl_easy_getinfo_char(PG_FUNCTION_ARGS) {
+EXTENSION(pg_curl_easy_getinfo_char) {
     CURLcode res = CURL_LAST;
     CURLINFO info;
     char *info_char;
@@ -534,7 +536,7 @@ ret:
     PG_RETURN_TEXT_P(cstring_to_text(str));
 }
 
-Datum pg_curl_easy_getinfo_long(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_getinfo_long); Datum pg_curl_easy_getinfo_long(PG_FUNCTION_ARGS) {
+EXTENSION(pg_curl_easy_getinfo_long) {
     CURLcode res = CURL_LAST;
     CURLINFO info;
     char *info_char;
@@ -570,7 +572,7 @@ Datum pg_curl_easy_getinfo_long(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_e
     PG_RETURN_INT64(lon);
 }
 
-Datum pg_curl_easy_cleanup(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(pg_curl_easy_cleanup); Datum pg_curl_easy_cleanup(PG_FUNCTION_ARGS) {
+EXTENSION(pg_curl_easy_cleanup) {
     if (curl) { (void)curl_easy_cleanup(curl); curl = NULL; }
     (void)curl_mime_free(mime);
     (void)curl_slist_free_all(header);
