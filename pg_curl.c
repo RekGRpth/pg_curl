@@ -25,7 +25,6 @@ bool has_mime;
 char pg_curl_error_buffer[CURL_ERROR_SIZE];
 
 static inline void pg_curl_interrupt_handler(int sig) { pg_curl_interrupt_requested = sig; }
-
 static inline void *custom_calloc(size_t nmemb, size_t size) { return ((nmemb > 0) && (size > 0)) ? (palloc0)(nmemb * size) : NULL; }
 static inline void *custom_malloc(size_t size) { return size ? (palloc)(size) : NULL; }
 static inline char *custom_strdup(const char *ptr) { return (pstrdup)(ptr); }
