@@ -71,11 +71,11 @@ EXTENSION(pg_curl_easy_init) { pg_curl_easy_init_internal(); PG_RETURN_BOOL(curl
 static inline void pg_curl_easy_reset_internal(void) {
     if (!curl) pg_curl_easy_init_internal();
     (void)curl_easy_reset(curl);
-    (void)curl_slist_free_all(header);
+    if (header) (void)curl_slist_free_all(header);
     header = NULL;
-    (void)curl_slist_free_all(recipient);
+    if (recipient) (void)curl_slist_free_all(recipient);
     recipient = NULL;
-    (void)curl_mime_free(mime);
+    if (mime) (void)curl_mime_free(mime);
     mime = curl_mime_init(curl);
     if (!mime) ereport(ERROR, (errmsg("!mime")));
     has_mime = false;
