@@ -57,7 +57,7 @@ static inline void fini_internal(void) {
 FINI { fini_internal(); }
 
 static inline void pg_curl_easy_init_internal(void) {
-    if (curl) ereport(ERROR, (errmsg("curl already init!")));
+    if (curl) return;
     curl = curl_easy_init();
     if (!curl) ereport(ERROR, (errmsg("!curl")));
     mime = curl_mime_init(curl);
@@ -69,7 +69,7 @@ static inline void pg_curl_easy_init_internal(void) {
 EXTENSION(pg_curl_easy_init) { pg_curl_easy_init_internal(); PG_RETURN_BOOL(curl != NULL); }
 
 static inline void pg_curl_easy_reset_internal(void) {
-    if (!curl) 
+    if (!curl) pg_curl_easy_init_internal();
     (void)curl_easy_reset(curl);
     (void)curl_slist_free_all(header);
     header = NULL;
@@ -99,7 +99,7 @@ EXTENSION(pg_curl_easy_cleanup) { pg_curl_easy_cleanup_internal(); PG_RETURN_VOI
 EXTENSION(pg_curl_easy_escape) {
     int length;
     char *string, *escape;
-    if (!curl) ereport(ERROR, (errmsg("call pg_curl_easy_init before!")));
+    if (!curl) pg_curl_easy_init_internal();
     if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("string is null!")));
     string = TextDatumGetCString(PG_GETARG_DATUM(0));
     length = PG_GETARG_INT32(1);
@@ -112,7 +112,7 @@ EXTENSION(pg_curl_easy_escape) {
 EXTENSION(pg_curl_easy_unescape) {
     int length;
     char *url, *unescape;
-    if (!curl) ereport(ERROR, (errmsg("call pg_curl_easy_init before!")));
+    if (!curl) pg_curl_easy_init_internal();
     if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("url is null!")));
     url = TextDatumGetCString(PG_GETARG_DATUM(0));
     length = PG_GETARG_INT32(1);
@@ -242,7 +242,7 @@ EXTENSION(pg_curl_easy_setopt_char) {
     CURLcode res = CURL_LAST;
     CURLoption option;
     char *option_char, *parameter_char;
-    if (!curl) ereport(ERROR, (errmsg("call pg_curl_easy_init before!")));
+    if (!curl) pg_curl_easy_init_internal();
     if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("option is null!")));
     option_char = TextDatumGetCString(PG_GETARG_DATUM(0));
     if (PG_ARGISNULL(1)) ereport(ERROR, (errmsg("parameter is null!")));
@@ -352,7 +352,7 @@ EXTENSION(pg_curl_easy_setopt_long) {
     CURLoption option;
     char *option_char;
     long parameter_long;
-    if (!curl) ereport(ERROR, (errmsg("call pg_curl_easy_init before!")));
+    if (!curl) pg_curl_easy_init_internal();
     if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("option is null!")));
     option_char = TextDatumGetCString(PG_GETARG_DATUM(0));
     if (PG_ARGISNULL(1)) ereport(ERROR, (errmsg("parameter is null!")));
@@ -498,7 +498,7 @@ inline static int progress_callback(void *clientp, curl_off_t dltotal, curl_off_
 
 EXTENSION(pg_curl_easy_perform) {
     CURLcode res = CURL_LAST;
-    if (!curl) ereport(ERROR, (errmsg("call pg_curl_easy_init before!")));
+    if (!curl) pg_curl_easy_init_internal();
     (void)resetStringInfo(&header_buf);
     (void)resetStringInfo(&write_buf);
 //    if ((res = curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, pg_curl_error_buffer)) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_setopt(CURLOPT_ERRORBUFFER): %s", curl_easy_strerror(res))));
@@ -527,7 +527,7 @@ EXTENSION(pg_curl_easy_getinfo_char) {
     CURLINFO info;
     char *info_char;
     char *str = NULL;
-    if (!curl) ereport(ERROR, (errmsg("call pg_curl_easy_init before!")));
+    if (!curl) pg_curl_easy_init_internal();
     if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("info is null!")));
     info_char = TextDatumGetCString(PG_GETARG_DATUM(0));
     if (false);
@@ -555,7 +555,7 @@ EXTENSION(pg_curl_easy_getinfo_long) {
     CURLINFO info;
     char *info_char;
     long lon;
-    if (!curl) ereport(ERROR, (errmsg("call pg_curl_easy_init before!")));
+    if (!curl) pg_curl_easy_init_internal();
     if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("info is null!")));
     info_char = TextDatumGetCString(PG_GETARG_DATUM(0));
     if (false);
