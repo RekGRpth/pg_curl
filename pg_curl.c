@@ -7,11 +7,10 @@
 #include <utils/builtins.h>
 
 #define EXTENSION(function) Datum (function)(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(function); Datum (function)(PG_FUNCTION_ARGS)
+#define INIT void _PG_init(void); void _PG_init(void)
+#define FINI void _PG_fini(void); void _PG_fini(void)
 
 PG_MODULE_MAGIC;
-
-void _PG_init(void);
-void _PG_fini(void);
 
 CURL *curl = NULL;
 StringInfoData header_buf;
@@ -33,7 +32,7 @@ static inline char *custom_strdup(const char *ptr) { return (pstrdup)(ptr); }
 static inline void *custom_realloc(void *ptr, size_t size) { return size ? ptr ? (repalloc)(ptr, size) : palloc(size) : ptr; }
 static inline void custom_free(void *ptr) { if (ptr) (void)(pfree)(ptr); }
 
-void _PG_init(void) {
+INIT {
     if (curl_global_init_mem(CURL_GLOBAL_ALL, custom_malloc, custom_free, custom_realloc, custom_strdup, custom_calloc)) ereport(ERROR, (errmsg("curl_global_init")));
     pgsql_interrupt_handler = pqsignal(SIGINT, pg_curl_interrupt_handler);
     pg_curl_interrupt_requested = 0;
@@ -42,7 +41,7 @@ void _PG_init(void) {
     (void)initStringInfo(&write_buf);
 }
 
-void _PG_fini(void) {
+FINI {
     (pqsigfunc)pqsignal(SIGINT, pgsql_interrupt_handler);
     if (curl) (void)curl_easy_cleanup(curl);
     (void)curl_mime_free(mime);
