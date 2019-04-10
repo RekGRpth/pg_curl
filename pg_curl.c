@@ -22,7 +22,6 @@ struct curl_slist *header = NULL;
 struct curl_slist *recipient = NULL;
 curl_mime *mime;
 bool has_mime;
-//char pg_curl_error_buffer[CURL_ERROR_SIZE];
 
 static inline void pg_curl_interrupt_handler(int sig) { pg_curl_interrupt_requested = sig; }
 //static inline void *custom_calloc(size_t nmemb, size_t size) { return ((nmemb > 0) && (size > 0)) ? (palloc0)(nmemb * size) : NULL; }
@@ -64,7 +63,6 @@ static inline void pg_curl_easy_init_internal(void) {
     mime = curl_mime_init(curl);
     if (!mime) ereport(ERROR, (errmsg("!mime")));
     has_mime = false;
-//    memset(pg_curl_error_buffer, 0, sizeof(pg_curl_error_buffer));
 }
 
 EXTENSION(pg_curl_easy_init) { pg_curl_easy_init_internal(); PG_RETURN_BOOL(curl != NULL); }
@@ -83,7 +81,6 @@ static inline void pg_curl_easy_reset_internal(void) {
     (void)resetStringInfo(&header_buf);
     (void)resetStringInfo(&read_buf);
     (void)resetStringInfo(&write_buf);
-//    memset(pg_curl_error_buffer, 0, sizeof(pg_curl_error_buffer));
 }
 
 EXTENSION(pg_curl_easy_reset) { pg_curl_easy_reset_internal(); PG_RETURN_VOID(); }
@@ -502,7 +499,6 @@ EXTENSION(pg_curl_easy_perform) {
     if (!curl) pg_curl_easy_init_internal();
     (void)resetStringInfo(&header_buf);
     (void)resetStringInfo(&write_buf);
-//    if ((res = curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, pg_curl_error_buffer)) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_setopt(CURLOPT_ERRORBUFFER): %s", curl_easy_strerror(res))));
     if ((res = curl_easy_setopt(curl, CURLOPT_HEADERDATA, (void *)(&header_buf))) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_setopt(CURLOPT_HEADERDATA): %s", curl_easy_strerror(res))));
     if ((res = curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, header_callback)) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_setopt(CURLOPT_HEADERFUNCTION): %s", curl_easy_strerror(res))));
     if ((res = curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L)) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_setopt(CURLOPT_NOPROGRESS): %s", curl_easy_strerror(res))));
@@ -517,7 +513,6 @@ EXTENSION(pg_curl_easy_perform) {
     switch (res = curl_easy_perform(curl)) {
         case CURLE_OK: break;
         case CURLE_ABORTED_BY_CALLBACK: if (pgsql_interrupt_handler && pg_curl_interrupt_requested) { (*pgsql_interrupt_handler)(pg_curl_interrupt_requested); pg_curl_interrupt_requested = 0; }
-//        default: ereport(ERROR, (errmsg("curl_easy_perform: %s, %s", curl_easy_strerror(res), pg_curl_error_buffer)));
         default: ereport(ERROR, (errmsg("curl_easy_perform: %s", curl_easy_strerror(res))));
     }
     PG_RETURN_BOOL(res == CURLE_OK);
