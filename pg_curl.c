@@ -130,7 +130,7 @@ EXTENSION(pg_curl_header_append) {
     value = TextDatumGetCString(PG_GETARG_DATUM(1));
     (void)initStringInfo(&buf);
     (void)appendStringInfo(&buf, "%s: %s", name, value);
-    if ((temp = curl_slist_append(temp, buf.data))) header = temp;
+    if ((temp = curl_slist_append(temp, buf.data))) header = temp; else ereport(ERROR, (errmsg("curl_slist_append")));
     (void)pfree(name);
     (void)pfree(value);
     (void)pfree(buf.data);
@@ -142,7 +142,7 @@ EXTENSION(pg_curl_recipient_append) {
     struct curl_slist *temp = recipient;
     if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("email is null!")));
     email = TextDatumGetCString(PG_GETARG_DATUM(0));
-    if ((temp = curl_slist_append(temp, email))) recipient = temp;
+    if ((temp = curl_slist_append(temp, email))) recipient = temp; else ereport(ERROR, (errmsg("curl_slist_append")));
     (void)pfree(email);
     PG_RETURN_BOOL(temp != NULL);
 }
