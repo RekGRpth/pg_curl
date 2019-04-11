@@ -44,7 +44,7 @@ INIT { init_internal(); }
 
 static inline void fini_internal(void) {
     (pqsigfunc)pqsignal(SIGINT, pgsql_interrupt_handler);
-    if (curl) (void)curl_easy_cleanup(curl);
+    (void)curl_easy_cleanup(curl);
     (void)curl_mime_free(mime);
     (void)curl_slist_free_all(header);
     (void)curl_slist_free_all(recipient);
