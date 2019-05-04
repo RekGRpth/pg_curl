@@ -15,7 +15,7 @@ $BODY$;
 
 # urlencoded post
 ```sql
-CREATE OR REPLACE FUNCTION post(url TEXT, request RECORD) RETURNS TEXT LANGUAGE SQL AS $BODY$
+CREATE OR REPLACE FUNCTION post(url TEXT, request JSON) RETURNS TEXT LANGUAGE SQL AS $BODY$
     WITH s AS (SELECT
         pg_curl_easy_init(),
         pg_curl_easy_reset(),
@@ -23,7 +23,7 @@ CREATE OR REPLACE FUNCTION post(url TEXT, request RECORD) RETURNS TEXT LANGUAGE 
         pg_curl_header_append('Connection', 'close'),
         pg_curl_easy_setopt_char('CURLOPT_COPYPOSTFIELDS', (
             WITH s AS (
-                SELECT (json_each_text(row_to_json(request))).*
+                SELECT (json_each_text(request)).*
             ) SELECT array_to_string(array_agg(concat_ws('=',
                 pg_curl_easy_escape(key),
                 pg_curl_easy_escape(value)
