@@ -9,7 +9,8 @@ CREATE OR REPLACE FUNCTION pg_curl_easy_escape(string text, length int default 0
 CREATE OR REPLACE FUNCTION pg_curl_easy_unescape(url text, length int default 0) RETURNS text AS 'MODULE_PATHNAME', 'pg_curl_easy_unescape' LANGUAGE 'c';
 
 CREATE OR REPLACE FUNCTION pg_curl_header_append(name text, value text) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_header_append' LANGUAGE 'c';
-CREATE OR REPLACE FUNCTION pg_curl_header_append(name text[], value text[]) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_header_append_array' LANGUAGE 'c';
+CREATE OR REPLACE FUNCTION pg_curl_header_append(name text, value text[]) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_header_append_array' LANGUAGE 'c';
+CREATE OR REPLACE FUNCTION pg_curl_header_append(name text[], value text[]) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_header_append_array_array' LANGUAGE 'c';
 CREATE OR REPLACE FUNCTION pg_curl_recipient_append(email text) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_recipient_append' LANGUAGE 'c';
 CREATE OR REPLACE FUNCTION pg_curl_recipient_append(email text[]) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_recipient_append_array' LANGUAGE 'c';
 

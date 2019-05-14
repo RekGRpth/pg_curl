@@ -134,6 +134,31 @@ EXTENSION(pg_curl_header_append) {
 }
 
 EXTENSION(pg_curl_header_append_array) {
+    Datum *elemsp;
+    bool *nullsp;
+    int nelemsp;
+    char *name;
+    StringInfoData buf;
+    struct curl_slist *temp = header;
+    if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("name is null!")));
+    name = TextDatumGetCString(PG_GETARG_DATUM(0));
+    if (PG_ARGISNULL(1)) ereport(ERROR, (errmsg("value is null!")));
+    if (array_contains_nulls(DatumGetArrayTypeP(PG_GETARG_DATUM(1)))) ereport(ERROR, (errcode(ERRCODE_ARRAY_ELEMENT_ERROR), errmsg("array_contains_nulls")));
+    (void)initStringInfo(&buf);
+    (void)deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(1)), TEXTOID, -1, false, 'i', &elemsp, &nullsp, &nelemsp);
+    for (int i = 0; i < nelemsp; i++) {
+        char *value = TextDatumGetCString(elemsp[i]);
+        (void)resetStringInfo(&buf);
+        (void)appendStringInfo(&buf, "%s: %s", name, value);
+        if ((temp = curl_slist_append(temp, buf.data))) header = temp; else ereport(ERROR, (errmsg("curl_slist_append")));
+        (void)pfree(value);
+    }
+    (void)pfree(name);
+    (void)pfree(buf.data);
+    PG_RETURN_BOOL(temp != NULL);
+}
+
+EXTENSION(pg_curl_header_append_array_array) {
     Datum *name_elemsp, *value_elemsp;
     bool *name_nullsp, *value_nullsp;
     int name_nelemsp, value_nelemsp;
