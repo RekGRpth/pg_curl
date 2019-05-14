@@ -143,6 +143,21 @@ EXTENSION(pg_curl_recipient_append) {
     PG_RETURN_BOOL(temp != NULL);
 }
 
+EXTENSION(pg_curl_recipient_append_array) {
+    Datum *elemsp;
+    bool *nullsp;
+    int nelemsp;
+    struct curl_slist *temp = recipient;
+    if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("email is null!")));
+    (void)deconstruct_array(PG_GETARG_ARRAYTYPE_P(0), TEXTOID, -1, false, 'i', &elemsp, &nullsp, &nelemsp);
+    for (int i = 0; i < nelemsp; i++) {
+        char *email = TextDatumGetCString(elemsp[i]);
+        if ((temp = curl_slist_append(temp, email))) recipient = temp; else ereport(ERROR, (errmsg("curl_slist_append")));
+        (void)pfree(email);
+    }
+    PG_RETURN_BOOL(temp != NULL);
+}
+
 EXTENSION(pg_curl_mime_data) {
     CURLcode res = CURL_LAST;
     char *data, *encoding = NULL;
