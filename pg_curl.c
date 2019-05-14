@@ -133,6 +133,33 @@ EXTENSION(pg_curl_header_append) {
     PG_RETURN_BOOL(temp != NULL);
 }
 
+EXTENSION(pg_curl_header_append_array) {
+    Datum *name_elemsp, *value_elemsp;
+    bool *name_nullsp, *value_nullsp;
+    int name_nelemsp, value_nelemsp;
+    StringInfoData buf;
+    struct curl_slist *temp = header;
+    if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("name is null!")));
+    if (PG_ARGISNULL(1)) ereport(ERROR, (errmsg("value is null!")));
+    if (array_contains_nulls(PG_GETARG_ARRAYTYPE_P(0))) ereport(ERROR, (errcode(ERRCODE_ARRAY_ELEMENT_ERROR), errmsg("array_contains_nulls")));
+    if (array_contains_nulls(PG_GETARG_ARRAYTYPE_P(1))) ereport(ERROR, (errcode(ERRCODE_ARRAY_ELEMENT_ERROR), errmsg("array_contains_nulls")));
+    (void)initStringInfo(&buf);
+    (void)deconstruct_array(PG_GETARG_ARRAYTYPE_P(0), TEXTOID, -1, false, 'i', &name_elemsp, &name_nullsp, &name_nelemsp);
+    (void)deconstruct_array(PG_GETARG_ARRAYTYPE_P(1), TEXTOID, -1, false, 'i', &value_elemsp, &value_nullsp, &value_nelemsp);
+    if (name_nelemsp != value_nelemsp) ereport(ERROR, (errmsg("name_nelemsp != value_nelemsp")));
+    for (int i = 0; i < name_nelemsp; i++) {
+        char *name = TextDatumGetCString(name_elemsp[i]);
+        char *value = TextDatumGetCString(value_elemsp[i]);
+        (void)resetStringInfo(&buf);
+        (void)appendStringInfo(&buf, "%s: %s", name, value);
+        if ((temp = curl_slist_append(temp, buf.data))) header = temp; else ereport(ERROR, (errmsg("curl_slist_append")));
+        (void)pfree(name);
+        (void)pfree(value);
+    }
+    (void)pfree(buf.data);
+    PG_RETURN_BOOL(temp != NULL);
+}
+
 EXTENSION(pg_curl_recipient_append) {
     char *email;
     struct curl_slist *temp = recipient;
@@ -149,6 +176,7 @@ EXTENSION(pg_curl_recipient_append_array) {
     int nelemsp;
     struct curl_slist *temp = recipient;
     if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("email is null!")));
+    if (array_contains_nulls(PG_GETARG_ARRAYTYPE_P(0))) ereport(ERROR, (errcode(ERRCODE_ARRAY_ELEMENT_ERROR), errmsg("array_contains_nulls")));
     (void)deconstruct_array(PG_GETARG_ARRAYTYPE_P(0), TEXTOID, -1, false, 'i', &elemsp, &nullsp, &nelemsp);
     for (int i = 0; i < nelemsp; i++) {
         char *email = TextDatumGetCString(elemsp[i]);
