@@ -14,11 +14,10 @@ CREATE OR REPLACE FUNCTION pg_curl_header_append(name text[], value text[]) RETU
 CREATE OR REPLACE FUNCTION pg_curl_recipient_append(email text) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_recipient_append' LANGUAGE 'c';
 CREATE OR REPLACE FUNCTION pg_curl_recipient_append(email text[]) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_recipient_append_array' LANGUAGE 'c';
 
-CREATE OR REPLACE FUNCTION pg_curl_mime_data(data text, code text default null) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_mime_data' LANGUAGE 'c';
+CREATE OR REPLACE FUNCTION pg_curl_mime_data(data text, name text default null, file text default null, type text default null, code text default null) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_mime_data' LANGUAGE 'c';
+CREATE OR REPLACE FUNCTION pg_curl_mime_data(data text[], name text[] default null, file text[] default null, type text[] default null, code text[] default null) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_mime_data_array' LANGUAGE 'c';
 CREATE OR REPLACE FUNCTION pg_curl_mime_file(data text, name text default null, type text default null, code text default null) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_mime_file' LANGUAGE 'c';
 CREATE OR REPLACE FUNCTION pg_curl_mime_file(data text[], name text[] default null, type text[] default null, code text[] default null) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_mime_file_array' LANGUAGE 'c';
-CREATE OR REPLACE FUNCTION pg_curl_mime_data_name(data text, name text, code text default null) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_mime_data_name' LANGUAGE 'c';
-CREATE OR REPLACE FUNCTION pg_curl_mime_data_type(data text, type text, code text default null) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_mime_data_type' LANGUAGE 'c';
 
 CREATE OR REPLACE FUNCTION pg_curl_easy_setopt_char(option text, parameter text) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_char' LANGUAGE 'c';
 CREATE OR REPLACE FUNCTION pg_curl_easy_setopt_long(option text, parameter bigint) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_long' LANGUAGE 'c';
