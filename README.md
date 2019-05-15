@@ -4,7 +4,7 @@ CREATE OR REPLACE FUNCTION get(url TEXT) RETURNS TEXT LANGUAGE SQL AS $BODY$
     WITH s AS (SELECT
         pg_curl_easy_init(),
         pg_curl_easy_reset(),
-        pg_curl_easy_setopt_char('CURLOPT_URL', url),
+        pg_curl_easy_setopt('CURLOPT_URL', url),
         pg_curl_header_append('Connection', 'close'),
         pg_curl_easy_perform(),
         pg_curl_easy_getinfo_char('CURLINFO_RESPONSE'),
@@ -19,9 +19,9 @@ CREATE OR REPLACE FUNCTION post(url TEXT, request JSON) RETURNS TEXT LANGUAGE SQ
     WITH s AS (SELECT
         pg_curl_easy_init(),
         pg_curl_easy_reset(),
-        pg_curl_easy_setopt_char('CURLOPT_URL', url),
+        pg_curl_easy_setopt('CURLOPT_URL', url),
         pg_curl_header_append('Connection', 'close'),
-        pg_curl_easy_setopt_char('CURLOPT_COPYPOSTFIELDS', (
+        pg_curl_easy_setopt('CURLOPT_COPYPOSTFIELDS', (
             WITH s AS (
                 SELECT (json_each_text(request)).*
             ) SELECT array_to_string(array_agg(concat_ws('=',
@@ -42,10 +42,10 @@ CREATE OR REPLACE FUNCTION post(url TEXT, request JSON) RETURNS TEXT LANGUAGE SQ
     WITH s AS (SELECT
         pg_curl_easy_init(),
         pg_curl_easy_reset(),
-        pg_curl_easy_setopt_char('CURLOPT_URL', url),
+        pg_curl_easy_setopt('CURLOPT_URL', url),
         pg_curl_header_append('Content-Type', 'application/json; charset=utf-8'),
         pg_curl_header_append('Connection', 'close'),
-        pg_curl_easy_setopt_char('CURLOPT_COPYPOSTFIELDS', request::TEXT),
+        pg_curl_easy_setopt('CURLOPT_COPYPOSTFIELDS', request::TEXT),
         pg_curl_easy_perform(),
         pg_curl_easy_getinfo_char('CURLINFO_RESPONSE'),
         pg_curl_easy_cleanup()
@@ -59,9 +59,9 @@ CREATE OR REPLACE FUNCTION email(url TEXT, username TEXT, password TEXT, subject
     WITH s AS (SELECT
         pg_curl_easy_init(),
         pg_curl_easy_reset(),
-        pg_curl_easy_setopt_char('CURLOPT_URL', url),
-        pg_curl_easy_setopt_char('CURLOPT_USERNAME', username),
-        pg_curl_easy_setopt_char('CURLOPT_PASSWORD', password),
+        pg_curl_easy_setopt('CURLOPT_URL', url),
+        pg_curl_easy_setopt('CURLOPT_USERNAME', username),
+        pg_curl_easy_setopt('CURLOPT_PASSWORD', password),
         pg_curl_recipient_append("to"),
         pg_curl_header_append('Subject', subject),
         pg_curl_header_append('From', "from"),
