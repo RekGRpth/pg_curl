@@ -227,7 +227,7 @@ EXTENSION(pg_curl_mime_data) {
     PG_RETURN_BOOL(res == CURLE_OK);
 }
 
-EXTENSION(pg_curl_mime_filedata) {
+EXTENSION(pg_curl_mime_file) {
     CURLcode res = CURL_LAST;
     char *filename, *base = NULL, *type = NULL, *code = NULL;
     curl_mimepart *part;
@@ -249,7 +249,7 @@ EXTENSION(pg_curl_mime_filedata) {
     PG_RETURN_BOOL(res == CURLE_OK);
 }
 
-EXTENSION(pg_curl_mime_filedata_array) {
+EXTENSION(pg_curl_mime_file_array) {
     CURLcode res = CURL_LAST;
     Datum *filename_elemsp, *base_elemsp = NULL, *type_elemsp = NULL, *code_elemsp = NULL;
     bool *filename_nullsp, *base_nullsp = NULL, *type_nullsp = NULL, *code_nullsp = NULL;
