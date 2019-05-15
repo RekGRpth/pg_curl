@@ -285,20 +285,23 @@ EXTENSION(pg_curl_mime_data_array) {
 
 EXTENSION(pg_curl_mime_file) {
     CURLcode res = CURL_LAST;
-    char *data, *name = NULL, *type = NULL, *code = NULL;
+    char *data, *name = NULL, *file = NULL, *type = NULL, *code = NULL;
     curl_mimepart *part;
     if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("data is null!")));
     data = TextDatumGetCString(PG_GETARG_DATUM(0));
     if (!PG_ARGISNULL(1)) name = TextDatumGetCString(PG_GETARG_DATUM(1));
-    if (!PG_ARGISNULL(2)) type = TextDatumGetCString(PG_GETARG_DATUM(2));
-    if (!PG_ARGISNULL(3)) code = TextDatumGetCString(PG_GETARG_DATUM(3));
+    if (!PG_ARGISNULL(2)) file = TextDatumGetCString(PG_GETARG_DATUM(2));
+    if (!PG_ARGISNULL(3)) type = TextDatumGetCString(PG_GETARG_DATUM(3));
+    if (!PG_ARGISNULL(4)) code = TextDatumGetCString(PG_GETARG_DATUM(4));
     part = curl_mime_addpart(mime);
     if ((res = curl_mime_filedata(part, data)) != CURLE_OK) ereport(ERROR, (errmsg("curl_mime_filedata(%s): %s", data, curl_easy_strerror(res))));
-    if (name && ((res = curl_mime_filename(part, name)) != CURLE_OK)) ereport(ERROR, (errmsg("curl_mime_filename(%s): %s", name, curl_easy_strerror(res))));
+    if (name && ((res = curl_mime_name(part, name)) != CURLE_OK)) ereport(ERROR, (errmsg("curl_mime_name(%s): %s", name, curl_easy_strerror(res))));
+    if (file && ((res = curl_mime_filename(part, file)) != CURLE_OK)) ereport(ERROR, (errmsg("curl_mime_filename(%s): %s", file, curl_easy_strerror(res))));
     if (type && ((res = curl_mime_type(part, type)) != CURLE_OK)) ereport(ERROR, (errmsg("curl_mime_type(%s): %s", type, curl_easy_strerror(res))));
     if (code && ((res = curl_mime_encoder(part, code)) != CURLE_OK)) ereport(ERROR, (errmsg("curl_mime_encoder(%s): %s", code, curl_easy_strerror(res))));
     (void)pfree(data);
     if (name) (void)pfree(name);
+    if (file) (void)pfree(file);
     if (type) (void)pfree(type);
     if (code) (void)pfree(code);
     has_mime = true;
@@ -307,9 +310,9 @@ EXTENSION(pg_curl_mime_file) {
 
 EXTENSION(pg_curl_mime_file_array) {
     CURLcode res = CURL_LAST;
-    Datum *data_elemsp, *name_elemsp = NULL, *type_elemsp = NULL, *code_elemsp = NULL;
-    bool *data_nullsp, *name_nullsp = NULL, *type_nullsp = NULL, *code_nullsp = NULL;
-    int data_nelemsp, name_nelemsp = 0, type_nelemsp = 0, code_nelemsp = 0;
+    Datum *data_elemsp, *name_elemsp = NULL, *file_elemsp = NULL, *type_elemsp = NULL, *code_elemsp = NULL;
+    bool *data_nullsp, *name_nullsp = NULL, *file_nullsp = NULL, *type_nullsp = NULL, *code_nullsp = NULL;
+    int data_nelemsp, name_nelemsp = 0, file_nelemsp = 0, type_nelemsp = 0, code_nelemsp = 0;
     if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("data is null!")));
     if (array_contains_nulls(DatumGetArrayTypeP(PG_GETARG_DATUM(0)))) ereport(ERROR, (errcode(ERRCODE_ARRAY_ELEMENT_ERROR), errmsg("array_contains_nulls")));
     (void)deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(0)), TEXTOID, -1, false, 'i', &data_elemsp, &data_nullsp, &data_nelemsp);
@@ -318,26 +321,33 @@ EXTENSION(pg_curl_mime_file_array) {
         if (data_nelemsp != name_nelemsp) ereport(ERROR, (errmsg("data_nelemsp != name_nelemsp")));
     }
     if (!PG_ARGISNULL(2)) {
-        (void)deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(2)), TEXTOID, -1, false, 'i', &type_elemsp, &type_nullsp, &type_nelemsp);
-        if (data_nelemsp != type_nelemsp) ereport(ERROR, (errmsg("data_nelemsp != type_nelemsp")));
+        (void)deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(2)), TEXTOID, -1, false, 'i', &file_elemsp, &file_nullsp, &file_nelemsp);
+        if (data_nelemsp != file_nelemsp) ereport(ERROR, (errmsg("data_nelemsp != file_nelemsp")));
     }
     if (!PG_ARGISNULL(3)) {
-        (void)deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(3)), TEXTOID, -1, false, 'i', &code_elemsp, &code_nullsp, &code_nelemsp);
+        (void)deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(3)), TEXTOID, -1, false, 'i', &type_elemsp, &type_nullsp, &type_nelemsp);
+        if (data_nelemsp != type_nelemsp) ereport(ERROR, (errmsg("data_nelemsp != type_nelemsp")));
+    }
+    if (!PG_ARGISNULL(4)) {
+        (void)deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(4)), TEXTOID, -1, false, 'i', &code_elemsp, &code_nullsp, &code_nelemsp);
         if (data_nelemsp != code_nelemsp) ereport(ERROR, (errmsg("data_nelemsp != code_nelemsp")));
     }
     for (int i = 0; i < data_nelemsp; i++) {
         curl_mimepart *part = curl_mime_addpart(mime);
-        char *name = NULL, *type = NULL, *code = NULL;
+        char *name = NULL, *file = NULL, *type = NULL, *code = NULL;
         char *data = TextDatumGetCString(data_elemsp[i]);
         if (name_nelemsp && !name_nullsp[i]) name = TextDatumGetCString(name_elemsp[i]);
+        if (file_nelemsp && !file_nullsp[i]) file = TextDatumGetCString(file_elemsp[i]);
         if (type_nelemsp && !type_nullsp[i]) type = TextDatumGetCString(type_elemsp[i]);
         if (code_nelemsp && !code_nullsp[i]) code = TextDatumGetCString(code_elemsp[i]);
         if ((res = curl_mime_filedata(part, data)) != CURLE_OK) ereport(ERROR, (errmsg("curl_mime_filedata(%s): %s", data, curl_easy_strerror(res))));
-        if (name && ((res = curl_mime_filename(part, name)) != CURLE_OK)) ereport(ERROR, (errmsg("curl_mime_filename(%s): %s", name, curl_easy_strerror(res))));
+        if (name && ((res = curl_mime_name(part, name)) != CURLE_OK)) ereport(ERROR, (errmsg("curl_mime_name(%s): %s", name, curl_easy_strerror(res))));
+        if (file && ((res = curl_mime_filename(part, file)) != CURLE_OK)) ereport(ERROR, (errmsg("curl_mime_filename(%s): %s", file, curl_easy_strerror(res))));
         if (type && ((res = curl_mime_type(part, type)) != CURLE_OK)) ereport(ERROR, (errmsg("curl_mime_type(%s): %s", type, curl_easy_strerror(res))));
         if (code && ((res = curl_mime_encoder(part, code)) != CURLE_OK)) ereport(ERROR, (errmsg("curl_mime_encoder(%s): %s", code, curl_easy_strerror(res))));
         (void)pfree(data);
         if (name) (void)pfree(name);
+        if (file) (void)pfree(file);
         if (type) (void)pfree(type);
         if (code) (void)pfree(code);
     }
