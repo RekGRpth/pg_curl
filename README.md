@@ -66,7 +66,7 @@ CREATE OR REPLACE FUNCTION email(url TEXT, username TEXT, password TEXT, subject
         pg_curl_header_append('Subject', subject),
         pg_curl_header_append('From', "from"),
         pg_curl_header_append('To', "to"),
-        pg_curl_mime_data_type(data, type),
+        pg_curl_mime_data(data, type:=type),
         pg_curl_header_append('Connection', 'close'),
         pg_curl_easy_perform(),
         pg_curl_easy_getinfo_char('CURLINFO_HEADERS'),
