@@ -89,7 +89,7 @@ EXTENSION(pg_curl_easy_escape) {
     char *escape;
     if (!curl) pg_curl_easy_init_internal();
     if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("string is null!")));
-    string = PG_GETARG_TEXT_P(0);
+    string = DatumGetTextP(PG_GETARG_DATUM(0));
     escape = curl_easy_escape(curl, VARDATA_ANY(string), VARSIZE_ANY_EXHDR(string));
     (void)pfree(string);
     if (!escape) PG_RETURN_NULL();
@@ -102,7 +102,7 @@ EXTENSION(pg_curl_easy_unescape) {
     int outlength;
     if (!curl) pg_curl_easy_init_internal();
     if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("url is null!")));
-    url = PG_GETARG_TEXT_P(0);
+    url = DatumGetTextP(PG_GETARG_DATUM(0));
     unescape = curl_easy_unescape(curl, VARDATA_ANY(url), VARSIZE_ANY_EXHDR(url), &outlength);
     (void)pfree(url);
     if (!unescape) PG_RETURN_NULL();
@@ -210,7 +210,7 @@ EXTENSION(pg_curl_mime_data) {
     char *name = NULL, *file = NULL, *type = NULL, *code = NULL;
     curl_mimepart *part;
     if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("data is null!")));
-    data = PG_GETARG_TEXT_P(0);
+    data = DatumGetTextP(PG_GETARG_DATUM(0));
     if (!PG_ARGISNULL(1)) name = TextDatumGetCString(PG_GETARG_DATUM(1));
     if (!PG_ARGISNULL(2)) file = TextDatumGetCString(PG_GETARG_DATUM(2));
     if (!PG_ARGISNULL(3)) type = TextDatumGetCString(PG_GETARG_DATUM(3));
