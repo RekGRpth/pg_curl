@@ -185,11 +185,11 @@ EXTENSION(pg_curl_header_append_array_array) {
 }
 
 EXTENSION(pg_curl_recipient_append) {
-    char *email;
+    text *email;
     struct curl_slist *temp = recipient;
     if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("email is null!")));
-    email = TextDatumGetCString(PG_GETARG_DATUM(0));
-    if ((temp = curl_slist_append(temp, email))) recipient = temp; else ereport(ERROR, (errmsg("curl_slist_append")));
+    email = PG_GETARG_TEXT_P(0);
+    if ((temp = curl_slist_append(temp, VARDATA_ANY(email)))) recipient = temp; else ereport(ERROR, (errmsg("curl_slist_append")));
     (void)pfree(email);
     PG_RETURN_BOOL(temp != NULL);
 }
