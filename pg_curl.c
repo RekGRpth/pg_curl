@@ -228,7 +228,7 @@ EXTENSION(pg_curl_mime_data) {
     if (file && ((res = curl_mime_filename(part, file)) != CURLE_OK)) ereport(ERROR, (errmsg("curl_mime_filename(%s): %s", file, curl_easy_strerror(res))));
     if (type && ((res = curl_mime_type(part, type)) != CURLE_OK)) ereport(ERROR, (errmsg("curl_mime_type(%s): %s", type, curl_easy_strerror(res))));
     if (code && ((res = curl_mime_encoder(part, code)) != CURLE_OK)) ereport(ERROR, (errmsg("curl_mime_encoder(%s): %s", code, curl_easy_strerror(res))));
-//    (void)pfree(data);
+    (void)pfree(data);
     if (name) (void)pfree(name);
     if (file) (void)pfree(file);
     if (type) (void)pfree(type);
@@ -274,7 +274,7 @@ EXTENSION(pg_curl_mime_data_array) {
         if (file && ((res = curl_mime_filename(part, file)) != CURLE_OK)) ereport(ERROR, (errmsg("curl_mime_filename(%s): %s", file, curl_easy_strerror(res))));
         if (type && ((res = curl_mime_type(part, type)) != CURLE_OK)) ereport(ERROR, (errmsg("curl_mime_type(%s): %s", type, curl_easy_strerror(res))));
         if (code && ((res = curl_mime_encoder(part, code)) != CURLE_OK)) ereport(ERROR, (errmsg("curl_mime_encoder(%s): %s", code, curl_easy_strerror(res))));
-//        (void)pfree(data);
+        (void)pfree(data);
         if (name) (void)pfree(name);
         if (file) (void)pfree(file);
         if (type) (void)pfree(type);
