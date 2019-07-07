@@ -116,15 +116,15 @@ EXTENSION(pg_curl_easy_unescape) {
 }
 
 EXTENSION(pg_curl_header_append) {
-    char *name, *value;
+    text *name, *value;
     StringInfoData buf;
     struct curl_slist *temp = header;
     if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("name is null!")));
-    name = TextDatumGetCString(PG_GETARG_DATUM(0));
+    name = PG_GETARG_TEXT_P(0);
     if (PG_ARGISNULL(1)) ereport(ERROR, (errmsg("value is null!")));
-    value = TextDatumGetCString(PG_GETARG_DATUM(1));
+    value = PG_GETARG_TEXT_P(1);
     (void)initStringInfo(&buf);
-    (void)appendStringInfo(&buf, "%s: %s", name, value);
+    (void)appendStringInfo(&buf, "%s: %s", VARDATA_ANY(name), VARDATA_ANY(value));
     if ((temp = curl_slist_append(temp, buf.data))) header = temp; else ereport(ERROR, (errmsg("curl_slist_append")));
     (void)pfree(name);
     (void)pfree(value);
