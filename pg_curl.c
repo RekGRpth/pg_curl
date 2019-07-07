@@ -91,29 +91,28 @@ static inline void pg_curl_easy_cleanup_internal(void) {
 EXTENSION(pg_curl_easy_cleanup) { pg_curl_easy_cleanup_internal(); PG_RETURN_VOID(); }
 
 EXTENSION(pg_curl_easy_escape) {
-    int length;
-    char *string, *escape;
+    text *string;
+    char *escape;
     if (!curl) pg_curl_easy_init_internal();
     if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("string is null!")));
-    string = TextDatumGetCString(PG_GETARG_DATUM(0));
-    length = PG_GETARG_INT32(1);
-    escape = curl_easy_escape(curl, string, length);
+    string = PG_GETARG_TEXT_P(0);
+    escape = curl_easy_escape(curl, VARDATA_ANY(string), VARSIZE_ANY_EXHDR(string));
     (void)pfree(string);
     if (!escape) PG_RETURN_NULL();
     PG_RETURN_TEXT_P(cstring_to_text(escape));
 }
 
 EXTENSION(pg_curl_easy_unescape) {
-    int length;
-    char *url, *unescape;
+    text *url;
+    char *unescape;
+    int outlength;
     if (!curl) pg_curl_easy_init_internal();
     if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("url is null!")));
-    url = TextDatumGetCString(PG_GETARG_DATUM(0));
-    length = PG_GETARG_INT32(1);
-    unescape = curl_easy_unescape(curl, url, length, NULL);
+    url = PG_GETARG_TEXT_P(0);
+    unescape = curl_easy_unescape(curl, VARDATA_ANY(url), VARSIZE_ANY_EXHDR(url), &outlength);
     (void)pfree(url);
     if (!unescape) PG_RETURN_NULL();
-    PG_RETURN_TEXT_P(cstring_to_text(unescape));
+    PG_RETURN_TEXT_P(cstring_to_text_with_len(unescape, outlength));
 }
 
 EXTENSION(pg_curl_header_append) {
