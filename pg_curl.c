@@ -648,7 +648,7 @@ EXTENSION(pg_curl_easy_getinfo_char) {
     CURLcode res = CURL_LAST;
     CURLINFO info;
     text *name;
-    char *str = NULL;
+    char *value = NULL;
     if (!curl) pg_curl_easy_init_internal();
     if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("info is null!")));
     name = PG_GETARG_TEXT_P(0);
@@ -656,27 +656,27 @@ EXTENSION(pg_curl_easy_getinfo_char) {
     else if (!pg_strncasecmp(VARDATA_ANY(name), "CURLINFO_CONTENT_TYPE", sizeof("CURLINFO_CONTENT_TYPE") - 1)) info = CURLINFO_CONTENT_TYPE;
     else if (!pg_strncasecmp(VARDATA_ANY(name), "CURLINFO_EFFECTIVE_URL", sizeof("CURLINFO_EFFECTIVE_URL") - 1)) info = CURLINFO_EFFECTIVE_URL;
     else if (!pg_strncasecmp(VARDATA_ANY(name), "CURLINFO_FTP_ENTRY_PATH", sizeof("CURLINFO_FTP_ENTRY_PATH") - 1)) info = CURLINFO_FTP_ENTRY_PATH;
-    else if (!pg_strncasecmp(VARDATA_ANY(name), "CURLINFO_HEADERS", sizeof("CURLINFO_HEADERS") - 1)) { str = header_buf.data; goto ret; }
+    else if (!pg_strncasecmp(VARDATA_ANY(name), "CURLINFO_HEADERS", sizeof("CURLINFO_HEADERS") - 1)) { value = header_buf.data; goto ret; }
     else if (!pg_strncasecmp(VARDATA_ANY(name), "CURLINFO_LOCAL_IP", sizeof("CURLINFO_LOCAL_IP") - 1)) info = CURLINFO_LOCAL_IP;
     else if (!pg_strncasecmp(VARDATA_ANY(name), "CURLINFO_PRIMARY_IP", sizeof("CURLINFO_PRIMARY_IP") - 1)) info = CURLINFO_PRIMARY_IP;
     else if (!pg_strncasecmp(VARDATA_ANY(name), "CURLINFO_PRIVATE", sizeof("CURLINFO_PRIVATE") - 1)) info = CURLINFO_PRIVATE;
     else if (!pg_strncasecmp(VARDATA_ANY(name), "CURLINFO_REDIRECT_URL", sizeof("CURLINFO_REDIRECT_URL") - 1)) info = CURLINFO_REDIRECT_URL;
-    else if (!pg_strncasecmp(VARDATA_ANY(name), "CURLINFO_RESPONSE", sizeof("CURLINFO_RESPONSE") - 1)) { str = write_buf.data; goto ret; }
+    else if (!pg_strncasecmp(VARDATA_ANY(name), "CURLINFO_RESPONSE", sizeof("CURLINFO_RESPONSE") - 1)) { value = write_buf.data; goto ret; }
     else if (!pg_strncasecmp(VARDATA_ANY(name), "CURLINFO_RTSP_SESSION_ID", sizeof("CURLINFO_RTSP_SESSION_ID") - 1)) info = CURLINFO_RTSP_SESSION_ID;
     else if (!pg_strncasecmp(VARDATA_ANY(name), "CURLINFO_SCHEME", sizeof("CURLINFO_SCHEME") - 1)) info = CURLINFO_SCHEME;
     else ereport(ERROR, (errmsg("unsupported option %s", VARDATA_ANY(name))));
-    if ((res = curl_easy_getinfo(curl, info, &str)) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_getinfo(%s): %s", VARDATA_ANY(name), curl_easy_strerror(res))));
+    if ((res = curl_easy_getinfo(curl, info, &value)) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_getinfo(%s): %s", VARDATA_ANY(name), curl_easy_strerror(res))));
 ret:
     (void)pfree(name);
-    if (!str) PG_RETURN_NULL();
-    PG_RETURN_TEXT_P(cstring_to_text(str));
+    if (!value) PG_RETURN_NULL();
+    PG_RETURN_TEXT_P(cstring_to_text(value));
 }
 
 EXTENSION(pg_curl_easy_getinfo_long) {
     CURLcode res = CURL_LAST;
     CURLINFO info;
     text *name;
-    long lon;
+    long value;
     if (!curl) pg_curl_easy_init_internal();
     if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("info is null!")));
     name = PG_GETARG_TEXT_P(0);
@@ -703,7 +703,7 @@ EXTENSION(pg_curl_easy_getinfo_long) {
     else if (!pg_strncasecmp(VARDATA_ANY(name), "CURLINFO_RTSP_SERVER_CSEQ", sizeof("CURLINFO_RTSP_SERVER_CSEQ") - 1)) info = CURLINFO_RTSP_SERVER_CSEQ;
     else if (!pg_strncasecmp(VARDATA_ANY(name), "CURLINFO_SSL_VERIFYRESULT", sizeof("CURLINFO_SSL_VERIFYRESULT") - 1)) info = CURLINFO_SSL_VERIFYRESULT;
     else ereport(ERROR, (errmsg("unsupported option %s", VARDATA_ANY(name))));
-    if ((res = curl_easy_getinfo(curl, info, &lon)) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_getinfo(%s): %s", VARDATA_ANY(name), curl_easy_strerror(res))));
+    if ((res = curl_easy_getinfo(curl, info, &value)) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_getinfo(%s): %s", VARDATA_ANY(name), curl_easy_strerror(res))));
     (void)pfree(name);
-    PG_RETURN_INT64(lon);
+    PG_RETURN_INT64(value);
 }
