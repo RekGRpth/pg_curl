@@ -256,16 +256,17 @@ EXTENSION(pg_curl_mime_data_array) {
     }
     for (int i = 0; i < data_nelemsp; i++) {
         curl_mimepart *part = curl_mime_addpart(mime);
-        text *name = NULL, *file = NULL, *type = NULL, *code = NULL, *data = DatumGetTextP(data_elemsp[i]);
-        if (name_nelemsp && !name_nullsp[i]) name = DatumGetTextP(name_elemsp[i]);
-        if (file_nelemsp && !file_nullsp[i]) file = DatumGetTextP(file_elemsp[i]);
-        if (type_nelemsp && !type_nullsp[i]) type = DatumGetTextP(type_elemsp[i]);
-        if (code_nelemsp && !code_nullsp[i]) code = DatumGetTextP(code_elemsp[i]);
+        char *name = NULL, *file = NULL, *type = NULL, *code = NULL;
+        text *data = DatumGetTextP(data_elemsp[i]);
+        if (name_nelemsp && !name_nullsp[i]) name = TextDatumGetCString(name_elemsp[i]);
+        if (file_nelemsp && !file_nullsp[i]) file = TextDatumGetCString(file_elemsp[i]);
+        if (type_nelemsp && !type_nullsp[i]) type = TextDatumGetCString(type_elemsp[i]);
+        if (code_nelemsp && !code_nullsp[i]) code = TextDatumGetCString(code_elemsp[i]);
         if ((res = curl_mime_data(part, VARDATA_ANY(data), VARSIZE_ANY_EXHDR(data))) != CURLE_OK) ereport(ERROR, (errmsg("curl_mime_data(%s): %s", VARDATA_ANY(data), curl_easy_strerror(res))));
-        if (name && ((res = curl_mime_name(part, VARDATA_ANY(name))) != CURLE_OK)) ereport(ERROR, (errmsg("curl_mime_name(%s): %s", VARDATA_ANY(name), curl_easy_strerror(res))));
-        if (file && ((res = curl_mime_filename(part, VARDATA_ANY(file))) != CURLE_OK)) ereport(ERROR, (errmsg("curl_mime_filename(%s): %s", VARDATA_ANY(file), curl_easy_strerror(res))));
-        if (type && ((res = curl_mime_type(part, VARDATA_ANY(type))) != CURLE_OK)) ereport(ERROR, (errmsg("curl_mime_type(%s): %s", VARDATA_ANY(type), curl_easy_strerror(res))));
-        if (code && ((res = curl_mime_encoder(part, VARDATA_ANY(code))) != CURLE_OK)) ereport(ERROR, (errmsg("curl_mime_encoder(%s): %s", VARDATA_ANY(code), curl_easy_strerror(res))));
+        if (name && ((res = curl_mime_name(part, name)) != CURLE_OK)) ereport(ERROR, (errmsg("curl_mime_name(%s): %s", name, curl_easy_strerror(res))));
+        if (file && ((res = curl_mime_filename(part, file)) != CURLE_OK)) ereport(ERROR, (errmsg("curl_mime_filename(%s): %s", file, curl_easy_strerror(res))));
+        if (type && ((res = curl_mime_type(part, type)) != CURLE_OK)) ereport(ERROR, (errmsg("curl_mime_type(%s): %s", type, curl_easy_strerror(res))));
+        if (code && ((res = curl_mime_encoder(part, code)) != CURLE_OK)) ereport(ERROR, (errmsg("curl_mime_encoder(%s): %s", code, curl_easy_strerror(res))));
         (void)pfree(data);
         if (name) (void)pfree(name);
         if (file) (void)pfree(file);
@@ -278,20 +279,20 @@ EXTENSION(pg_curl_mime_data_array) {
 
 EXTENSION(pg_curl_mime_file) {
     CURLcode res = CURL_LAST;
-    text *data, *name = NULL, *file = NULL, *type = NULL, *code = NULL;
+    char *data, *name = NULL, *file = NULL, *type = NULL, *code = NULL;
     curl_mimepart *part;
     if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("data is null!")));
-    data = PG_GETARG_TEXT_P(0);
-    if (!PG_ARGISNULL(1)) name = PG_GETARG_TEXT_P(1);
-    if (!PG_ARGISNULL(2)) file = PG_GETARG_TEXT_P(2);
-    if (!PG_ARGISNULL(3)) type = PG_GETARG_TEXT_P(3);
-    if (!PG_ARGISNULL(4)) code = PG_GETARG_TEXT_P(4);
+    data = TextDatumGetCString(PG_GETARG_DATUM(0));
+    if (!PG_ARGISNULL(1)) name = TextDatumGetCString(PG_GETARG_DATUM(1));
+    if (!PG_ARGISNULL(2)) file = TextDatumGetCString(PG_GETARG_DATUM(2));
+    if (!PG_ARGISNULL(3)) type = TextDatumGetCString(PG_GETARG_DATUM(3));
+    if (!PG_ARGISNULL(4)) code = TextDatumGetCString(PG_GETARG_DATUM(4));
     part = curl_mime_addpart(mime);
-    if ((res = curl_mime_filedata(part, VARDATA_ANY(data))) != CURLE_OK) ereport(ERROR, (errmsg("curl_mime_filedata(%s): %s", VARDATA_ANY(data), curl_easy_strerror(res))));
-    if (name && ((res = curl_mime_name(part, VARDATA_ANY(name))) != CURLE_OK)) ereport(ERROR, (errmsg("curl_mime_name(%s): %s", VARDATA_ANY(name), curl_easy_strerror(res))));
-    if (file && ((res = curl_mime_filename(part, VARDATA_ANY(file))) != CURLE_OK)) ereport(ERROR, (errmsg("curl_mime_filename(%s): %s", VARDATA_ANY(file), curl_easy_strerror(res))));
-    if (type && ((res = curl_mime_type(part, VARDATA_ANY(type))) != CURLE_OK)) ereport(ERROR, (errmsg("curl_mime_type(%s): %s", VARDATA_ANY(type), curl_easy_strerror(res))));
-    if (code && ((res = curl_mime_encoder(part, VARDATA_ANY(code))) != CURLE_OK)) ereport(ERROR, (errmsg("curl_mime_encoder(%s): %s", VARDATA_ANY(code), curl_easy_strerror(res))));
+    if ((res = curl_mime_filedata(part, data)) != CURLE_OK) ereport(ERROR, (errmsg("curl_mime_filedata(%s): %s", data, curl_easy_strerror(res))));
+    if (name && ((res = curl_mime_name(part, name)) != CURLE_OK)) ereport(ERROR, (errmsg("curl_mime_name(%s): %s", name, curl_easy_strerror(res))));
+    if (file && ((res = curl_mime_filename(part, file)) != CURLE_OK)) ereport(ERROR, (errmsg("curl_mime_filename(%s): %s", file, curl_easy_strerror(res))));
+    if (type && ((res = curl_mime_type(part, type)) != CURLE_OK)) ereport(ERROR, (errmsg("curl_mime_type(%s): %s", type, curl_easy_strerror(res))));
+    if (code && ((res = curl_mime_encoder(part, code)) != CURLE_OK)) ereport(ERROR, (errmsg("curl_mime_encoder(%s): %s", code, curl_easy_strerror(res))));
     (void)pfree(data);
     if (name) (void)pfree(name);
     if (file) (void)pfree(file);
