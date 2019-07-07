@@ -462,7 +462,7 @@ EXTENSION(pg_curl_easy_setopt_char) {
     else if (!pg_strncasecmp(name, "CURLOPT_USERPWD", sizeof("CURLOPT_USERPWD") - 1)) option = CURLOPT_USERPWD;
     else if (!pg_strncasecmp(name, "CURLOPT_XOAUTH2_BEARER", sizeof("CURLOPT_XOAUTH2_BEARER") - 1)) option = CURLOPT_XOAUTH2_BEARER;
     else ereport(ERROR, (errmsg("unsupported option %s", name)));
-    if ((res = curl_easy_setopt(curl, option, VARDATA_ANY(value_char))) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_setopt(%s, %s): %s", name, value_char, curl_easy_strerror(res))));
+    if ((res = curl_easy_setopt(curl, option, value_char)) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_setopt(%s, %s): %s", name, value_char, curl_easy_strerror(res))));
 ret:
     (void)pfree(name);
     (void)pfree(value_char);
