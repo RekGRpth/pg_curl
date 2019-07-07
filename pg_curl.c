@@ -203,8 +203,8 @@ EXTENSION(pg_curl_recipient_append_array) {
     if (array_contains_nulls(DatumGetArrayTypeP(PG_GETARG_DATUM(0)))) ereport(ERROR, (errcode(ERRCODE_ARRAY_ELEMENT_ERROR), errmsg("array_contains_nulls")));
     (void)deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(0)), TEXTOID, -1, false, 'i', &elemsp, &nullsp, &nelemsp);
     for (int i = 0; i < nelemsp; i++) {
-        char *email = TextDatumGetCString(elemsp[i]);
-        if ((temp = curl_slist_append(temp, email))) recipient = temp; else ereport(ERROR, (errmsg("curl_slist_append")));
+        text *email = DatumGetTextP(elemsp[i]);
+        if ((temp = curl_slist_append(temp, VARDATA_ANY(email)))) recipient = temp; else ereport(ERROR, (errmsg("curl_slist_append")));
         (void)pfree(email);
     }
     PG_RETURN_BOOL(temp != NULL);
