@@ -7,8 +7,6 @@
 #include <utils/builtins.h>
 
 #define EXTENSION(function) Datum (function)(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(function); Datum (function)(PG_FUNCTION_ARGS)
-#define INIT void _PG_init(void); void _PG_init(void)
-#define FINI void _PG_fini(void); void _PG_fini(void)
 
 PG_MODULE_MAGIC;
 
@@ -27,7 +25,7 @@ static void pg_curl_interrupt_handler(int sig) { pg_curl_interrupt_requested = s
 static void *custom_calloc(size_t nmemb, size_t size) { return palloc0(nmemb * size); }
 static void custom_free(void *ptr) { if (ptr) (void)pfree(ptr); }
 
-static void init_internal(void) {
+void _PG_init(void); void _PG_init(void) {
     if (curl_global_init_mem(CURL_GLOBAL_ALL, palloc, custom_free, repalloc, pstrdup, custom_calloc)) ereport(ERROR, (errmsg("curl_global_init_mem")));
     pgsql_interrupt_handler = pqsignal(SIGINT, pg_curl_interrupt_handler);
     pg_curl_interrupt_requested = 0;
@@ -36,9 +34,7 @@ static void init_internal(void) {
     (void)initStringInfo(&write_buf);
 }
 
-INIT { init_internal(); }
-
-static void fini_internal(void) {
+void _PG_fini(void); void _PG_fini(void) {
     (pqsigfunc)pqsignal(SIGINT, pgsql_interrupt_handler);
     (void)curl_easy_cleanup(curl);
     (void)curl_mime_free(mime);
@@ -49,8 +45,6 @@ static void fini_internal(void) {
     (void)pfree(read_buf.data);
     (void)pfree(write_buf.data);
 }
-
-FINI { fini_internal(); }
 
 static void pg_curl_easy_init_internal(void) {
     if (curl) return;
