@@ -23,11 +23,11 @@ struct curl_slist *recipient = NULL;
 curl_mime *mime;
 bool has_mime;
 
-static inline void pg_curl_interrupt_handler(int sig) { pg_curl_interrupt_requested = sig; }
-static inline void *custom_calloc(size_t nmemb, size_t size) { return palloc0(nmemb * size); }
-static inline void custom_free(void *ptr) { if (ptr) (void)pfree(ptr); }
+static void pg_curl_interrupt_handler(int sig) { pg_curl_interrupt_requested = sig; }
+static void *custom_calloc(size_t nmemb, size_t size) { return palloc0(nmemb * size); }
+static void custom_free(void *ptr) { if (ptr) (void)pfree(ptr); }
 
-static inline void init_internal(void) {
+static void init_internal(void) {
     if (curl_global_init_mem(CURL_GLOBAL_ALL, palloc, custom_free, repalloc, pstrdup, custom_calloc)) ereport(ERROR, (errmsg("curl_global_init_mem")));
     pgsql_interrupt_handler = pqsignal(SIGINT, pg_curl_interrupt_handler);
     pg_curl_interrupt_requested = 0;
@@ -38,7 +38,7 @@ static inline void init_internal(void) {
 
 INIT { init_internal(); }
 
-static inline void fini_internal(void) {
+static void fini_internal(void) {
     (pqsigfunc)pqsignal(SIGINT, pgsql_interrupt_handler);
     (void)curl_easy_cleanup(curl);
     (void)curl_mime_free(mime);
@@ -52,7 +52,7 @@ static inline void fini_internal(void) {
 
 FINI { fini_internal(); }
 
-static inline void pg_curl_easy_init_internal(void) {
+static void pg_curl_easy_init_internal(void) {
     if (curl) return;
     curl = curl_easy_init();
     if (!curl) ereport(ERROR, (errmsg("!curl")));
@@ -63,7 +63,7 @@ static inline void pg_curl_easy_init_internal(void) {
 
 EXTENSION(pg_curl_easy_init) { pg_curl_easy_init_internal(); PG_RETURN_BOOL(curl != NULL); }
 
-static inline void pg_curl_easy_reset_internal(void) {
+static void pg_curl_easy_reset_internal(void) {
     if (!curl) return;
     (void)curl_easy_reset(curl);
     (void)curl_mime_free(mime);
@@ -81,7 +81,7 @@ static inline void pg_curl_easy_reset_internal(void) {
 
 EXTENSION(pg_curl_easy_reset) { pg_curl_easy_reset_internal(); PG_RETURN_VOID(); }
 
-static inline void pg_curl_easy_cleanup_internal(void) {
+static void pg_curl_easy_cleanup_internal(void) {
     if (curl) { (void)curl_easy_cleanup(curl); curl = NULL; }
     (void)curl_mime_free(mime);
     (void)curl_slist_free_all(header);
@@ -352,7 +352,7 @@ EXTENSION(pg_curl_mime_file_array) {
     PG_RETURN_BOOL(res == CURLE_OK);
 }
 
-inline static size_t read_callback(void *buffer, size_t size, size_t nitems, void *instream) {	
+static size_t read_callback(void *buffer, size_t size, size_t nitems, void *instream) {	
     size_t reqsize = size * nitems;
     StringInfo si = (StringInfo)instream;
     size_t remaining = si->len - si->cursor;
@@ -604,21 +604,21 @@ EXTENSION(pg_curl_easy_setopt_long) {
     PG_RETURN_BOOL(res == CURLE_OK);
 }
 
-inline static size_t header_callback(void *buffer, size_t size, size_t nitems, void *outstream) {
+static size_t header_callback(void *buffer, size_t size, size_t nitems, void *outstream) {
     size_t realsize = size * nitems;
 //    elog(LOG, "header_callback: buffer=%s, size=%lu, nitems=%lu, outstream=%s", (const char *)buffer, size, nitems, ((StringInfo)outstream)->data);
     (void)appendBinaryStringInfo((StringInfo)outstream, (const char *)buffer, (int)realsize);
     return realsize;
 }
 
-inline static size_t write_callback(void *buffer, size_t size, size_t nitems, void *outstream) {
+static size_t write_callback(void *buffer, size_t size, size_t nitems, void *outstream) {
     size_t realsize = size * nitems;
 //    elog(LOG, "write_callback: buffer=%s, size=%lu, nitems=%lu, outstream=%s", (const char *)buffer, size, nitems, ((StringInfo)outstream)->data);
     (void)appendBinaryStringInfo((StringInfo)outstream, (const char *)buffer, (int)realsize);
     return realsize;
 }
 
-inline static int progress_callback(void *clientp, curl_off_t dltotal, curl_off_t dlnow, curl_off_t ultotal, curl_off_t ulnow) { return pg_curl_interrupt_requested; }
+static int progress_callback(void *clientp, curl_off_t dltotal, curl_off_t dlnow, curl_off_t ultotal, curl_off_t ulnow) { return pg_curl_interrupt_requested; }
 
 EXTENSION(pg_curl_easy_perform) {
     CURLcode res = CURL_LAST;
