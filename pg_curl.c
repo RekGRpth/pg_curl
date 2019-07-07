@@ -362,12 +362,14 @@ static size_t read_callback(void *buffer, size_t size, size_t nitems, void *inst
 EXTENSION(pg_curl_easy_setopt_char) {
     CURLcode res = CURL_LAST;
     CURLoption option;
-    text *name, *value;
+    char *name, *value_char;
+    text *value_text;
     if (!curl) pg_curl_easy_init_internal();
     if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("option is null!")));
-    name = PG_GETARG_TEXT_P(0);
+    name = TextDatumGetCString(PG_GETARG_DATUM(0));
     if (PG_ARGISNULL(1)) ereport(ERROR, (errmsg("parameter is null!")));
-    value = PG_GETARG_TEXT_P(1);
+    value_char = TextDatumGetCString(PG_GETARG_DATUM(1));
+    value_text = DatumGetTextP(PG_GETARG_DATUM(1));
     if (false);
     else if (!pg_strncasecmp(VARDATA_ANY(name), "CURLOPT_ABSTRACT_UNIX_SOCKET", sizeof("CURLOPT_ABSTRACT_UNIX_SOCKET") - 1)) option = CURLOPT_ABSTRACT_UNIX_SOCKET;
     else if (!pg_strncasecmp(VARDATA_ANY(name), "CURLOPT_ACCEPT_ENCODING", sizeof("CURLOPT_ACCEPT_ENCODING") - 1)) option = CURLOPT_ACCEPT_ENCODING;
@@ -425,8 +427,8 @@ EXTENSION(pg_curl_easy_setopt_char) {
     else if (!pg_strncasecmp(VARDATA_ANY(name), "CURLOPT_RANDOM_FILE", sizeof("CURLOPT_RANDOM_FILE") - 1)) option = CURLOPT_RANDOM_FILE;
     else if (!pg_strncasecmp(VARDATA_ANY(name), "CURLOPT_RANGE", sizeof("CURLOPT_RANGE") - 1)) option = CURLOPT_RANGE;
     else if (!pg_strncasecmp(VARDATA_ANY(name), "CURLOPT_READDATA", sizeof("CURLOPT_READDATA") - 1)) {
-        (void)appendBinaryStringInfo(&read_buf, VARDATA_ANY(value), VARSIZE_ANY_EXHDR(value));
-        if ((res = curl_easy_setopt(curl, CURLOPT_INFILESIZE, VARSIZE_ANY_EXHDR(value))) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_setopt(CURLOPT_INFILESIZE): %s", curl_easy_strerror(res))));
+        (void)appendBinaryStringInfo(&read_buf, VARDATA_ANY(value_text), VARSIZE_ANY_EXHDR(value_text));
+        if ((res = curl_easy_setopt(curl, CURLOPT_INFILESIZE, VARSIZE_ANY_EXHDR(value_text))) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_setopt(CURLOPT_INFILESIZE): %s", curl_easy_strerror(res))));
         if ((res = curl_easy_setopt(curl, CURLOPT_READDATA, (void *)&read_buf)) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_setopt(CURLOPT_READDATA, %s): %s", read_buf.data, curl_easy_strerror(res))));
         if ((res = curl_easy_setopt(curl, CURLOPT_READFUNCTION, read_callback)) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_setopt(CURLOPT_READFUNCTION): %s", curl_easy_strerror(res))));
         if ((res = curl_easy_setopt(curl, CURLOPT_UPLOAD, 1L)) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_setopt(CURLOPT_UPLOAD): %s", curl_easy_strerror(res))));
@@ -460,10 +462,11 @@ EXTENSION(pg_curl_easy_setopt_char) {
     else if (!pg_strncasecmp(VARDATA_ANY(name), "CURLOPT_USERPWD", sizeof("CURLOPT_USERPWD") - 1)) option = CURLOPT_USERPWD;
     else if (!pg_strncasecmp(VARDATA_ANY(name), "CURLOPT_XOAUTH2_BEARER", sizeof("CURLOPT_XOAUTH2_BEARER") - 1)) option = CURLOPT_XOAUTH2_BEARER;
     else ereport(ERROR, (errmsg("unsupported option %s", VARDATA_ANY(name))));
-    if ((res = curl_easy_setopt(curl, option, VARDATA_ANY(value))) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_setopt(%s, %s): %s", VARDATA_ANY(name), VARDATA_ANY(value), curl_easy_strerror(res))));
+    if ((res = curl_easy_setopt(curl, option, VARDATA_ANY(value_char))) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_setopt(%s, %s): %s", name, value_char, curl_easy_strerror(res))));
 ret:
     (void)pfree(name);
-    (void)pfree(value);
+    (void)pfree(value_char);
+    (void)pfree(value_text);
     PG_RETURN_BOOL(res == CURLE_OK);
 }
 
