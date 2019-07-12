@@ -27,11 +27,14 @@ static void custom_free(void *ptr) { if (ptr) (void)pfree(ptr); }
 
 void _PG_init(void); void _PG_init(void) {
     if (curl_global_init_mem(CURL_GLOBAL_ALL, palloc, custom_free, repalloc, pstrdup, custom_calloc)) ereport(ERROR, (errmsg("curl_global_init_mem")));
-    pgsql_interrupt_handler = pqsignal(SIGINT, pg_curl_interrupt_handler);
-    pg_curl_interrupt_requested = 0;
+    if (!(curl = curl_easy_init())) ereport(ERROR, (errmsg("!curl")));
+    if (!(curl_mime_init(curl))) ereport(ERROR, (errmsg("!mime")));
+    has_mime = false;
     (void)initStringInfo(&header_buf);
     (void)initStringInfo(&read_buf);
     (void)initStringInfo(&write_buf);
+    pg_curl_interrupt_requested = 0;
+    pgsql_interrupt_handler = pqsignal(SIGINT, pg_curl_interrupt_handler);
 }
 
 void _PG_fini(void); void _PG_fini(void) {
@@ -46,48 +49,24 @@ void _PG_fini(void); void _PG_fini(void) {
     (void)pfree(write_buf.data);
 }
 
-static void pg_curl_easy_init_internal(void) {
-    if (curl) return;
-    curl = curl_easy_init();
-    if (!curl) ereport(ERROR, (errmsg("!curl")));
-    mime = curl_mime_init(curl);
-    if (!mime) ereport(ERROR, (errmsg("!mime")));
-    has_mime = false;
-}
-
-EXTENSION(pg_curl_easy_init) { pg_curl_easy_init_internal(); PG_RETURN_BOOL(curl != NULL); }
-
-static void pg_curl_easy_reset_internal(void) {
-    if (!curl) return;
+EXTENSION(pg_curl_easy_reset) { 
     (void)curl_easy_reset(curl);
     (void)curl_mime_free(mime);
     (void)curl_slist_free_all(header);
     (void)curl_slist_free_all(recipient);
     header = NULL;
     recipient = NULL;
-    mime = curl_mime_init(curl);
-    if (!mime) ereport(ERROR, (errmsg("!mime")));
+    if (!(mime = curl_mime_init(curl))) ereport(ERROR, (errmsg("!mime")));
     has_mime = false;
     (void)resetStringInfo(&header_buf);
     (void)resetStringInfo(&read_buf);
     (void)resetStringInfo(&write_buf);
+    PG_RETURN_VOID();
 }
-
-EXTENSION(pg_curl_easy_reset) { pg_curl_easy_reset_internal(); PG_RETURN_VOID(); }
-
-static void pg_curl_easy_cleanup_internal(void) {
-    if (curl) { (void)curl_easy_cleanup(curl); curl = NULL; }
-    (void)curl_mime_free(mime);
-    (void)curl_slist_free_all(header);
-    (void)curl_slist_free_all(recipient);
-}
-
-EXTENSION(pg_curl_easy_cleanup) { pg_curl_easy_cleanup_internal(); PG_RETURN_VOID(); }
 
 EXTENSION(pg_curl_easy_escape) {
     text *string;
     char *escape;
-    if (!curl) pg_curl_easy_init_internal();
     if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("string is null!")));
     string = DatumGetTextP(PG_GETARG_DATUM(0));
     escape = curl_easy_escape(curl, VARDATA_ANY(string), VARSIZE_ANY_EXHDR(string));
@@ -100,7 +79,6 @@ EXTENSION(pg_curl_easy_unescape) {
     text *url;
     char *unescape;
     int outlength;
-    if (!curl) pg_curl_easy_init_internal();
     if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("url is null!")));
     url = DatumGetTextP(PG_GETARG_DATUM(0));
     unescape = curl_easy_unescape(curl, VARDATA_ANY(url), VARSIZE_ANY_EXHDR(url), &outlength);
@@ -364,7 +342,6 @@ EXTENSION(pg_curl_easy_setopt_char) {
     CURLoption option;
     char *name, *value_char;
     text *value_text;
-    if (!curl) pg_curl_easy_init_internal();
     if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("option is null!")));
     name = TextDatumGetCString(PG_GETARG_DATUM(0));
     if (PG_ARGISNULL(1)) ereport(ERROR, (errmsg("parameter is null!")));
@@ -475,7 +452,6 @@ EXTENSION(pg_curl_easy_setopt_long) {
     CURLoption option;
     char *name;
     long value;
-    if (!curl) pg_curl_easy_init_internal();
     if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("option is null!")));
     name = TextDatumGetCString(PG_GETARG_DATUM(0));
     if (PG_ARGISNULL(1)) ereport(ERROR, (errmsg("parameter is null!")));
@@ -621,7 +597,6 @@ static int progress_callback(void *clientp, curl_off_t dltotal, curl_off_t dlnow
 
 EXTENSION(pg_curl_easy_perform) {
     CURLcode res = CURL_LAST;
-    if (!curl) pg_curl_easy_init_internal();
     (void)resetStringInfo(&header_buf);
     (void)resetStringInfo(&write_buf);
     if ((res = curl_easy_setopt(curl, CURLOPT_HEADERDATA, (void *)(&header_buf))) != CURLE_OK) ereport(ERROR, (errmsg("curl_easy_setopt(CURLOPT_HEADERDATA): %s", curl_easy_strerror(res))));
@@ -648,7 +623,6 @@ EXTENSION(pg_curl_easy_getinfo_char) {
     CURLINFO info;
     char *name, *value = NULL;
     int len;
-    if (!curl) pg_curl_easy_init_internal();
     if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("info is null!")));
     name = TextDatumGetCString(PG_GETARG_DATUM(0));
     if (false);
@@ -677,7 +651,6 @@ EXTENSION(pg_curl_easy_getinfo_long) {
     CURLINFO info;
     char *name;
     long value;
-    if (!curl) pg_curl_easy_init_internal();
     if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("info is null!")));
     name = TextDatumGetCString(PG_GETARG_DATUM(0));
     if (false);
