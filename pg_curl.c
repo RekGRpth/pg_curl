@@ -5,6 +5,7 @@
 #include <curl/curl.h>
 #include <signal.h>
 #include <utils/builtins.h>
+#include <utils/lsyscache.h>
 
 #define EXTENSION(function) Datum (function)(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(function); Datum (function)(PG_FUNCTION_ARGS)
 
@@ -105,6 +106,11 @@ EXTENSION(pg_curl_header_append) {
 }
 
 EXTENSION(pg_curl_header_append_array) {
+    ArrayType *value;
+    Oid elmtype;
+    int elmlen;
+    bool elmbyval;
+    char elmalign;
     Datum *elemsp;
     bool *nullsp;
     int nelemsp;
@@ -114,9 +120,12 @@ EXTENSION(pg_curl_header_append_array) {
     if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("name is null!")));
     name = TextDatumGetCString(PG_GETARG_DATUM(0));
     if (PG_ARGISNULL(1)) ereport(ERROR, (errmsg("value is null!")));
-    if (array_contains_nulls(DatumGetArrayTypeP(PG_GETARG_DATUM(1)))) ereport(ERROR, (errcode(ERRCODE_ARRAY_ELEMENT_ERROR), errmsg("array_contains_nulls")));
+    value = DatumGetArrayTypeP(PG_GETARG_DATUM(1));
+    if (array_contains_nulls(value)) ereport(ERROR, (errcode(ERRCODE_ARRAY_ELEMENT_ERROR), errmsg("array_contains_nulls")));
     (void)initStringInfo(&buf);
-    (void)deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(1)), TEXTOID, -1, false, 'i', &elemsp, &nullsp, &nelemsp);
+    elmtype = ARR_ELEMTYPE(value);
+    (void)get_typlenbyvalalign(elmtype, (int16 *)&elmlen, &elmbyval, &elmalign);
+    (void)deconstruct_array(value, elmtype, elmlen, elmbyval, elmalign, &elemsp, &nullsp, &nelemsp);
     for (int i = 0; i < nelemsp; i++) {
         char *value = TextDatumGetCString(elemsp[i]);
         (void)resetStringInfo(&buf);
@@ -130,6 +139,11 @@ EXTENSION(pg_curl_header_append_array) {
 }
 
 EXTENSION(pg_curl_header_append_array_array) {
+    ArrayType *name_array, *value_array;
+    Oid name_elmtype, value_elmtype;
+    int name_elmlen, value_elmlen;
+    bool name_elmbyval, value_elmbyval;
+    char name_elmalign, value_elmalign;
     Datum *name_elemsp, *value_elemsp;
     bool *name_nullsp, *value_nullsp;
     int name_nelemsp, value_nelemsp;
@@ -137,11 +151,17 @@ EXTENSION(pg_curl_header_append_array_array) {
     struct curl_slist *temp = header;
     if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("name is null!")));
     if (PG_ARGISNULL(1)) ereport(ERROR, (errmsg("value is null!")));
-    if (array_contains_nulls(DatumGetArrayTypeP(PG_GETARG_DATUM(0)))) ereport(ERROR, (errcode(ERRCODE_ARRAY_ELEMENT_ERROR), errmsg("array_contains_nulls")));
-    if (array_contains_nulls(DatumGetArrayTypeP(PG_GETARG_DATUM(1)))) ereport(ERROR, (errcode(ERRCODE_ARRAY_ELEMENT_ERROR), errmsg("array_contains_nulls")));
+    name_array = DatumGetArrayTypeP(PG_GETARG_DATUM(0));
+    if (array_contains_nulls(name_array)) ereport(ERROR, (errcode(ERRCODE_ARRAY_ELEMENT_ERROR), errmsg("array_contains_nulls")));
+    value_array = DatumGetArrayTypeP(PG_GETARG_DATUM(1));
+    if (array_contains_nulls(value_array)) ereport(ERROR, (errcode(ERRCODE_ARRAY_ELEMENT_ERROR), errmsg("array_contains_nulls")));
     (void)initStringInfo(&buf);
-    (void)deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(0)), TEXTOID, -1, false, 'i', &name_elemsp, &name_nullsp, &name_nelemsp);
-    (void)deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(1)), TEXTOID, -1, false, 'i', &value_elemsp, &value_nullsp, &value_nelemsp);
+    name_elmtype = ARR_ELEMTYPE(name_array);
+    (void)get_typlenbyvalalign(name_elmtype, (int16 *)&name_elmlen, &name_elmbyval, &name_elmalign);
+    (void)deconstruct_array(name_array, name_elmtype, name_elmlen, name_elmbyval, name_elmalign, &name_elemsp, &name_nullsp, &name_nelemsp);
+    value_elmtype = ARR_ELEMTYPE(value_array);
+    (void)get_typlenbyvalalign(value_elmtype, (int16 *)&value_elmlen, &value_elmbyval, &value_elmalign);
+    (void)deconstruct_array(value_array, value_elmtype, value_elmlen, value_elmbyval, value_elmalign, &value_elemsp, &value_nullsp, &value_nelemsp);
     if (name_nelemsp != value_nelemsp) ereport(ERROR, (errmsg("name_nelemsp != value_nelemsp")));
     for (int i = 0; i < name_nelemsp; i++) {
         char *name = TextDatumGetCString(name_elemsp[i]);
@@ -167,13 +187,21 @@ EXTENSION(pg_curl_recipient_append) {
 }
 
 EXTENSION(pg_curl_recipient_append_array) {
+    ArrayType *email;
+    Oid elmtype;
+    int elmlen;
+    bool elmbyval;
+    char elmalign;
     Datum *elemsp;
     bool *nullsp;
     int nelemsp;
     struct curl_slist *temp = recipient;
     if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("email is null!")));
-    if (array_contains_nulls(DatumGetArrayTypeP(PG_GETARG_DATUM(0)))) ereport(ERROR, (errcode(ERRCODE_ARRAY_ELEMENT_ERROR), errmsg("array_contains_nulls")));
-    (void)deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(0)), TEXTOID, -1, false, 'i', &elemsp, &nullsp, &nelemsp);
+    email = DatumGetArrayTypeP(PG_GETARG_DATUM(0));
+    if (array_contains_nulls(email)) ereport(ERROR, (errcode(ERRCODE_ARRAY_ELEMENT_ERROR), errmsg("array_contains_nulls")));
+    elmtype = ARR_ELEMTYPE(email);
+    (void)get_typlenbyvalalign(elmtype, (int16 *)&elmlen, &elmbyval, &elmalign);
+    (void)deconstruct_array(email, elmtype, elmlen, elmbyval, elmalign, &elemsp, &nullsp, &nelemsp);
     for (int i = 0; i < nelemsp; i++) {
         char *email = TextDatumGetCString(elemsp[i]);
         if ((temp = curl_slist_append(temp, email))) recipient = temp; else ereport(ERROR, (errmsg("curl_slist_append")));
@@ -210,26 +238,46 @@ EXTENSION(pg_curl_mime_data) {
 
 EXTENSION(pg_curl_mime_data_array) {
     CURLcode res = CURL_LAST;
+    ArrayType *data_array, *name_array, *file_array, *type_array, *code_array;
+    Oid data_elmtype, name_elmtype, file_elmtype, type_elmtype, code_elmtype;
+    int data_elmlen, name_elmlen, file_elmlen, type_elmlen, code_elmlen;
+    bool data_elmbyval, name_elmbyval, file_elmbyval, type_elmbyval, code_elmbyval;
+    char data_elmalign, name_elmalign, file_elmalign, type_elmalign, code_elmalign;
     Datum *data_elemsp, *name_elemsp = NULL, *file_elemsp = NULL, *type_elemsp = NULL, *code_elemsp = NULL;
     bool *data_nullsp, *name_nullsp = NULL, *file_nullsp = NULL, *type_nullsp = NULL, *code_nullsp = NULL;
     int data_nelemsp, name_nelemsp = 0, file_nelemsp = 0, type_nelemsp = 0, code_nelemsp = 0;
     if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("data is null!")));
-    if (array_contains_nulls(DatumGetArrayTypeP(PG_GETARG_DATUM(0)))) ereport(ERROR, (errcode(ERRCODE_ARRAY_ELEMENT_ERROR), errmsg("array_contains_nulls")));
-    (void)deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(0)), TEXTOID, -1, false, 'i', &data_elemsp, &data_nullsp, &data_nelemsp);
+    data_array = DatumGetArrayTypeP(PG_GETARG_DATUM(0));
+    if (array_contains_nulls(data_array)) ereport(ERROR, (errcode(ERRCODE_ARRAY_ELEMENT_ERROR), errmsg("array_contains_nulls")));
+    data_elmtype = ARR_ELEMTYPE(data_array);
+    (void)get_typlenbyvalalign(data_elmtype, (int16 *)&data_elmlen, &data_elmbyval, &data_elmalign);
+    (void)deconstruct_array(data_array, data_elmtype, data_elmlen, data_elmbyval, data_elmalign, &data_elemsp, &data_nullsp, &data_nelemsp);
     if (!PG_ARGISNULL(1)) {
-        (void)deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(1)), TEXTOID, -1, false, 'i', &name_elemsp, &name_nullsp, &name_nelemsp);
+        name_array = DatumGetArrayTypeP(PG_GETARG_DATUM(1));
+        name_elmtype = ARR_ELEMTYPE(name_array);
+        (void)get_typlenbyvalalign(name_elmtype, (int16 *)&name_elmlen, &name_elmbyval, &name_elmalign);
+        (void)deconstruct_array(name_array, name_elmtype, name_elmlen, name_elmbyval, name_elmalign, &name_elemsp, &name_nullsp, &name_nelemsp);
         if (data_nelemsp != name_nelemsp) ereport(ERROR, (errmsg("data_nelemsp != name_nelemsp")));
     }
     if (!PG_ARGISNULL(2)) {
-        (void)deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(2)), TEXTOID, -1, false, 'i', &file_elemsp, &file_nullsp, &file_nelemsp);
+        file_array = DatumGetArrayTypeP(PG_GETARG_DATUM(2));
+        file_elmtype = ARR_ELEMTYPE(file_array);
+        (void)get_typlenbyvalalign(file_elmtype, (int16 *)&file_elmlen, &file_elmbyval, &file_elmalign);
+        (void)deconstruct_array(file_array, file_elmtype, file_elmlen, file_elmbyval, file_elmalign, &file_elemsp, &file_nullsp, &file_nelemsp);
         if (data_nelemsp != file_nelemsp) ereport(ERROR, (errmsg("data_nelemsp != file_nelemsp")));
     }
     if (!PG_ARGISNULL(3)) {
-        (void)deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(3)), TEXTOID, -1, false, 'i', &type_elemsp, &type_nullsp, &type_nelemsp);
+        type_array = DatumGetArrayTypeP(PG_GETARG_DATUM(3));
+        type_elmtype = ARR_ELEMTYPE(type_array);
+        (void)get_typlenbyvalalign(type_elmtype, (int16 *)&type_elmlen, &type_elmbyval, &type_elmalign);
+        (void)deconstruct_array(type_array, type_elmtype, type_elmlen, type_elmbyval, type_elmalign, &type_elemsp, &type_nullsp, &type_nelemsp);
         if (data_nelemsp != type_nelemsp) ereport(ERROR, (errmsg("data_nelemsp != type_nelemsp")));
     }
     if (!PG_ARGISNULL(4)) {
-        (void)deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(4)), TEXTOID, -1, false, 'i', &code_elemsp, &code_nullsp, &code_nelemsp);
+        code_array = DatumGetArrayTypeP(PG_GETARG_DATUM(4));
+        code_elmtype = ARR_ELEMTYPE(code_array);
+        (void)get_typlenbyvalalign(code_elmtype, (int16 *)&code_elmlen, &code_elmbyval, &code_elmalign);
+        (void)deconstruct_array(code_array, code_elmtype, code_elmlen, code_elmbyval, code_elmalign, &code_elemsp, &code_nullsp, &code_nelemsp);
         if (data_nelemsp != code_nelemsp) ereport(ERROR, (errmsg("data_nelemsp != code_nelemsp")));
     }
     for (int i = 0; i < data_nelemsp; i++) {
@@ -282,26 +330,46 @@ EXTENSION(pg_curl_mime_file) {
 
 EXTENSION(pg_curl_mime_file_array) {
     CURLcode res = CURL_LAST;
+    ArrayType *data_array, *name_array, *file_array, *type_array, *code_array;
+    Oid data_elmtype, name_elmtype, file_elmtype, type_elmtype, code_elmtype;
+    int data_elmlen, name_elmlen, file_elmlen, type_elmlen, code_elmlen;
+    bool data_elmbyval, name_elmbyval, file_elmbyval, type_elmbyval, code_elmbyval;
+    char data_elmalign, name_elmalign, file_elmalign, type_elmalign, code_elmalign;
     Datum *data_elemsp, *name_elemsp = NULL, *file_elemsp = NULL, *type_elemsp = NULL, *code_elemsp = NULL;
     bool *data_nullsp, *name_nullsp = NULL, *file_nullsp = NULL, *type_nullsp = NULL, *code_nullsp = NULL;
     int data_nelemsp, name_nelemsp = 0, file_nelemsp = 0, type_nelemsp = 0, code_nelemsp = 0;
     if (PG_ARGISNULL(0)) ereport(ERROR, (errmsg("data is null!")));
-    if (array_contains_nulls(DatumGetArrayTypeP(PG_GETARG_DATUM(0)))) ereport(ERROR, (errcode(ERRCODE_ARRAY_ELEMENT_ERROR), errmsg("array_contains_nulls")));
-    (void)deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(0)), TEXTOID, -1, false, 'i', &data_elemsp, &data_nullsp, &data_nelemsp);
+    data_array = DatumGetArrayTypeP(PG_GETARG_DATUM(0));
+    if (array_contains_nulls(data_array)) ereport(ERROR, (errcode(ERRCODE_ARRAY_ELEMENT_ERROR), errmsg("array_contains_nulls")));
+    data_elmtype = ARR_ELEMTYPE(data_array);
+    (void)get_typlenbyvalalign(data_elmtype, (int16 *)&data_elmlen, &data_elmbyval, &data_elmalign);
+    (void)deconstruct_array(data_array, data_elmtype, data_elmlen, data_elmbyval, data_elmalign, &data_elemsp, &data_nullsp, &data_nelemsp);
     if (!PG_ARGISNULL(1)) {
-        (void)deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(1)), TEXTOID, -1, false, 'i', &name_elemsp, &name_nullsp, &name_nelemsp);
+        name_array = DatumGetArrayTypeP(PG_GETARG_DATUM(1));
+        name_elmtype = ARR_ELEMTYPE(name_array);
+        (void)get_typlenbyvalalign(name_elmtype, (int16 *)&name_elmlen, &name_elmbyval, &name_elmalign);
+        (void)deconstruct_array(name_array, name_elmtype, name_elmlen, name_elmbyval, name_elmalign, &name_elemsp, &name_nullsp, &name_nelemsp);
         if (data_nelemsp != name_nelemsp) ereport(ERROR, (errmsg("data_nelemsp != name_nelemsp")));
     }
     if (!PG_ARGISNULL(2)) {
-        (void)deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(2)), TEXTOID, -1, false, 'i', &file_elemsp, &file_nullsp, &file_nelemsp);
+        file_array = DatumGetArrayTypeP(PG_GETARG_DATUM(2));
+        file_elmtype = ARR_ELEMTYPE(file_array);
+        (void)get_typlenbyvalalign(file_elmtype, (int16 *)&file_elmlen, &file_elmbyval, &file_elmalign);
+        (void)deconstruct_array(file_array, file_elmtype, file_elmlen, file_elmbyval, file_elmalign, &file_elemsp, &file_nullsp, &file_nelemsp);
         if (data_nelemsp != file_nelemsp) ereport(ERROR, (errmsg("data_nelemsp != file_nelemsp")));
     }
     if (!PG_ARGISNULL(3)) {
-        (void)deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(3)), TEXTOID, -1, false, 'i', &type_elemsp, &type_nullsp, &type_nelemsp);
+        type_array = DatumGetArrayTypeP(PG_GETARG_DATUM(3));
+        type_elmtype = ARR_ELEMTYPE(type_array);
+        (void)get_typlenbyvalalign(type_elmtype, (int16 *)&type_elmlen, &type_elmbyval, &type_elmalign);
+        (void)deconstruct_array(type_array, type_elmtype, type_elmlen, type_elmbyval, type_elmalign, &type_elemsp, &type_nullsp, &type_nelemsp);
         if (data_nelemsp != type_nelemsp) ereport(ERROR, (errmsg("data_nelemsp != type_nelemsp")));
     }
     if (!PG_ARGISNULL(4)) {
-        (void)deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(4)), TEXTOID, -1, false, 'i', &code_elemsp, &code_nullsp, &code_nelemsp);
+        code_array = DatumGetArrayTypeP(PG_GETARG_DATUM(4));
+        code_elmtype = ARR_ELEMTYPE(code_array);
+        (void)get_typlenbyvalalign(code_elmtype, (int16 *)&code_elmlen, &code_elmbyval, &code_elmalign);
+        (void)deconstruct_array(code_array, code_elmtype, code_elmlen, code_elmbyval, code_elmalign, &code_elemsp, &code_nullsp, &code_nelemsp);
         if (data_nelemsp != code_nelemsp) ereport(ERROR, (errmsg("data_nelemsp != code_nelemsp")));
     }
     for (int i = 0; i < data_nelemsp; i++) {
