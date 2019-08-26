@@ -1,10 +1,11 @@
 #include <postgres.h>
-#include <fmgr.h>
 
 #include <catalog/pg_type.h>
-#include <curl/curl.h>
+#include <fmgr.h>
 #include <signal.h>
 #include <utils/builtins.h>
+
+#include <curl/curl.h>
 
 #define EXTENSION(function) Datum (function)(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(function); Datum (function)(PG_FUNCTION_ARGS)
 
