@@ -117,6 +117,7 @@ EXTENSION(pg_curl_easy_unescape) {
     (void)pfree(url);
     if (!unescape) PG_RETURN_NULL();
     PG_RETURN_TEXT_P(cstring_to_text_with_len(unescape, outlength));
+    curl_free(unescape);
 }
 
 EXTENSION(pg_curl_header_append) {
