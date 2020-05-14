@@ -103,8 +103,9 @@ EXTENSION(pg_curl_easy_escape) {
     escape = curl_easy_escape(curl, VARDATA_ANY(string), VARSIZE_ANY_EXHDR(string));
     (void)pfree(string);
     if (!escape) PG_RETURN_NULL();
-    PG_RETURN_TEXT_P(cstring_to_text(escape));
+    string = cstring_to_text(escape);
     curl_free(escape);
+    PG_RETURN_TEXT_P(string);
 }
 
 EXTENSION(pg_curl_easy_unescape) {
@@ -116,8 +117,9 @@ EXTENSION(pg_curl_easy_unescape) {
     unescape = curl_easy_unescape(curl, VARDATA_ANY(url), VARSIZE_ANY_EXHDR(url), &outlength);
     (void)pfree(url);
     if (!unescape) PG_RETURN_NULL();
-    PG_RETURN_TEXT_P(cstring_to_text_with_len(unescape, outlength));
+    url = cstring_to_text_with_len(unescape, outlength);
     curl_free(unescape);
+    PG_RETURN_TEXT_P(url);
 }
 
 EXTENSION(pg_curl_header_append) {
