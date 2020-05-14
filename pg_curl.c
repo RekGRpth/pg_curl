@@ -98,13 +98,14 @@ EXTENSION(pg_curl_easy_reset) {
 EXTENSION(pg_curl_easy_escape) {
     text *string;
     char *escape;
+    L("%s", TextDatumGetCString(PG_GETARG_DATUM(0)));
     if (PG_ARGISNULL(0)) E("string is null!");
     string = DatumGetTextP(PG_GETARG_DATUM(0));
-    escape = curl_easy_escape(curl, VARDATA_ANY(string), VARSIZE_ANY_EXHDR(string));
+    if (!(escape = curl_easy_escape(curl, VARDATA_ANY(string), VARSIZE_ANY_EXHDR(string)))) E("!curl_easy_escape");
     (void)pfree(string);
-    if (!escape) PG_RETURN_NULL();
     string = cstring_to_text(escape);
     curl_free(escape);
+    L("hi");
     PG_RETURN_TEXT_P(string);
 }
 
