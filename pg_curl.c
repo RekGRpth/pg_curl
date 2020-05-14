@@ -58,8 +58,8 @@ static void pg_curl_interrupt_handler(int sig) { pg_curl_interrupt_requested = s
 
 void _PG_init(void); void _PG_init(void) {
     if (curl_global_init(CURL_GLOBAL_ALL)) E("curl_global_init");
-    if (!(curl = curl_easy_init())) E("!curl");
-    if (!(curl_mime_init(curl))) E("!mime");
+    if (!(curl = curl_easy_init())) E("!curl_easy_init");
+    if (!(curl_mime_init(curl))) E("!curl_mime_init");
     has_mime = false;
     (void)initStringInfo(&header_buf);
     (void)initStringInfo(&read_buf);
@@ -87,7 +87,7 @@ EXTENSION(pg_curl_easy_reset) {
     (void)curl_slist_free_all(recipient);
     header = NULL;
     recipient = NULL;
-    if (!(mime = curl_mime_init(curl))) E("!mime");
+    if (!(mime = curl_mime_init(curl))) E("!curl_mime_init");
     has_mime = false;
     (void)resetStringInfo(&header_buf);
     (void)resetStringInfo(&read_buf);
@@ -128,7 +128,7 @@ EXTENSION(pg_curl_header_append) {
     value = TextDatumGetCString(PG_GETARG_DATUM(1));
     (void)initStringInfo(&buf);
     (void)appendStringInfo(&buf, "%s: %s", name, value);
-    if ((temp = curl_slist_append(temp, buf.data))) header = temp; else E("curl_slist_append");
+    if ((temp = curl_slist_append(temp, buf.data))) header = temp; else E("!curl_slist_append");
     (void)pfree(name);
     (void)pfree(value);
     (void)pfree(buf.data);
@@ -152,7 +152,7 @@ EXTENSION(pg_curl_header_append_array) {
         char *value = TextDatumGetCString(elemsp[i]);
         (void)resetStringInfo(&buf);
         (void)appendStringInfo(&buf, "%s: %s", name, value);
-        if ((temp = curl_slist_append(temp, buf.data))) header = temp; else E("curl_slist_append");
+        if ((temp = curl_slist_append(temp, buf.data))) header = temp; else E("!curl_slist_append");
         (void)pfree(value);
     }
     (void)pfree(name);
@@ -179,7 +179,7 @@ EXTENSION(pg_curl_header_append_array_array) {
         char *value = TextDatumGetCString(value_elemsp[i]);
         (void)resetStringInfo(&buf);
         (void)appendStringInfo(&buf, "%s: %s", name, value);
-        if ((temp = curl_slist_append(temp, buf.data))) header = temp; else E("curl_slist_append");
+        if ((temp = curl_slist_append(temp, buf.data))) header = temp; else E("!curl_slist_append");
         (void)pfree(name);
         (void)pfree(value);
     }
@@ -192,7 +192,7 @@ EXTENSION(pg_curl_recipient_append) {
     struct curl_slist *temp = recipient;
     if (PG_ARGISNULL(0)) E("email is null!");
     email = TextDatumGetCString(PG_GETARG_DATUM(0));
-    if ((temp = curl_slist_append(temp, email))) recipient = temp; else E("curl_slist_append");
+    if ((temp = curl_slist_append(temp, email))) recipient = temp; else E("!curl_slist_append");
     (void)pfree(email);
     PG_RETURN_BOOL(temp != NULL);
 }
@@ -207,7 +207,7 @@ EXTENSION(pg_curl_recipient_append_array) {
     (void)deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(0)), TEXTOID, -1, false, 'i', &elemsp, &nullsp, &nelemsp);
     for (int i = 0; i < nelemsp; i++) {
         char *email = TextDatumGetCString(elemsp[i]);
-        if ((temp = curl_slist_append(temp, email))) recipient = temp; else E("curl_slist_append");
+        if ((temp = curl_slist_append(temp, email))) recipient = temp; else E("!curl_slist_append");
         (void)pfree(email);
     }
     PG_RETURN_BOOL(temp != NULL);
