@@ -55,11 +55,9 @@ curl_mime *mime;
 bool has_mime;
 
 static void pg_curl_interrupt_handler(int sig) { pg_curl_interrupt_requested = sig; }
-static void *custom_calloc(size_t nmemb, size_t size) { return palloc0(nmemb * size); }
-static void custom_free(void *ptr) { if (ptr) (void)pfree(ptr); }
 
 void _PG_init(void); void _PG_init(void) {
-    if (curl_global_init_mem(CURL_GLOBAL_ALL, palloc, custom_free, repalloc, pstrdup, custom_calloc)) E("curl_global_init_mem");
+    if (curl_global_init(CURL_GLOBAL_ALL)) E("curl_global_init");
     if (!(curl = curl_easy_init())) E("!curl");
     if (!(curl_mime_init(curl))) E("!mime");
     has_mime = false;
