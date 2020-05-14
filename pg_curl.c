@@ -147,7 +147,7 @@ EXTENSION(pg_curl_header_append_array) {
     if (PG_ARGISNULL(0)) E("name is null!");
     name = TextDatumGetCString(PG_GETARG_DATUM(0));
     if (PG_ARGISNULL(1)) E("value is null!");
-    if (array_contains_nulls(DatumGetArrayTypeP(PG_GETARG_DATUM(1)))) ereport(ERROR, (errcode(ERRCODE_ARRAY_ELEMENT_ERROR), errmsg("array_contains_nulls")));
+    if (array_contains_nulls(DatumGetArrayTypeP(PG_GETARG_DATUM(1)))) E("array_contains_nulls");
     (void)initStringInfo(&buf);
     (void)deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(1)), TEXTOID, -1, false, 'i', &elemsp, &nullsp, &nelemsp);
     for (int i = 0; i < nelemsp; i++) {
@@ -170,8 +170,8 @@ EXTENSION(pg_curl_header_append_array_array) {
     struct curl_slist *temp = header;
     if (PG_ARGISNULL(0)) E("name is null!");
     if (PG_ARGISNULL(1)) E("value is null!");
-    if (array_contains_nulls(DatumGetArrayTypeP(PG_GETARG_DATUM(0)))) ereport(ERROR, (errcode(ERRCODE_ARRAY_ELEMENT_ERROR), errmsg("array_contains_nulls")));
-    if (array_contains_nulls(DatumGetArrayTypeP(PG_GETARG_DATUM(1)))) ereport(ERROR, (errcode(ERRCODE_ARRAY_ELEMENT_ERROR), errmsg("array_contains_nulls")));
+    if (array_contains_nulls(DatumGetArrayTypeP(PG_GETARG_DATUM(0)))) E("array_contains_nulls");
+    if (array_contains_nulls(DatumGetArrayTypeP(PG_GETARG_DATUM(1)))) E("array_contains_nulls");
     (void)initStringInfo(&buf);
     (void)deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(0)), TEXTOID, -1, false, 'i', &name_elemsp, &name_nullsp, &name_nelemsp);
     (void)deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(1)), TEXTOID, -1, false, 'i', &value_elemsp, &value_nullsp, &value_nelemsp);
@@ -205,7 +205,7 @@ EXTENSION(pg_curl_recipient_append_array) {
     int nelemsp;
     struct curl_slist *temp = recipient;
     if (PG_ARGISNULL(0)) E("email is null!");
-    if (array_contains_nulls(DatumGetArrayTypeP(PG_GETARG_DATUM(0)))) ereport(ERROR, (errcode(ERRCODE_ARRAY_ELEMENT_ERROR), errmsg("array_contains_nulls")));
+    if (array_contains_nulls(DatumGetArrayTypeP(PG_GETARG_DATUM(0)))) E("array_contains_nulls");
     (void)deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(0)), TEXTOID, -1, false, 'i', &elemsp, &nullsp, &nelemsp);
     for (int i = 0; i < nelemsp; i++) {
         char *email = TextDatumGetCString(elemsp[i]);
@@ -247,7 +247,7 @@ EXTENSION(pg_curl_mime_data_array) {
     bool *data_nullsp, *name_nullsp = NULL, *file_nullsp = NULL, *type_nullsp = NULL, *code_nullsp = NULL;
     int data_nelemsp, name_nelemsp = 0, file_nelemsp = 0, type_nelemsp = 0, code_nelemsp = 0;
     if (PG_ARGISNULL(0)) E("data is null!");
-    if (array_contains_nulls(DatumGetArrayTypeP(PG_GETARG_DATUM(0)))) ereport(ERROR, (errcode(ERRCODE_ARRAY_ELEMENT_ERROR), errmsg("array_contains_nulls")));
+    if (array_contains_nulls(DatumGetArrayTypeP(PG_GETARG_DATUM(0)))) E("array_contains_nulls");
     (void)deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(0)), TEXTOID, -1, false, 'i', &data_elemsp, &data_nullsp, &data_nelemsp);
     if (!PG_ARGISNULL(1)) {
         (void)deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(1)), TEXTOID, -1, false, 'i', &name_elemsp, &name_nullsp, &name_nelemsp);
@@ -319,7 +319,7 @@ EXTENSION(pg_curl_mime_file_array) {
     bool *data_nullsp, *name_nullsp = NULL, *file_nullsp = NULL, *type_nullsp = NULL, *code_nullsp = NULL;
     int data_nelemsp, name_nelemsp = 0, file_nelemsp = 0, type_nelemsp = 0, code_nelemsp = 0;
     if (PG_ARGISNULL(0)) E("data is null!");
-    if (array_contains_nulls(DatumGetArrayTypeP(PG_GETARG_DATUM(0)))) ereport(ERROR, (errcode(ERRCODE_ARRAY_ELEMENT_ERROR), errmsg("array_contains_nulls")));
+    if (array_contains_nulls(DatumGetArrayTypeP(PG_GETARG_DATUM(0)))) E("array_contains_nulls");
     (void)deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(0)), TEXTOID, -1, false, 'i', &data_elemsp, &data_nullsp, &data_nelemsp);
     if (!PG_ARGISNULL(1)) {
         (void)deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(1)), TEXTOID, -1, false, 'i', &name_elemsp, &name_nullsp, &name_nelemsp);
