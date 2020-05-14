@@ -115,9 +115,8 @@ EXTENSION(pg_curl_easy_unescape) {
     int outlength;
     if (PG_ARGISNULL(0)) E("url is null!");
     url = DatumGetTextP(PG_GETARG_DATUM(0));
-    unescape = curl_easy_unescape(curl, VARDATA_ANY(url), VARSIZE_ANY_EXHDR(url), &outlength);
+    if (!(unescape = curl_easy_unescape(curl, VARDATA_ANY(url), VARSIZE_ANY_EXHDR(url), &outlength))) PG_RETURN_NULL();
     (void)pfree(url);
-    if (!unescape) PG_RETURN_NULL();
     url = cstring_to_text_with_len(unescape, outlength);
     curl_free(unescape);
     PG_RETURN_TEXT_P(url);
