@@ -372,7 +372,6 @@ EXTENSION(pg_curl_easy_setopt_char) {
     CURLcode res = CURL_LAST;
     CURLoption option;
     char *name, *value;
-    L("hi");
     if (PG_ARGISNULL(0)) E("option is null!");
     name = TextDatumGetCString(PG_GETARG_DATUM(0));
     if (PG_ARGISNULL(1)) E("parameter is null!");
@@ -470,13 +469,11 @@ EXTENSION(pg_curl_easy_setopt_char) {
     else if (!pg_strncasecmp(name, "CURLOPT_USERPWD", sizeof("CURLOPT_USERPWD") - 1)) option = CURLOPT_USERPWD;
     else if (!pg_strncasecmp(name, "CURLOPT_XOAUTH2_BEARER", sizeof("CURLOPT_XOAUTH2_BEARER") - 1)) option = CURLOPT_XOAUTH2_BEARER;
     else E("unsupported option %s", name);
-    L("hi");
     value = TextDatumGetCString(PG_GETARG_DATUM(1));
-    L("%s = %s", name, value);
+//    L("%s = %s", name, value);
     if ((res = curl_easy_setopt(curl, option, value)) != CURLE_OK) E("curl_easy_setopt(%s, %s): %s", name, value, curl_easy_strerror(res));
     (void)pfree(value);
 ret:
-    L("hi");
     (void)pfree(name);
     PG_RETURN_BOOL(res == CURLE_OK);
 }
@@ -486,12 +483,11 @@ EXTENSION(pg_curl_easy_setopt_long) {
     CURLoption option;
     char *name;
     long value;
-    L("hi");
     if (PG_ARGISNULL(0)) E("option is null!");
     name = TextDatumGetCString(PG_GETARG_DATUM(0));
     if (PG_ARGISNULL(1)) E("parameter is null!");
     value = PG_GETARG_INT64(1);
-    L("%s = %li", name, value);
+//    L("%s = %li", name, value);
     if (false);
     else if (!pg_strncasecmp(name, "CURLOPT_ACCEPTTIMEOUT_MS", sizeof("CURLOPT_ACCEPTTIMEOUT_MS") - 1)) option = CURLOPT_ACCEPTTIMEOUT_MS;
     else if (!pg_strncasecmp(name, "CURLOPT_ADDRESS_SCOPE", sizeof("CURLOPT_ADDRESS_SCOPE") - 1)) option = CURLOPT_ADDRESS_SCOPE;
@@ -610,9 +606,7 @@ EXTENSION(pg_curl_easy_setopt_long) {
     else if (!pg_strncasecmp(name, "CURLOPT_VERBOSE", sizeof("CURLOPT_VERBOSE") - 1)) option = CURLOPT_VERBOSE;
     else if (!pg_strncasecmp(name, "CURLOPT_WILDCARDMATCH", sizeof("CURLOPT_WILDCARDMATCH") - 1)) option = CURLOPT_WILDCARDMATCH;
     else E("unsupported option %s", name);
-    L("hi");
     if ((res = curl_easy_setopt(curl, option, value)) != CURLE_OK) E("curl_easy_setopt(%s, %li): %s", name, value, curl_easy_strerror(res));
-    L("hi");
     (void)pfree(name);
     PG_RETURN_BOOL(res == CURLE_OK);
 }
@@ -635,7 +629,6 @@ static int progress_callback(void *clientp, curl_off_t dltotal, curl_off_t dlnow
 
 EXTENSION(pg_curl_easy_perform) {
     CURLcode res = CURL_LAST;
-    L("hi");
     (void)resetStringInfo(&header_buf);
     (void)resetStringInfo(&write_buf);
     if ((res = curl_easy_setopt(curl, CURLOPT_HEADERDATA, (void *)(&header_buf))) != CURLE_OK) E("curl_easy_setopt(CURLOPT_HEADERDATA): %s", curl_easy_strerror(res));
@@ -649,7 +642,6 @@ EXTENSION(pg_curl_easy_perform) {
     if (recipient && ((res = curl_easy_setopt(curl, CURLOPT_MAIL_RCPT, recipient)) != CURLE_OK)) E("curl_easy_setopt(CURLOPT_MAIL_RCPT): %s", curl_easy_strerror(res));
     if (has_mime && ((res = curl_easy_setopt(curl, CURLOPT_MIMEPOST, mime)) != CURLE_OK)) E("curl_easy_setopt(CURLOPT_MIMEPOST): %s", curl_easy_strerror(res));
     pg_curl_interrupt_requested = 0;
-    L("hi");
     switch (res = curl_easy_perform(curl)) {
         case CURLE_OK: break;
         case CURLE_ABORTED_BY_CALLBACK: if (pgsql_interrupt_handler && pg_curl_interrupt_requested) { (*pgsql_interrupt_handler)(pg_curl_interrupt_requested); pg_curl_interrupt_requested = 0; }
