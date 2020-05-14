@@ -98,14 +98,11 @@ EXTENSION(pg_curl_easy_reset) {
 EXTENSION(pg_curl_easy_escape) {
     text *string;
     char *escape;
-    L("%s", TextDatumGetCString(PG_GETARG_DATUM(0)));
     if (PG_ARGISNULL(0)) E("string is null!");
     string = DatumGetTextP(PG_GETARG_DATUM(0));
     if (!(escape = curl_easy_escape(curl, VARDATA_ANY(string), VARSIZE_ANY_EXHDR(string)))) E("!curl_easy_escape");
-    (void)pfree(string);
     string = cstring_to_text(escape);
     curl_free(escape);
-    L("hi");
     PG_RETURN_TEXT_P(string);
 }
 
@@ -116,7 +113,6 @@ EXTENSION(pg_curl_easy_unescape) {
     if (PG_ARGISNULL(0)) E("url is null!");
     url = DatumGetTextP(PG_GETARG_DATUM(0));
     if (!(unescape = curl_easy_unescape(curl, VARDATA_ANY(url), VARSIZE_ANY_EXHDR(url), &outlength))) PG_RETURN_NULL();
-    (void)pfree(url);
     url = cstring_to_text_with_len(unescape, outlength);
     curl_free(unescape);
     PG_RETURN_TEXT_P(url);
@@ -126,7 +122,6 @@ EXTENSION(pg_curl_header_append) {
     char *name, *value;
     StringInfoData buf;
     struct curl_slist *temp = header;
-    L("hi");
     if (PG_ARGISNULL(0)) E("name is null!");
     name = TextDatumGetCString(PG_GETARG_DATUM(0));
     if (PG_ARGISNULL(1)) E("value is null!");
@@ -137,7 +132,6 @@ EXTENSION(pg_curl_header_append) {
     (void)pfree(name);
     (void)pfree(value);
     (void)pfree(buf.data);
-    L("hi");
     PG_RETURN_BOOL(temp != NULL);
 }
 
@@ -148,7 +142,6 @@ EXTENSION(pg_curl_header_append_array) {
     char *name;
     StringInfoData buf;
     struct curl_slist *temp = header;
-    L("hi");
     if (PG_ARGISNULL(0)) E("name is null!");
     name = TextDatumGetCString(PG_GETARG_DATUM(0));
     if (PG_ARGISNULL(1)) E("value is null!");
@@ -164,7 +157,6 @@ EXTENSION(pg_curl_header_append_array) {
     }
     (void)pfree(name);
     (void)pfree(buf.data);
-    L("hi");
     PG_RETURN_BOOL(temp != NULL);
 }
 
@@ -174,7 +166,6 @@ EXTENSION(pg_curl_header_append_array_array) {
     int name_nelemsp, value_nelemsp;
     StringInfoData buf;
     struct curl_slist *temp = header;
-    L("hi");
     if (PG_ARGISNULL(0)) E("name is null!");
     if (PG_ARGISNULL(1)) E("value is null!");
     if (array_contains_nulls(DatumGetArrayTypeP(PG_GETARG_DATUM(0)))) E("array_contains_nulls");
@@ -193,7 +184,6 @@ EXTENSION(pg_curl_header_append_array_array) {
         (void)pfree(value);
     }
     (void)pfree(buf.data);
-    L("hi");
     PG_RETURN_BOOL(temp != NULL);
 }
 
@@ -240,7 +230,6 @@ EXTENSION(pg_curl_mime_data) {
     if (file && ((res = curl_mime_filename(part, file)) != CURLE_OK)) E("curl_mime_filename(%s): %s", file, curl_easy_strerror(res));
     if (type && ((res = curl_mime_type(part, type)) != CURLE_OK)) E("curl_mime_type(%s): %s", type, curl_easy_strerror(res));
     if (code && ((res = curl_mime_encoder(part, code)) != CURLE_OK)) E("curl_mime_encoder(%s): %s", code, curl_easy_strerror(res));
-    (void)pfree(data);
     if (name) (void)pfree(name);
     if (file) (void)pfree(file);
     if (type) (void)pfree(type);
@@ -286,7 +275,6 @@ EXTENSION(pg_curl_mime_data_array) {
         if (file && ((res = curl_mime_filename(part, file)) != CURLE_OK)) E("curl_mime_filename(%s): %s", file, curl_easy_strerror(res));
         if (type && ((res = curl_mime_type(part, type)) != CURLE_OK)) E("curl_mime_type(%s): %s", type, curl_easy_strerror(res));
         if (code && ((res = curl_mime_encoder(part, code)) != CURLE_OK)) E("curl_mime_encoder(%s): %s", code, curl_easy_strerror(res));
-        (void)pfree(data);
         if (name) (void)pfree(name);
         if (file) (void)pfree(file);
         if (type) (void)pfree(type);
@@ -382,7 +370,6 @@ EXTENSION(pg_curl_easy_setopt_char) {
     CURLcode res = CURL_LAST;
     CURLoption option;
     char *name, *value;
-    L("hi");
     if (PG_ARGISNULL(0)) E("option is null!");
     name = TextDatumGetCString(PG_GETARG_DATUM(0));
     if (PG_ARGISNULL(1)) E("parameter is null!");
@@ -449,7 +436,6 @@ EXTENSION(pg_curl_easy_setopt_char) {
         if ((res = curl_easy_setopt(curl, CURLOPT_READDATA, (void *)&read_buf)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_READDATA, %s): %s", read_buf.data, curl_easy_strerror(res));
         if ((res = curl_easy_setopt(curl, CURLOPT_READFUNCTION, read_callback)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_READFUNCTION): %s", curl_easy_strerror(res));
         if ((res = curl_easy_setopt(curl, CURLOPT_UPLOAD, 1L)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_UPLOAD): %s", curl_easy_strerror(res));
-        (void)pfree(value);
         goto ret;
     }
     else if (!pg_strncasecmp(name, "CURLOPT_REFERER", sizeof("CURLOPT_REFERER") - 1)) option = CURLOPT_REFERER;
@@ -481,13 +467,11 @@ EXTENSION(pg_curl_easy_setopt_char) {
     else if (!pg_strncasecmp(name, "CURLOPT_XOAUTH2_BEARER", sizeof("CURLOPT_XOAUTH2_BEARER") - 1)) option = CURLOPT_XOAUTH2_BEARER;
     else E("unsupported option %s", name);
     value = TextDatumGetCString(PG_GETARG_DATUM(1));
-    L("%s = %s", name, value);
+//    L("%s = %s", name, value);
     if ((res = curl_easy_setopt(curl, option, value)) != CURLE_OK) E("curl_easy_setopt(%s, %s): %s", name, value, curl_easy_strerror(res));
     (void)pfree(value);
 ret:
-    L("hi");
     (void)pfree(name);
-    L("hi");
     PG_RETURN_BOOL(res == CURLE_OK);
 }
 
@@ -496,12 +480,11 @@ EXTENSION(pg_curl_easy_setopt_long) {
     CURLoption option;
     char *name;
     long value;
-    L("hi");
     if (PG_ARGISNULL(0)) E("option is null!");
     name = TextDatumGetCString(PG_GETARG_DATUM(0));
     if (PG_ARGISNULL(1)) E("parameter is null!");
     value = PG_GETARG_INT64(1);
-    L("%s = %li", name, value);
+//    L("%s = %li", name, value);
     if (false);
     else if (!pg_strncasecmp(name, "CURLOPT_ACCEPTTIMEOUT_MS", sizeof("CURLOPT_ACCEPTTIMEOUT_MS") - 1)) option = CURLOPT_ACCEPTTIMEOUT_MS;
     else if (!pg_strncasecmp(name, "CURLOPT_ADDRESS_SCOPE", sizeof("CURLOPT_ADDRESS_SCOPE") - 1)) option = CURLOPT_ADDRESS_SCOPE;
@@ -621,7 +604,6 @@ EXTENSION(pg_curl_easy_setopt_long) {
     else if (!pg_strncasecmp(name, "CURLOPT_WILDCARDMATCH", sizeof("CURLOPT_WILDCARDMATCH") - 1)) option = CURLOPT_WILDCARDMATCH;
     else E("unsupported option %s", name);
     if ((res = curl_easy_setopt(curl, option, value)) != CURLE_OK) E("curl_easy_setopt(%s, %li): %s", name, value, curl_easy_strerror(res));
-    L("hi");
     (void)pfree(name);
     PG_RETURN_BOOL(res == CURLE_OK);
 }
@@ -644,7 +626,6 @@ static int progress_callback(void *clientp, curl_off_t dltotal, curl_off_t dlnow
 
 EXTENSION(pg_curl_easy_perform) {
     CURLcode res = CURL_LAST;
-    L("hi");
     (void)resetStringInfo(&header_buf);
     (void)resetStringInfo(&write_buf);
     if ((res = curl_easy_setopt(curl, CURLOPT_HEADERDATA, (void *)(&header_buf))) != CURLE_OK) E("curl_easy_setopt(CURLOPT_HEADERDATA): %s", curl_easy_strerror(res));
@@ -658,7 +639,6 @@ EXTENSION(pg_curl_easy_perform) {
     if (recipient && ((res = curl_easy_setopt(curl, CURLOPT_MAIL_RCPT, recipient)) != CURLE_OK)) E("curl_easy_setopt(CURLOPT_MAIL_RCPT): %s", curl_easy_strerror(res));
     if (has_mime && ((res = curl_easy_setopt(curl, CURLOPT_MIMEPOST, mime)) != CURLE_OK)) E("curl_easy_setopt(CURLOPT_MIMEPOST): %s", curl_easy_strerror(res));
     pg_curl_interrupt_requested = 0;
-    L("hi");
     switch (res = curl_easy_perform(curl)) {
         case CURLE_OK: break;
         case CURLE_ABORTED_BY_CALLBACK: if (pgsql_interrupt_handler && pg_curl_interrupt_requested) { (*pgsql_interrupt_handler)(pg_curl_interrupt_requested); pg_curl_interrupt_requested = 0; }
