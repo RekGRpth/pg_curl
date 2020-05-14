@@ -364,7 +364,7 @@ static size_t read_callback(void *buffer, size_t size, size_t nitems, void *inst
     StringInfo si = (StringInfo)instream;
     size_t remaining = si->len - si->cursor;
     size_t readsize = reqsize < remaining ? reqsize : remaining;
-//    elog(LOG, "read_callback: buffer=%s, size=%lu, nitems=%lu, instream=%s", (const char *)buffer, size, nitems, ((StringInfo)instream)->data);
+//    L("read_callback: buffer=%s, size=%lu, nitems=%lu, instream=%s", (const char *)buffer, size, nitems, ((StringInfo)instream)->data);
     memcpy(buffer, si->data + si->cursor, readsize);
     si->cursor += readsize;
     return readsize;
@@ -614,14 +614,14 @@ EXTENSION(pg_curl_easy_setopt_long) {
 
 static size_t header_callback(void *buffer, size_t size, size_t nitems, void *outstream) {
     size_t realsize = size * nitems;
-//    elog(LOG, "header_callback: buffer=%s, size=%lu, nitems=%lu, outstream=%s", (const char *)buffer, size, nitems, ((StringInfo)outstream)->data);
+//    L("header_callback: buffer=%s, size=%lu, nitems=%lu, outstream=%s", (const char *)buffer, size, nitems, ((StringInfo)outstream)->data);
     (void)appendBinaryStringInfo((StringInfo)outstream, (const char *)buffer, (int)realsize);
     return realsize;
 }
 
 static size_t write_callback(void *buffer, size_t size, size_t nitems, void *outstream) {
     size_t realsize = size * nitems;
-//    elog(LOG, "write_callback: buffer=%s, size=%lu, nitems=%lu, outstream=%s", (const char *)buffer, size, nitems, ((StringInfo)outstream)->data);
+//    L("write_callback: buffer=%s, size=%lu, nitems=%lu, outstream=%s", (const char *)buffer, size, nitems, ((StringInfo)outstream)->data);
     (void)appendBinaryStringInfo((StringInfo)outstream, (const char *)buffer, (int)realsize);
     return realsize;
 }
@@ -632,7 +632,6 @@ EXTENSION(pg_curl_easy_perform) {
     CURLcode res = CURL_LAST;
     (void)resetStringInfo(&header_buf);
     (void)resetStringInfo(&write_buf);
-    elog(LOG, "hi");
     if ((res = curl_easy_setopt(curl, CURLOPT_HEADERDATA, (void *)(&header_buf))) != CURLE_OK) E("curl_easy_setopt(CURLOPT_HEADERDATA): %s", curl_easy_strerror(res));
     if ((res = curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, header_callback)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_HEADERFUNCTION): %s", curl_easy_strerror(res));
     if ((res = curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_NOPROGRESS): %s", curl_easy_strerror(res));
@@ -643,6 +642,7 @@ EXTENSION(pg_curl_easy_perform) {
     if (header && ((res = curl_easy_setopt(curl, CURLOPT_HTTPHEADER, header)) != CURLE_OK)) E("curl_easy_setopt(CURLOPT_HTTPHEADER): %s", curl_easy_strerror(res));
     if (recipient && ((res = curl_easy_setopt(curl, CURLOPT_MAIL_RCPT, recipient)) != CURLE_OK)) E("curl_easy_setopt(CURLOPT_MAIL_RCPT): %s", curl_easy_strerror(res));
     if (has_mime && ((res = curl_easy_setopt(curl, CURLOPT_MIMEPOST, mime)) != CURLE_OK)) E("curl_easy_setopt(CURLOPT_MIMEPOST): %s", curl_easy_strerror(res));
+    L("hi");
     pg_curl_interrupt_requested = 0;
     switch (res = curl_easy_perform(curl)) {
         case CURLE_OK: break;
