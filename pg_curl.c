@@ -87,9 +87,7 @@ EXTENSION(pg_curl_easy_reset) {
     recipient = NULL;
     if (!(mime = curl_mime_init(curl))) E("!curl_mime_init");
     has_mime = false;
-    if (header_buf.data) pfree(header_buf.data);
     resetStringInfo(&read_buf);
-    if (write_buf.data) pfree(write_buf.data);
     PG_RETURN_VOID();
 }
 
@@ -624,7 +622,9 @@ static int progress_callback(void *clientp, curl_off_t dltotal, curl_off_t dlnow
 
 EXTENSION(pg_curl_easy_perform) {
     CURLcode res = CURL_LAST;
+    if (header_buf.data) pfree(header_buf.data);
     initStringInfo(&header_buf);
+    if (write_buf.data) pfree(write_buf.data);
     initStringInfo(&write_buf);
     if ((res = curl_easy_setopt(curl, CURLOPT_HEADERDATA, &header_buf)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_HEADERDATA): %s", curl_easy_strerror(res));
     if ((res = curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, header_callback)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_HEADERFUNCTION): %s", curl_easy_strerror(res));
