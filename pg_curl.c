@@ -611,14 +611,14 @@ EXTENSION(pg_curl_easy_setopt_long) {
 static size_t header_callback(void *buffer, size_t size, size_t nitems, void *outstream) {
     size_t realsize = size * nitems;
 //    L("header_callback: buffer=%s, size=%lu, nitems=%lu, outstream=%s", (const char *)buffer, size, nitems, ((StringInfo)outstream)->data);
-    (void)appendBinaryStringInfo((StringInfo)outstream, (const char *)buffer, (int)realsize);
+    (void)appendBinaryStringInfo(&header_buf, (const char *)buffer, (int)realsize);
     return realsize;
 }
 
 static size_t write_callback(void *buffer, size_t size, size_t nitems, void *outstream) {
     size_t realsize = size * nitems;
 //    L("write_callback: buffer=%s, size=%lu, nitems=%lu, outstream=%s", (const char *)buffer, size, nitems, ((StringInfo)outstream)->data);
-    (void)appendBinaryStringInfo((StringInfo)outstream, (const char *)buffer, (int)realsize);
+    (void)appendBinaryStringInfo(&write_buf, (const char *)buffer, (int)realsize);
     return realsize;
 }
 
