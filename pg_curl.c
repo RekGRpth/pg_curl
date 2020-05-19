@@ -61,37 +61,37 @@ void _PG_init(void); void _PG_init(void) {
     if (!(curl = curl_easy_init())) E("!curl_easy_init");
     if (!(curl_mime_init(curl))) E("!curl_mime_init");
     has_mime = false;
-    (void)initStringInfo(&header_buf);
-    (void)initStringInfo(&read_buf);
-    (void)initStringInfo(&write_buf);
+    initStringInfo(&header_buf);
+    initStringInfo(&read_buf);
+    initStringInfo(&write_buf);
     pg_curl_interrupt_requested = 0;
     pgsql_interrupt_handler = pqsignal(SIGINT, pg_curl_interrupt_handler);
 }
 
 void _PG_fini(void); void _PG_fini(void) {
     (pqsigfunc)pqsignal(SIGINT, pgsql_interrupt_handler);
-    (void)curl_easy_cleanup(curl);
-    (void)curl_mime_free(mime);
-    (void)curl_slist_free_all(header);
-    (void)curl_slist_free_all(recipient);
-    (void)curl_global_cleanup();
-    (void)pfree(header_buf.data);
-    (void)pfree(read_buf.data);
-    (void)pfree(write_buf.data);
+    curl_easy_cleanup(curl);
+    curl_mime_free(mime);
+    curl_slist_free_all(header);
+    curl_slist_free_all(recipient);
+    curl_global_cleanup();
+    pfree(header_buf.data);
+    pfree(read_buf.data);
+    pfree(write_buf.data);
 }
 
 EXTENSION(pg_curl_easy_reset) { 
-    (void)curl_easy_reset(curl);
-    (void)curl_mime_free(mime);
-    (void)curl_slist_free_all(header);
-    (void)curl_slist_free_all(recipient);
+    curl_easy_reset(curl);
+    curl_mime_free(mime);
+    curl_slist_free_all(header);
+    curl_slist_free_all(recipient);
     header = NULL;
     recipient = NULL;
     if (!(mime = curl_mime_init(curl))) E("!curl_mime_init");
     has_mime = false;
-    (void)resetStringInfo(&header_buf);
-    (void)resetStringInfo(&read_buf);
-    (void)resetStringInfo(&write_buf);
+    resetStringInfo(&header_buf);
+    resetStringInfo(&read_buf);
+    resetStringInfo(&write_buf);
     PG_RETURN_VOID();
 }
 
@@ -126,12 +126,12 @@ EXTENSION(pg_curl_header_append) {
     name = TextDatumGetCString(PG_GETARG_DATUM(0));
     if (PG_ARGISNULL(1)) E("value is null!");
     value = TextDatumGetCString(PG_GETARG_DATUM(1));
-    (void)initStringInfo(&buf);
-    (void)appendStringInfo(&buf, "%s: %s", name, value);
+    initStringInfo(&buf);
+    appendStringInfo(&buf, "%s: %s", name, value);
     if ((temp = curl_slist_append(temp, buf.data))) header = temp; else E("!curl_slist_append");
-    (void)pfree(name);
-    (void)pfree(value);
-    (void)pfree(buf.data);
+    pfree(name);
+    pfree(value);
+    pfree(buf.data);
     PG_RETURN_BOOL(temp != NULL);
 }
 
@@ -146,17 +146,17 @@ EXTENSION(pg_curl_header_append_array) {
     name = TextDatumGetCString(PG_GETARG_DATUM(0));
     if (PG_ARGISNULL(1)) E("value is null!");
     if (array_contains_nulls(DatumGetArrayTypeP(PG_GETARG_DATUM(1)))) E("array_contains_nulls");
-    (void)initStringInfo(&buf);
-    (void)deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(1)), TEXTOID, -1, false, 'i', &elemsp, &nullsp, &nelemsp);
+    initStringInfo(&buf);
+    deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(1)), TEXTOID, -1, false, 'i', &elemsp, &nullsp, &nelemsp);
     for (int i = 0; i < nelemsp; i++) {
         char *value = TextDatumGetCString(elemsp[i]);
-        (void)resetStringInfo(&buf);
-        (void)appendStringInfo(&buf, "%s: %s", name, value);
+        resetStringInfo(&buf);
+        appendStringInfo(&buf, "%s: %s", name, value);
         if ((temp = curl_slist_append(temp, buf.data))) header = temp; else E("!curl_slist_append");
-        (void)pfree(value);
+        pfree(value);
     }
-    (void)pfree(name);
-    (void)pfree(buf.data);
+    pfree(name);
+    pfree(buf.data);
     PG_RETURN_BOOL(temp != NULL);
 }
 
@@ -170,20 +170,20 @@ EXTENSION(pg_curl_header_append_array_array) {
     if (PG_ARGISNULL(1)) E("value is null!");
     if (array_contains_nulls(DatumGetArrayTypeP(PG_GETARG_DATUM(0)))) E("array_contains_nulls");
     if (array_contains_nulls(DatumGetArrayTypeP(PG_GETARG_DATUM(1)))) E("array_contains_nulls");
-    (void)initStringInfo(&buf);
-    (void)deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(0)), TEXTOID, -1, false, 'i', &name_elemsp, &name_nullsp, &name_nelemsp);
-    (void)deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(1)), TEXTOID, -1, false, 'i', &value_elemsp, &value_nullsp, &value_nelemsp);
+    initStringInfo(&buf);
+    deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(0)), TEXTOID, -1, false, 'i', &name_elemsp, &name_nullsp, &name_nelemsp);
+    deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(1)), TEXTOID, -1, false, 'i', &value_elemsp, &value_nullsp, &value_nelemsp);
     if (name_nelemsp != value_nelemsp) E("name_nelemsp != value_nelemsp");
     for (int i = 0; i < name_nelemsp; i++) {
         char *name = TextDatumGetCString(name_elemsp[i]);
         char *value = TextDatumGetCString(value_elemsp[i]);
-        (void)resetStringInfo(&buf);
-        (void)appendStringInfo(&buf, "%s: %s", name, value);
+        resetStringInfo(&buf);
+        appendStringInfo(&buf, "%s: %s", name, value);
         if ((temp = curl_slist_append(temp, buf.data))) header = temp; else E("!curl_slist_append");
-        (void)pfree(name);
-        (void)pfree(value);
+        pfree(name);
+        pfree(value);
     }
-    (void)pfree(buf.data);
+    pfree(buf.data);
     PG_RETURN_BOOL(temp != NULL);
 }
 
@@ -193,7 +193,7 @@ EXTENSION(pg_curl_recipient_append) {
     if (PG_ARGISNULL(0)) E("email is null!");
     email = TextDatumGetCString(PG_GETARG_DATUM(0));
     if ((temp = curl_slist_append(temp, email))) recipient = temp; else E("!curl_slist_append");
-    (void)pfree(email);
+    pfree(email);
     PG_RETURN_BOOL(temp != NULL);
 }
 
@@ -204,11 +204,11 @@ EXTENSION(pg_curl_recipient_append_array) {
     struct curl_slist *temp = recipient;
     if (PG_ARGISNULL(0)) E("email is null!");
     if (array_contains_nulls(DatumGetArrayTypeP(PG_GETARG_DATUM(0)))) E("array_contains_nulls");
-    (void)deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(0)), TEXTOID, -1, false, 'i', &elemsp, &nullsp, &nelemsp);
+    deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(0)), TEXTOID, -1, false, 'i', &elemsp, &nullsp, &nelemsp);
     for (int i = 0; i < nelemsp; i++) {
         char *email = TextDatumGetCString(elemsp[i]);
         if ((temp = curl_slist_append(temp, email))) recipient = temp; else E("!curl_slist_append");
-        (void)pfree(email);
+        pfree(email);
     }
     PG_RETURN_BOOL(temp != NULL);
 }
@@ -230,10 +230,10 @@ EXTENSION(pg_curl_mime_data) {
     if (file && ((res = curl_mime_filename(part, file)) != CURLE_OK)) E("curl_mime_filename(%s): %s", file, curl_easy_strerror(res));
     if (type && ((res = curl_mime_type(part, type)) != CURLE_OK)) E("curl_mime_type(%s): %s", type, curl_easy_strerror(res));
     if (code && ((res = curl_mime_encoder(part, code)) != CURLE_OK)) E("curl_mime_encoder(%s): %s", code, curl_easy_strerror(res));
-    if (name) (void)pfree(name);
-    if (file) (void)pfree(file);
-    if (type) (void)pfree(type);
-    if (code) (void)pfree(code);
+    if (name) pfree(name);
+    if (file) pfree(file);
+    if (type) pfree(type);
+    if (code) pfree(code);
     has_mime = true;
     PG_RETURN_BOOL(res == CURLE_OK);
 }
@@ -245,21 +245,21 @@ EXTENSION(pg_curl_mime_data_array) {
     int data_nelemsp, name_nelemsp = 0, file_nelemsp = 0, type_nelemsp = 0, code_nelemsp = 0;
     if (PG_ARGISNULL(0)) E("data is null!");
     if (array_contains_nulls(DatumGetArrayTypeP(PG_GETARG_DATUM(0)))) E("array_contains_nulls");
-    (void)deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(0)), TEXTOID, -1, false, 'i', &data_elemsp, &data_nullsp, &data_nelemsp);
+    deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(0)), TEXTOID, -1, false, 'i', &data_elemsp, &data_nullsp, &data_nelemsp);
     if (!PG_ARGISNULL(1)) {
-        (void)deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(1)), TEXTOID, -1, false, 'i', &name_elemsp, &name_nullsp, &name_nelemsp);
+        deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(1)), TEXTOID, -1, false, 'i', &name_elemsp, &name_nullsp, &name_nelemsp);
         if (data_nelemsp != name_nelemsp) E("data_nelemsp != name_nelemsp");
     }
     if (!PG_ARGISNULL(2)) {
-        (void)deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(2)), TEXTOID, -1, false, 'i', &file_elemsp, &file_nullsp, &file_nelemsp);
+        deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(2)), TEXTOID, -1, false, 'i', &file_elemsp, &file_nullsp, &file_nelemsp);
         if (data_nelemsp != file_nelemsp) E("data_nelemsp != file_nelemsp");
     }
     if (!PG_ARGISNULL(3)) {
-        (void)deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(3)), TEXTOID, -1, false, 'i', &type_elemsp, &type_nullsp, &type_nelemsp);
+        deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(3)), TEXTOID, -1, false, 'i', &type_elemsp, &type_nullsp, &type_nelemsp);
         if (data_nelemsp != type_nelemsp) E("data_nelemsp != type_nelemsp");
     }
     if (!PG_ARGISNULL(4)) {
-        (void)deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(4)), TEXTOID, -1, false, 'i', &code_elemsp, &code_nullsp, &code_nelemsp);
+        deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(4)), TEXTOID, -1, false, 'i', &code_elemsp, &code_nullsp, &code_nelemsp);
         if (data_nelemsp != code_nelemsp) E("data_nelemsp != code_nelemsp");
     }
     for (int i = 0; i < data_nelemsp; i++) {
@@ -275,10 +275,10 @@ EXTENSION(pg_curl_mime_data_array) {
         if (file && ((res = curl_mime_filename(part, file)) != CURLE_OK)) E("curl_mime_filename(%s): %s", file, curl_easy_strerror(res));
         if (type && ((res = curl_mime_type(part, type)) != CURLE_OK)) E("curl_mime_type(%s): %s", type, curl_easy_strerror(res));
         if (code && ((res = curl_mime_encoder(part, code)) != CURLE_OK)) E("curl_mime_encoder(%s): %s", code, curl_easy_strerror(res));
-        if (name) (void)pfree(name);
-        if (file) (void)pfree(file);
-        if (type) (void)pfree(type);
-        if (code) (void)pfree(code);
+        if (name) pfree(name);
+        if (file) pfree(file);
+        if (type) pfree(type);
+        if (code) pfree(code);
     }
     has_mime = true;
     PG_RETURN_BOOL(res == CURLE_OK);
@@ -300,11 +300,11 @@ EXTENSION(pg_curl_mime_file) {
     if (file && ((res = curl_mime_filename(part, file)) != CURLE_OK)) E("curl_mime_filename(%s): %s", file, curl_easy_strerror(res));
     if (type && ((res = curl_mime_type(part, type)) != CURLE_OK)) E("curl_mime_type(%s): %s", type, curl_easy_strerror(res));
     if (code && ((res = curl_mime_encoder(part, code)) != CURLE_OK)) E("curl_mime_encoder(%s): %s", code, curl_easy_strerror(res));
-    (void)pfree(data);
-    if (name) (void)pfree(name);
-    if (file) (void)pfree(file);
-    if (type) (void)pfree(type);
-    if (code) (void)pfree(code);
+    pfree(data);
+    if (name) pfree(name);
+    if (file) pfree(file);
+    if (type) pfree(type);
+    if (code) pfree(code);
     has_mime = true;
     PG_RETURN_BOOL(res == CURLE_OK);
 }
@@ -316,21 +316,21 @@ EXTENSION(pg_curl_mime_file_array) {
     int data_nelemsp, name_nelemsp = 0, file_nelemsp = 0, type_nelemsp = 0, code_nelemsp = 0;
     if (PG_ARGISNULL(0)) E("data is null!");
     if (array_contains_nulls(DatumGetArrayTypeP(PG_GETARG_DATUM(0)))) E("array_contains_nulls");
-    (void)deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(0)), TEXTOID, -1, false, 'i', &data_elemsp, &data_nullsp, &data_nelemsp);
+    deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(0)), TEXTOID, -1, false, 'i', &data_elemsp, &data_nullsp, &data_nelemsp);
     if (!PG_ARGISNULL(1)) {
-        (void)deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(1)), TEXTOID, -1, false, 'i', &name_elemsp, &name_nullsp, &name_nelemsp);
+        deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(1)), TEXTOID, -1, false, 'i', &name_elemsp, &name_nullsp, &name_nelemsp);
         if (data_nelemsp != name_nelemsp) E("data_nelemsp != name_nelemsp");
     }
     if (!PG_ARGISNULL(2)) {
-        (void)deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(2)), TEXTOID, -1, false, 'i', &file_elemsp, &file_nullsp, &file_nelemsp);
+        deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(2)), TEXTOID, -1, false, 'i', &file_elemsp, &file_nullsp, &file_nelemsp);
         if (data_nelemsp != file_nelemsp) E("data_nelemsp != file_nelemsp");
     }
     if (!PG_ARGISNULL(3)) {
-        (void)deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(3)), TEXTOID, -1, false, 'i', &type_elemsp, &type_nullsp, &type_nelemsp);
+        deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(3)), TEXTOID, -1, false, 'i', &type_elemsp, &type_nullsp, &type_nelemsp);
         if (data_nelemsp != type_nelemsp) E("data_nelemsp != type_nelemsp");
     }
     if (!PG_ARGISNULL(4)) {
-        (void)deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(4)), TEXTOID, -1, false, 'i', &code_elemsp, &code_nullsp, &code_nelemsp);
+        deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(4)), TEXTOID, -1, false, 'i', &code_elemsp, &code_nullsp, &code_nelemsp);
         if (data_nelemsp != code_nelemsp) E("data_nelemsp != code_nelemsp");
     }
     for (int i = 0; i < data_nelemsp; i++) {
@@ -345,11 +345,11 @@ EXTENSION(pg_curl_mime_file_array) {
         if (file && ((res = curl_mime_filename(part, file)) != CURLE_OK)) E("curl_mime_filename(%s): %s", file, curl_easy_strerror(res));
         if (type && ((res = curl_mime_type(part, type)) != CURLE_OK)) E("curl_mime_type(%s): %s", type, curl_easy_strerror(res));
         if (code && ((res = curl_mime_encoder(part, code)) != CURLE_OK)) E("curl_mime_encoder(%s): %s", code, curl_easy_strerror(res));
-        (void)pfree(data);
-        if (name) (void)pfree(name);
-        if (file) (void)pfree(file);
-        if (type) (void)pfree(type);
-        if (code) (void)pfree(code);
+        pfree(data);
+        if (name) pfree(name);
+        if (file) pfree(file);
+        if (type) pfree(type);
+        if (code) pfree(code);
     }
     has_mime = true;
     PG_RETURN_BOOL(res == CURLE_OK);
@@ -431,7 +431,7 @@ EXTENSION(pg_curl_easy_setopt_char) {
     else if (!pg_strncasecmp(name, "CURLOPT_RANGE", sizeof("CURLOPT_RANGE") - 1)) option = CURLOPT_RANGE;
     else if (!pg_strncasecmp(name, "CURLOPT_READDATA", sizeof("CURLOPT_READDATA") - 1)) {
         text *value = DatumGetTextP(PG_GETARG_DATUM(1));
-        (void)appendBinaryStringInfo(&read_buf, VARDATA_ANY(value), VARSIZE_ANY_EXHDR(value));
+        appendBinaryStringInfo(&read_buf, VARDATA_ANY(value), VARSIZE_ANY_EXHDR(value));
         if ((res = curl_easy_setopt(curl, CURLOPT_INFILESIZE, VARSIZE_ANY_EXHDR(value))) != CURLE_OK) E("curl_easy_setopt(CURLOPT_INFILESIZE): %s", curl_easy_strerror(res));
         if ((res = curl_easy_setopt(curl, CURLOPT_READDATA, &read_buf)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_READDATA, %s): %s", read_buf.data, curl_easy_strerror(res));
         if ((res = curl_easy_setopt(curl, CURLOPT_READFUNCTION, read_callback)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_READFUNCTION): %s", curl_easy_strerror(res));
@@ -469,9 +469,9 @@ EXTENSION(pg_curl_easy_setopt_char) {
     value = TextDatumGetCString(PG_GETARG_DATUM(1));
 //    L("%s = %s", name, value);
     if ((res = curl_easy_setopt(curl, option, value)) != CURLE_OK) E("curl_easy_setopt(%s, %s): %s", name, value, curl_easy_strerror(res));
-    (void)pfree(value);
+    pfree(value);
 ret:
-    (void)pfree(name);
+    pfree(name);
     PG_RETURN_BOOL(res == CURLE_OK);
 }
 
@@ -604,21 +604,21 @@ EXTENSION(pg_curl_easy_setopt_long) {
     else if (!pg_strncasecmp(name, "CURLOPT_WILDCARDMATCH", sizeof("CURLOPT_WILDCARDMATCH") - 1)) option = CURLOPT_WILDCARDMATCH;
     else E("unsupported option %s", name);
     if ((res = curl_easy_setopt(curl, option, value)) != CURLE_OK) E("curl_easy_setopt(%s, %li): %s", name, value, curl_easy_strerror(res));
-    (void)pfree(name);
+    pfree(name);
     PG_RETURN_BOOL(res == CURLE_OK);
 }
 
 static size_t header_callback(char *buffer, size_t size, size_t nitems, void *outstream) {
     size_t realsize = size * nitems;
 //    L("header_callback: buffer=%s, size=%lu, nitems=%lu, outstream=%s", (const char *)buffer, size, nitems, ((StringInfo)outstream)->data);
-    (void)appendBinaryStringInfo(&header_buf, buffer, (int)realsize);
+    appendBinaryStringInfo(&header_buf, buffer, (int)realsize);
     return realsize;
 }
 
 static size_t write_callback(char *buffer, size_t size, size_t nitems, void *outstream) {
     size_t realsize = size * nitems;
 //    L("write_callback: buffer=%s, size=%lu, nitems=%lu, outstream=%s", (const char *)buffer, size, nitems, ((StringInfo)outstream)->data);
-    (void)appendBinaryStringInfo(&write_buf, buffer, (int)realsize);
+    appendBinaryStringInfo(&write_buf, buffer, (int)realsize);
     return realsize;
 }
 
@@ -626,8 +626,8 @@ static int progress_callback(void *clientp, curl_off_t dltotal, curl_off_t dlnow
 
 EXTENSION(pg_curl_easy_perform) {
     CURLcode res = CURL_LAST;
-    (void)resetStringInfo(&header_buf);
-    (void)resetStringInfo(&write_buf);
+    resetStringInfo(&header_buf);
+    resetStringInfo(&write_buf);
     if ((res = curl_easy_setopt(curl, CURLOPT_HEADERDATA, &header_buf)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_HEADERDATA): %s", curl_easy_strerror(res));
     if ((res = curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, header_callback)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_HEADERFUNCTION): %s", curl_easy_strerror(res));
     if ((res = curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_NOPROGRESS): %s", curl_easy_strerror(res));
@@ -670,7 +670,7 @@ EXTENSION(pg_curl_easy_getinfo_char) {
     if ((res = curl_easy_getinfo(curl, info, &value)) != CURLE_OK) E("curl_easy_getinfo(%s): %s", name, curl_easy_strerror(res));
     len = value ? strlen(value) : 0;
 ret:
-    (void)pfree(name);
+    pfree(name);
     if (!value) PG_RETURN_NULL();
     PG_RETURN_TEXT_P(cstring_to_text_with_len(value, len));
 }
@@ -706,6 +706,6 @@ EXTENSION(pg_curl_easy_getinfo_long) {
     else if (!pg_strncasecmp(name, "CURLINFO_SSL_VERIFYRESULT", sizeof("CURLINFO_SSL_VERIFYRESULT") - 1)) info = CURLINFO_SSL_VERIFYRESULT;
     else E("unsupported option %s", name);
     if ((res = curl_easy_getinfo(curl, info, &value)) != CURLE_OK) E("curl_easy_getinfo(%s): %s", name, curl_easy_strerror(res));
-    (void)pfree(name);
+    pfree(name);
     PG_RETURN_INT64(value);
 }
