@@ -142,26 +142,33 @@ EXTENSION(pg_curl_recipient_append) {
 }
 
 EXTENSION(pg_curl_mime_data) {
+    char *name = NULL, *file = NULL, *type = NULL, *code = NULL, *head = NULL;
     CURLcode res = CURL_LAST;
-    text *data;
-    char *name = NULL, *file = NULL, *type = NULL, *code = NULL;
     curl_mimepart *part;
+    text *data;
     if (PG_ARGISNULL(0)) E("data is null!");
     data = DatumGetTextP(PG_GETARG_DATUM(0));
     if (!PG_ARGISNULL(1)) name = TextDatumGetCString(PG_GETARG_DATUM(1));
     if (!PG_ARGISNULL(2)) file = TextDatumGetCString(PG_GETARG_DATUM(2));
     if (!PG_ARGISNULL(3)) type = TextDatumGetCString(PG_GETARG_DATUM(3));
     if (!PG_ARGISNULL(4)) code = TextDatumGetCString(PG_GETARG_DATUM(4));
+    if (!PG_ARGISNULL(5)) head = TextDatumGetCString(PG_GETARG_DATUM(5));
     part = curl_mime_addpart(mime);
     if ((res = curl_mime_data(part, VARDATA_ANY(data), VARSIZE_ANY_EXHDR(data))) != CURLE_OK) E("curl_mime_data(%s): %s", VARDATA_ANY(data), curl_easy_strerror(res));
     if (name && ((res = curl_mime_name(part, name)) != CURLE_OK)) E("curl_mime_name(%s): %s", name, curl_easy_strerror(res));
     if (file && ((res = curl_mime_filename(part, file)) != CURLE_OK)) E("curl_mime_filename(%s): %s", file, curl_easy_strerror(res));
     if (type && ((res = curl_mime_type(part, type)) != CURLE_OK)) E("curl_mime_type(%s): %s", type, curl_easy_strerror(res));
     if (code && ((res = curl_mime_encoder(part, code)) != CURLE_OK)) E("curl_mime_encoder(%s): %s", code, curl_easy_strerror(res));
+    if (head) {
+        struct curl_slist *headers = NULL;
+        if (!(headers = curl_slist_append(headers, head))) E("!curl_slist_append");
+        if ((res = curl_mime_headers(part, headers, true)) != CURLE_OK) E("curl_mime_headers(%s): %s", head, curl_easy_strerror(res));
+    }
     if (name) pfree(name);
     if (file) pfree(file);
     if (type) pfree(type);
     if (code) pfree(code);
+    if (head) pfree(head);
     has_mime = true;
     PG_RETURN_BOOL(res == CURLE_OK);
 }
@@ -169,7 +176,7 @@ EXTENSION(pg_curl_mime_data) {
 EXTENSION(pg_curl_mime_data_bytea) {
     CURLcode res = CURL_LAST;
     bytea *data;
-    char *name = NULL, *file = NULL, *type = NULL, *code = NULL;
+    char *name = NULL, *file = NULL, *type = NULL, *code = NULL, *head = NULL;
     curl_mimepart *part;
     if (PG_ARGISNULL(0)) E("data is null!");
     data = DatumGetByteaP(PG_GETARG_DATUM(0));
@@ -177,23 +184,30 @@ EXTENSION(pg_curl_mime_data_bytea) {
     if (!PG_ARGISNULL(2)) file = TextDatumGetCString(PG_GETARG_DATUM(2));
     if (!PG_ARGISNULL(3)) type = TextDatumGetCString(PG_GETARG_DATUM(3));
     if (!PG_ARGISNULL(4)) code = TextDatumGetCString(PG_GETARG_DATUM(4));
+    if (!PG_ARGISNULL(5)) head = TextDatumGetCString(PG_GETARG_DATUM(5));
     part = curl_mime_addpart(mime);
     if ((res = curl_mime_data(part, VARDATA_ANY(data), VARSIZE_ANY_EXHDR(data))) != CURLE_OK) E("curl_mime_data(%s): %s", VARDATA_ANY(data), curl_easy_strerror(res));
     if (name && ((res = curl_mime_name(part, name)) != CURLE_OK)) E("curl_mime_name(%s): %s", name, curl_easy_strerror(res));
     if (file && ((res = curl_mime_filename(part, file)) != CURLE_OK)) E("curl_mime_filename(%s): %s", file, curl_easy_strerror(res));
     if (type && ((res = curl_mime_type(part, type)) != CURLE_OK)) E("curl_mime_type(%s): %s", type, curl_easy_strerror(res));
     if (code && ((res = curl_mime_encoder(part, code)) != CURLE_OK)) E("curl_mime_encoder(%s): %s", code, curl_easy_strerror(res));
+    if (head) {
+        struct curl_slist *headers = NULL;
+        if (!(headers = curl_slist_append(headers, head))) E("!curl_slist_append");
+        if ((res = curl_mime_headers(part, headers, true)) != CURLE_OK) E("curl_mime_headers(%s): %s", head, curl_easy_strerror(res));
+    }
     if (name) pfree(name);
     if (file) pfree(file);
     if (type) pfree(type);
     if (code) pfree(code);
+    if (head) pfree(head);
     has_mime = true;
     PG_RETURN_BOOL(res == CURLE_OK);
 }
 
 EXTENSION(pg_curl_mime_file) {
     CURLcode res = CURL_LAST;
-    char *data, *name = NULL, *file = NULL, *type = NULL, *code = NULL;
+    char *data, *name = NULL, *file = NULL, *type = NULL, *code = NULL, *head = NULL;
     curl_mimepart *part;
     if (PG_ARGISNULL(0)) E("data is null!");
     data = TextDatumGetCString(PG_GETARG_DATUM(0));
@@ -201,17 +215,24 @@ EXTENSION(pg_curl_mime_file) {
     if (!PG_ARGISNULL(2)) file = TextDatumGetCString(PG_GETARG_DATUM(2));
     if (!PG_ARGISNULL(3)) type = TextDatumGetCString(PG_GETARG_DATUM(3));
     if (!PG_ARGISNULL(4)) code = TextDatumGetCString(PG_GETARG_DATUM(4));
+    if (!PG_ARGISNULL(5)) head = TextDatumGetCString(PG_GETARG_DATUM(5));
     part = curl_mime_addpart(mime);
     if ((res = curl_mime_filedata(part, data)) != CURLE_OK) E("curl_mime_filedata(%s): %s", data, curl_easy_strerror(res));
     if (name && ((res = curl_mime_name(part, name)) != CURLE_OK)) E("curl_mime_name(%s): %s", name, curl_easy_strerror(res));
     if (file && ((res = curl_mime_filename(part, file)) != CURLE_OK)) E("curl_mime_filename(%s): %s", file, curl_easy_strerror(res));
     if (type && ((res = curl_mime_type(part, type)) != CURLE_OK)) E("curl_mime_type(%s): %s", type, curl_easy_strerror(res));
     if (code && ((res = curl_mime_encoder(part, code)) != CURLE_OK)) E("curl_mime_encoder(%s): %s", code, curl_easy_strerror(res));
+    if (head) {
+        struct curl_slist *headers = NULL;
+        if (!(headers = curl_slist_append(headers, head))) E("!curl_slist_append");
+        if ((res = curl_mime_headers(part, headers, true)) != CURLE_OK) E("curl_mime_headers(%s): %s", head, curl_easy_strerror(res));
+    }
     pfree(data);
     if (name) pfree(name);
     if (file) pfree(file);
     if (type) pfree(type);
     if (code) pfree(code);
+    if (head) pfree(head);
     has_mime = true;
     PG_RETURN_BOOL(res == CURLE_OK);
 }
