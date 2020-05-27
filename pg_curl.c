@@ -131,58 +131,6 @@ EXTENSION(pg_curl_header_append) {
     PG_RETURN_BOOL(temp != NULL);
 }
 
-EXTENSION(pg_curl_header_append_array) {
-    Datum *elemsp;
-    bool *nullsp;
-    int nelemsp;
-    char *name;
-    StringInfoData buf;
-    struct curl_slist *temp = header;
-    if (PG_ARGISNULL(0)) E("name is null!");
-    name = TextDatumGetCString(PG_GETARG_DATUM(0));
-    if (PG_ARGISNULL(1)) E("value is null!");
-    if (array_contains_nulls(DatumGetArrayTypeP(PG_GETARG_DATUM(1)))) E("array_contains_nulls");
-    initStringInfo(&buf);
-    deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(1)), TEXTOID, -1, false, 'i', &elemsp, &nullsp, &nelemsp);
-    for (int i = 0; i < nelemsp; i++) {
-        char *value = TextDatumGetCString(elemsp[i]);
-        resetStringInfo(&buf);
-        appendStringInfo(&buf, "%s: %s", name, value);
-        if ((temp = curl_slist_append(temp, buf.data))) header = temp; else E("!curl_slist_append");
-        pfree(value);
-    }
-    pfree(name);
-    pfree(buf.data);
-    PG_RETURN_BOOL(temp != NULL);
-}
-
-EXTENSION(pg_curl_header_append_array_array) {
-    Datum *name_elemsp, *value_elemsp;
-    bool *name_nullsp, *value_nullsp;
-    int name_nelemsp, value_nelemsp;
-    StringInfoData buf;
-    struct curl_slist *temp = header;
-    if (PG_ARGISNULL(0)) E("name is null!");
-    if (PG_ARGISNULL(1)) E("value is null!");
-    if (array_contains_nulls(DatumGetArrayTypeP(PG_GETARG_DATUM(0)))) E("array_contains_nulls");
-    if (array_contains_nulls(DatumGetArrayTypeP(PG_GETARG_DATUM(1)))) E("array_contains_nulls");
-    initStringInfo(&buf);
-    deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(0)), TEXTOID, -1, false, 'i', &name_elemsp, &name_nullsp, &name_nelemsp);
-    deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(1)), TEXTOID, -1, false, 'i', &value_elemsp, &value_nullsp, &value_nelemsp);
-    if (name_nelemsp != value_nelemsp) E("name_nelemsp != value_nelemsp");
-    for (int i = 0; i < name_nelemsp; i++) {
-        char *name = TextDatumGetCString(name_elemsp[i]);
-        char *value = TextDatumGetCString(value_elemsp[i]);
-        resetStringInfo(&buf);
-        appendStringInfo(&buf, "%s: %s", name, value);
-        if ((temp = curl_slist_append(temp, buf.data))) header = temp; else E("!curl_slist_append");
-        pfree(name);
-        pfree(value);
-    }
-    pfree(buf.data);
-    PG_RETURN_BOOL(temp != NULL);
-}
-
 EXTENSION(pg_curl_recipient_append) {
     char *email;
     struct curl_slist *temp = recipient;
@@ -190,22 +138,6 @@ EXTENSION(pg_curl_recipient_append) {
     email = TextDatumGetCString(PG_GETARG_DATUM(0));
     if ((temp = curl_slist_append(temp, email))) recipient = temp; else E("!curl_slist_append");
     pfree(email);
-    PG_RETURN_BOOL(temp != NULL);
-}
-
-EXTENSION(pg_curl_recipient_append_array) {
-    Datum *elemsp;
-    bool *nullsp;
-    int nelemsp;
-    struct curl_slist *temp = recipient;
-    if (PG_ARGISNULL(0)) E("email is null!");
-    if (array_contains_nulls(DatumGetArrayTypeP(PG_GETARG_DATUM(0)))) E("array_contains_nulls");
-    deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(0)), TEXTOID, -1, false, 'i', &elemsp, &nullsp, &nelemsp);
-    for (int i = 0; i < nelemsp; i++) {
-        char *email = TextDatumGetCString(elemsp[i]);
-        if ((temp = curl_slist_append(temp, email))) recipient = temp; else E("!curl_slist_append");
-        pfree(email);
-    }
     PG_RETURN_BOOL(temp != NULL);
 }
 
@@ -230,52 +162,6 @@ EXTENSION(pg_curl_mime_data) {
     if (file) pfree(file);
     if (type) pfree(type);
     if (code) pfree(code);
-    has_mime = true;
-    PG_RETURN_BOOL(res == CURLE_OK);
-}
-
-EXTENSION(pg_curl_mime_data_array) {
-    CURLcode res = CURL_LAST;
-    Datum *data_elemsp, *name_elemsp = NULL, *file_elemsp = NULL, *type_elemsp = NULL, *code_elemsp = NULL;
-    bool *data_nullsp, *name_nullsp = NULL, *file_nullsp = NULL, *type_nullsp = NULL, *code_nullsp = NULL;
-    int data_nelemsp, name_nelemsp = 0, file_nelemsp = 0, type_nelemsp = 0, code_nelemsp = 0;
-    if (PG_ARGISNULL(0)) E("data is null!");
-    if (array_contains_nulls(DatumGetArrayTypeP(PG_GETARG_DATUM(0)))) E("array_contains_nulls");
-    deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(0)), TEXTOID, -1, false, 'i', &data_elemsp, &data_nullsp, &data_nelemsp);
-    if (!PG_ARGISNULL(1)) {
-        deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(1)), TEXTOID, -1, false, 'i', &name_elemsp, &name_nullsp, &name_nelemsp);
-        if (data_nelemsp != name_nelemsp) E("data_nelemsp != name_nelemsp");
-    }
-    if (!PG_ARGISNULL(2)) {
-        deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(2)), TEXTOID, -1, false, 'i', &file_elemsp, &file_nullsp, &file_nelemsp);
-        if (data_nelemsp != file_nelemsp) E("data_nelemsp != file_nelemsp");
-    }
-    if (!PG_ARGISNULL(3)) {
-        deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(3)), TEXTOID, -1, false, 'i', &type_elemsp, &type_nullsp, &type_nelemsp);
-        if (data_nelemsp != type_nelemsp) E("data_nelemsp != type_nelemsp");
-    }
-    if (!PG_ARGISNULL(4)) {
-        deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(4)), TEXTOID, -1, false, 'i', &code_elemsp, &code_nullsp, &code_nelemsp);
-        if (data_nelemsp != code_nelemsp) E("data_nelemsp != code_nelemsp");
-    }
-    for (int i = 0; i < data_nelemsp; i++) {
-        curl_mimepart *part = curl_mime_addpart(mime);
-        char *name = NULL, *file = NULL, *type = NULL, *code = NULL;
-        text *data = DatumGetTextP(data_elemsp[i]);
-        if (name_nelemsp && !name_nullsp[i]) name = TextDatumGetCString(name_elemsp[i]);
-        if (file_nelemsp && !file_nullsp[i]) file = TextDatumGetCString(file_elemsp[i]);
-        if (type_nelemsp && !type_nullsp[i]) type = TextDatumGetCString(type_elemsp[i]);
-        if (code_nelemsp && !code_nullsp[i]) code = TextDatumGetCString(code_elemsp[i]);
-        if ((res = curl_mime_data(part, VARDATA_ANY(data), VARSIZE_ANY_EXHDR(data))) != CURLE_OK) E("curl_mime_data(%s): %s", VARDATA_ANY(data), curl_easy_strerror(res));
-        if (name && ((res = curl_mime_name(part, name)) != CURLE_OK)) E("curl_mime_name(%s): %s", name, curl_easy_strerror(res));
-        if (file && ((res = curl_mime_filename(part, file)) != CURLE_OK)) E("curl_mime_filename(%s): %s", file, curl_easy_strerror(res));
-        if (type && ((res = curl_mime_type(part, type)) != CURLE_OK)) E("curl_mime_type(%s): %s", type, curl_easy_strerror(res));
-        if (code && ((res = curl_mime_encoder(part, code)) != CURLE_OK)) E("curl_mime_encoder(%s): %s", code, curl_easy_strerror(res));
-        if (name) pfree(name);
-        if (file) pfree(file);
-        if (type) pfree(type);
-        if (code) pfree(code);
-    }
     has_mime = true;
     PG_RETURN_BOOL(res == CURLE_OK);
 }
@@ -305,52 +191,6 @@ EXTENSION(pg_curl_mime_data_bytea) {
     PG_RETURN_BOOL(res == CURLE_OK);
 }
 
-EXTENSION(pg_curl_mime_data_array_bytea) {
-    CURLcode res = CURL_LAST;
-    Datum *data_elemsp, *name_elemsp = NULL, *file_elemsp = NULL, *type_elemsp = NULL, *code_elemsp = NULL;
-    bool *data_nullsp, *name_nullsp = NULL, *file_nullsp = NULL, *type_nullsp = NULL, *code_nullsp = NULL;
-    int data_nelemsp, name_nelemsp = 0, file_nelemsp = 0, type_nelemsp = 0, code_nelemsp = 0;
-    if (PG_ARGISNULL(0)) E("data is null!");
-    if (array_contains_nulls(DatumGetArrayTypeP(PG_GETARG_DATUM(0)))) E("array_contains_nulls");
-    deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(0)), BYTEAOID, -1, false, 'i', &data_elemsp, &data_nullsp, &data_nelemsp);
-    if (!PG_ARGISNULL(1)) {
-        deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(1)), BYTEAOID, -1, false, 'i', &name_elemsp, &name_nullsp, &name_nelemsp);
-        if (data_nelemsp != name_nelemsp) E("data_nelemsp != name_nelemsp");
-    }
-    if (!PG_ARGISNULL(2)) {
-        deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(2)), BYTEAOID, -1, false, 'i', &file_elemsp, &file_nullsp, &file_nelemsp);
-        if (data_nelemsp != file_nelemsp) E("data_nelemsp != file_nelemsp");
-    }
-    if (!PG_ARGISNULL(3)) {
-        deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(3)), BYTEAOID, -1, false, 'i', &type_elemsp, &type_nullsp, &type_nelemsp);
-        if (data_nelemsp != type_nelemsp) E("data_nelemsp != type_nelemsp");
-    }
-    if (!PG_ARGISNULL(4)) {
-        deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(4)), BYTEAOID, -1, false, 'i', &code_elemsp, &code_nullsp, &code_nelemsp);
-        if (data_nelemsp != code_nelemsp) E("data_nelemsp != code_nelemsp");
-    }
-    for (int i = 0; i < data_nelemsp; i++) {
-        curl_mimepart *part = curl_mime_addpart(mime);
-        char *name = NULL, *file = NULL, *type = NULL, *code = NULL;
-        bytea *data = DatumGetByteaP(data_elemsp[i]);
-        if (name_nelemsp && !name_nullsp[i]) name = TextDatumGetCString(name_elemsp[i]);
-        if (file_nelemsp && !file_nullsp[i]) file = TextDatumGetCString(file_elemsp[i]);
-        if (type_nelemsp && !type_nullsp[i]) type = TextDatumGetCString(type_elemsp[i]);
-        if (code_nelemsp && !code_nullsp[i]) code = TextDatumGetCString(code_elemsp[i]);
-        if ((res = curl_mime_data(part, VARDATA_ANY(data), VARSIZE_ANY_EXHDR(data))) != CURLE_OK) E("curl_mime_data(%s): %s", VARDATA_ANY(data), curl_easy_strerror(res));
-        if (name && ((res = curl_mime_name(part, name)) != CURLE_OK)) E("curl_mime_name(%s): %s", name, curl_easy_strerror(res));
-        if (file && ((res = curl_mime_filename(part, file)) != CURLE_OK)) E("curl_mime_filename(%s): %s", file, curl_easy_strerror(res));
-        if (type && ((res = curl_mime_type(part, type)) != CURLE_OK)) E("curl_mime_type(%s): %s", type, curl_easy_strerror(res));
-        if (code && ((res = curl_mime_encoder(part, code)) != CURLE_OK)) E("curl_mime_encoder(%s): %s", code, curl_easy_strerror(res));
-        if (name) pfree(name);
-        if (file) pfree(file);
-        if (type) pfree(type);
-        if (code) pfree(code);
-    }
-    has_mime = true;
-    PG_RETURN_BOOL(res == CURLE_OK);
-}
-
 EXTENSION(pg_curl_mime_file) {
     CURLcode res = CURL_LAST;
     char *data, *name = NULL, *file = NULL, *type = NULL, *code = NULL;
@@ -372,52 +212,6 @@ EXTENSION(pg_curl_mime_file) {
     if (file) pfree(file);
     if (type) pfree(type);
     if (code) pfree(code);
-    has_mime = true;
-    PG_RETURN_BOOL(res == CURLE_OK);
-}
-
-EXTENSION(pg_curl_mime_file_array) {
-    CURLcode res = CURL_LAST;
-    Datum *data_elemsp, *name_elemsp = NULL, *file_elemsp = NULL, *type_elemsp = NULL, *code_elemsp = NULL;
-    bool *data_nullsp, *name_nullsp = NULL, *file_nullsp = NULL, *type_nullsp = NULL, *code_nullsp = NULL;
-    int data_nelemsp, name_nelemsp = 0, file_nelemsp = 0, type_nelemsp = 0, code_nelemsp = 0;
-    if (PG_ARGISNULL(0)) E("data is null!");
-    if (array_contains_nulls(DatumGetArrayTypeP(PG_GETARG_DATUM(0)))) E("array_contains_nulls");
-    deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(0)), TEXTOID, -1, false, 'i', &data_elemsp, &data_nullsp, &data_nelemsp);
-    if (!PG_ARGISNULL(1)) {
-        deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(1)), TEXTOID, -1, false, 'i', &name_elemsp, &name_nullsp, &name_nelemsp);
-        if (data_nelemsp != name_nelemsp) E("data_nelemsp != name_nelemsp");
-    }
-    if (!PG_ARGISNULL(2)) {
-        deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(2)), TEXTOID, -1, false, 'i', &file_elemsp, &file_nullsp, &file_nelemsp);
-        if (data_nelemsp != file_nelemsp) E("data_nelemsp != file_nelemsp");
-    }
-    if (!PG_ARGISNULL(3)) {
-        deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(3)), TEXTOID, -1, false, 'i', &type_elemsp, &type_nullsp, &type_nelemsp);
-        if (data_nelemsp != type_nelemsp) E("data_nelemsp != type_nelemsp");
-    }
-    if (!PG_ARGISNULL(4)) {
-        deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(4)), TEXTOID, -1, false, 'i', &code_elemsp, &code_nullsp, &code_nelemsp);
-        if (data_nelemsp != code_nelemsp) E("data_nelemsp != code_nelemsp");
-    }
-    for (int i = 0; i < data_nelemsp; i++) {
-        curl_mimepart *part = curl_mime_addpart(mime);
-        char *name = NULL, *file = NULL, *type = NULL, *code = NULL, *data = TextDatumGetCString(data_elemsp[i]);
-        if (name_nelemsp && !name_nullsp[i]) name = TextDatumGetCString(name_elemsp[i]);
-        if (file_nelemsp && !file_nullsp[i]) file = TextDatumGetCString(file_elemsp[i]);
-        if (type_nelemsp && !type_nullsp[i]) type = TextDatumGetCString(type_elemsp[i]);
-        if (code_nelemsp && !code_nullsp[i]) code = TextDatumGetCString(code_elemsp[i]);
-        if ((res = curl_mime_filedata(part, data)) != CURLE_OK) E("curl_mime_filedata(%s): %s", data, curl_easy_strerror(res));
-        if (name && ((res = curl_mime_name(part, name)) != CURLE_OK)) E("curl_mime_name(%s): %s", name, curl_easy_strerror(res));
-        if (file && ((res = curl_mime_filename(part, file)) != CURLE_OK)) E("curl_mime_filename(%s): %s", file, curl_easy_strerror(res));
-        if (type && ((res = curl_mime_type(part, type)) != CURLE_OK)) E("curl_mime_type(%s): %s", type, curl_easy_strerror(res));
-        if (code && ((res = curl_mime_encoder(part, code)) != CURLE_OK)) E("curl_mime_encoder(%s): %s", code, curl_easy_strerror(res));
-        pfree(data);
-        if (name) pfree(name);
-        if (file) pfree(file);
-        if (type) pfree(type);
-        if (code) pfree(code);
-    }
     has_mime = true;
     PG_RETURN_BOOL(res == CURLE_OK);
 }
