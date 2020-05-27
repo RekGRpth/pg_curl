@@ -722,10 +722,9 @@ EXTENSION(pg_curl_easy_getinfo_bytea) {
     if (PG_ARGISNULL(0)) E("info is null!");
     name = TextDatumGetCString(PG_GETARG_DATUM(0));
     if (false);
-    else if (!pg_strcasecmp(name, "CURLINFO_HEADERS")) { value = header_buf.data; len = header_buf.len; goto ret; }
-    else if (!pg_strcasecmp(name, "CURLINFO_RESPONSE")) { value = write_buf.data; len = write_buf.len; goto ret; }
+    else if (!pg_strcasecmp(name, "CURLINFO_HEADERS")) { value = header_buf.data; len = header_buf.len; }
+    else if (!pg_strcasecmp(name, "CURLINFO_RESPONSE")) { value = write_buf.data; len = write_buf.len; }
     else E("unsupported option %s", name);
-ret:
     pfree(name);
     if (!value) PG_RETURN_NULL();
     PG_RETURN_BYTEA_P(cstring_to_text_with_len(value, len));
@@ -749,9 +748,9 @@ EXTENSION(pg_curl_easy_getinfo_char) {
     else if (!pg_strcasecmp(name, "CURLINFO_RTSP_SESSION_ID")) info = CURLINFO_RTSP_SESSION_ID;
     else if (!pg_strcasecmp(name, "CURLINFO_SCHEME")) info = CURLINFO_SCHEME;
     else E("unsupported option %s", name);
+    pfree(name);
     if ((res = curl_easy_getinfo(curl, info, &value)) != CURLE_OK) E("curl_easy_getinfo(%s): %s", name, curl_easy_strerror(res));
     len = value ? strlen(value) : 0;
-    pfree(name);
     if (!value) PG_RETURN_NULL();
     PG_RETURN_TEXT_P(cstring_to_text_with_len(value, len));
 }
@@ -786,7 +785,7 @@ EXTENSION(pg_curl_easy_getinfo_long) {
     else if (!pg_strcasecmp(name, "CURLINFO_RTSP_SERVER_CSEQ")) info = CURLINFO_RTSP_SERVER_CSEQ;
     else if (!pg_strcasecmp(name, "CURLINFO_SSL_VERIFYRESULT")) info = CURLINFO_SSL_VERIFYRESULT;
     else E("unsupported option %s", name);
-    if ((res = curl_easy_getinfo(curl, info, &value)) != CURLE_OK) E("curl_easy_getinfo(%s): %s", name, curl_easy_strerror(res));
     pfree(name);
+    if ((res = curl_easy_getinfo(curl, info, &value)) != CURLE_OK) E("curl_easy_getinfo(%s): %s", name, curl_easy_strerror(res));
     PG_RETURN_INT64(value);
 }
