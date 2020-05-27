@@ -280,6 +280,77 @@ EXTENSION(pg_curl_mime_data_array) {
     PG_RETURN_BOOL(res == CURLE_OK);
 }
 
+EXTENSION(pg_curl_mime_data_bytea) {
+    CURLcode res = CURL_LAST;
+    bytea *data;
+    char *name = NULL, *file = NULL, *type = NULL, *code = NULL;
+    curl_mimepart *part;
+    if (PG_ARGISNULL(0)) E("data is null!");
+    data = DatumGetByteaP(PG_GETARG_DATUM(0));
+    if (!PG_ARGISNULL(1)) name = TextDatumGetCString(PG_GETARG_DATUM(1));
+    if (!PG_ARGISNULL(2)) file = TextDatumGetCString(PG_GETARG_DATUM(2));
+    if (!PG_ARGISNULL(3)) type = TextDatumGetCString(PG_GETARG_DATUM(3));
+    if (!PG_ARGISNULL(4)) code = TextDatumGetCString(PG_GETARG_DATUM(4));
+    part = curl_mime_addpart(mime);
+    if ((res = curl_mime_data(part, VARDATA_ANY(data), VARSIZE_ANY_EXHDR(data))) != CURLE_OK) E("curl_mime_data(%s): %s", VARDATA_ANY(data), curl_easy_strerror(res));
+    if (name && ((res = curl_mime_name(part, name)) != CURLE_OK)) E("curl_mime_name(%s): %s", name, curl_easy_strerror(res));
+    if (file && ((res = curl_mime_filename(part, file)) != CURLE_OK)) E("curl_mime_filename(%s): %s", file, curl_easy_strerror(res));
+    if (type && ((res = curl_mime_type(part, type)) != CURLE_OK)) E("curl_mime_type(%s): %s", type, curl_easy_strerror(res));
+    if (code && ((res = curl_mime_encoder(part, code)) != CURLE_OK)) E("curl_mime_encoder(%s): %s", code, curl_easy_strerror(res));
+    if (name) pfree(name);
+    if (file) pfree(file);
+    if (type) pfree(type);
+    if (code) pfree(code);
+    has_mime = true;
+    PG_RETURN_BOOL(res == CURLE_OK);
+}
+
+EXTENSION(pg_curl_mime_data_array_bytea) {
+    CURLcode res = CURL_LAST;
+    Datum *data_elemsp, *name_elemsp = NULL, *file_elemsp = NULL, *type_elemsp = NULL, *code_elemsp = NULL;
+    bool *data_nullsp, *name_nullsp = NULL, *file_nullsp = NULL, *type_nullsp = NULL, *code_nullsp = NULL;
+    int data_nelemsp, name_nelemsp = 0, file_nelemsp = 0, type_nelemsp = 0, code_nelemsp = 0;
+    if (PG_ARGISNULL(0)) E("data is null!");
+    if (array_contains_nulls(DatumGetArrayTypeP(PG_GETARG_DATUM(0)))) E("array_contains_nulls");
+    deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(0)), BYTEAOID, -1, false, 'i', &data_elemsp, &data_nullsp, &data_nelemsp);
+    if (!PG_ARGISNULL(1)) {
+        deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(1)), BYTEAOID, -1, false, 'i', &name_elemsp, &name_nullsp, &name_nelemsp);
+        if (data_nelemsp != name_nelemsp) E("data_nelemsp != name_nelemsp");
+    }
+    if (!PG_ARGISNULL(2)) {
+        deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(2)), BYTEAOID, -1, false, 'i', &file_elemsp, &file_nullsp, &file_nelemsp);
+        if (data_nelemsp != file_nelemsp) E("data_nelemsp != file_nelemsp");
+    }
+    if (!PG_ARGISNULL(3)) {
+        deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(3)), BYTEAOID, -1, false, 'i', &type_elemsp, &type_nullsp, &type_nelemsp);
+        if (data_nelemsp != type_nelemsp) E("data_nelemsp != type_nelemsp");
+    }
+    if (!PG_ARGISNULL(4)) {
+        deconstruct_array(DatumGetArrayTypeP(PG_GETARG_DATUM(4)), BYTEAOID, -1, false, 'i', &code_elemsp, &code_nullsp, &code_nelemsp);
+        if (data_nelemsp != code_nelemsp) E("data_nelemsp != code_nelemsp");
+    }
+    for (int i = 0; i < data_nelemsp; i++) {
+        curl_mimepart *part = curl_mime_addpart(mime);
+        char *name = NULL, *file = NULL, *type = NULL, *code = NULL;
+        bytea *data = DatumGetByteaP(data_elemsp[i]);
+        if (name_nelemsp && !name_nullsp[i]) name = TextDatumGetCString(name_elemsp[i]);
+        if (file_nelemsp && !file_nullsp[i]) file = TextDatumGetCString(file_elemsp[i]);
+        if (type_nelemsp && !type_nullsp[i]) type = TextDatumGetCString(type_elemsp[i]);
+        if (code_nelemsp && !code_nullsp[i]) code = TextDatumGetCString(code_elemsp[i]);
+        if ((res = curl_mime_data(part, VARDATA_ANY(data), VARSIZE_ANY_EXHDR(data))) != CURLE_OK) E("curl_mime_data(%s): %s", VARDATA_ANY(data), curl_easy_strerror(res));
+        if (name && ((res = curl_mime_name(part, name)) != CURLE_OK)) E("curl_mime_name(%s): %s", name, curl_easy_strerror(res));
+        if (file && ((res = curl_mime_filename(part, file)) != CURLE_OK)) E("curl_mime_filename(%s): %s", file, curl_easy_strerror(res));
+        if (type && ((res = curl_mime_type(part, type)) != CURLE_OK)) E("curl_mime_type(%s): %s", type, curl_easy_strerror(res));
+        if (code && ((res = curl_mime_encoder(part, code)) != CURLE_OK)) E("curl_mime_encoder(%s): %s", code, curl_easy_strerror(res));
+        if (name) pfree(name);
+        if (file) pfree(file);
+        if (type) pfree(type);
+        if (code) pfree(code);
+    }
+    has_mime = true;
+    PG_RETURN_BOOL(res == CURLE_OK);
+}
+
 EXTENSION(pg_curl_mime_file) {
     CURLcode res = CURL_LAST;
     char *data, *name = NULL, *file = NULL, *type = NULL, *code = NULL;
@@ -645,6 +716,21 @@ EXTENSION(pg_curl_easy_perform) {
     PG_RETURN_BOOL(res == CURLE_OK);
 }
 
+EXTENSION(pg_curl_easy_getinfo_bytea) {
+    char *name, *value = NULL;
+    int len;
+    if (PG_ARGISNULL(0)) E("info is null!");
+    name = TextDatumGetCString(PG_GETARG_DATUM(0));
+    if (false);
+    else if (!pg_strcasecmp(name, "CURLINFO_HEADERS")) { value = header_buf.data; len = header_buf.len; goto ret; }
+    else if (!pg_strcasecmp(name, "CURLINFO_RESPONSE")) { value = write_buf.data; len = write_buf.len; goto ret; }
+    else E("unsupported option %s", name);
+ret:
+    pfree(name);
+    if (!value) PG_RETURN_NULL();
+    PG_RETURN_BYTEA_P(cstring_to_text_with_len(value, len));
+}
+
 EXTENSION(pg_curl_easy_getinfo_char) {
     CURLcode res = CURL_LAST;
     CURLINFO info;
@@ -656,18 +742,15 @@ EXTENSION(pg_curl_easy_getinfo_char) {
     else if (!pg_strcasecmp(name, "CURLINFO_CONTENT_TYPE")) info = CURLINFO_CONTENT_TYPE;
     else if (!pg_strcasecmp(name, "CURLINFO_EFFECTIVE_URL")) info = CURLINFO_EFFECTIVE_URL;
     else if (!pg_strcasecmp(name, "CURLINFO_FTP_ENTRY_PATH")) info = CURLINFO_FTP_ENTRY_PATH;
-    else if (!pg_strcasecmp(name, "CURLINFO_HEADERS")) { value = header_buf.data; len = header_buf.len; goto ret; }
     else if (!pg_strcasecmp(name, "CURLINFO_LOCAL_IP")) info = CURLINFO_LOCAL_IP;
     else if (!pg_strcasecmp(name, "CURLINFO_PRIMARY_IP")) info = CURLINFO_PRIMARY_IP;
     else if (!pg_strcasecmp(name, "CURLINFO_PRIVATE")) info = CURLINFO_PRIVATE;
     else if (!pg_strcasecmp(name, "CURLINFO_REDIRECT_URL")) info = CURLINFO_REDIRECT_URL;
-    else if (!pg_strcasecmp(name, "CURLINFO_RESPONSE")) { value = write_buf.data; len = write_buf.len; goto ret; }
     else if (!pg_strcasecmp(name, "CURLINFO_RTSP_SESSION_ID")) info = CURLINFO_RTSP_SESSION_ID;
     else if (!pg_strcasecmp(name, "CURLINFO_SCHEME")) info = CURLINFO_SCHEME;
     else E("unsupported option %s", name);
     if ((res = curl_easy_getinfo(curl, info, &value)) != CURLE_OK) E("curl_easy_getinfo(%s): %s", name, curl_easy_strerror(res));
     len = value ? strlen(value) : 0;
-ret:
     pfree(name);
     if (!value) PG_RETURN_NULL();
     PG_RETURN_TEXT_P(cstring_to_text_with_len(value, len));
