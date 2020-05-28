@@ -18,6 +18,8 @@ CREATE OR REPLACE FUNCTION pg_curl_easy_setopt(option text, parameter bigint) RE
 
 CREATE OR REPLACE FUNCTION pg_curl_easy_perform() RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_perform' LANGUAGE 'c';
 
-CREATE OR REPLACE FUNCTION pg_curl_easy_getinfo_bytea(info text) RETURNS bytea AS 'MODULE_PATHNAME', 'pg_curl_easy_getinfo_bytea' LANGUAGE 'c';
+CREATE OR REPLACE FUNCTION pg_curl_easy_headers() RETURNS text AS 'MODULE_PATHNAME', 'pg_curl_easy_headers' LANGUAGE 'c';
+CREATE OR REPLACE FUNCTION pg_curl_easy_response() RETURNS bytea AS 'MODULE_PATHNAME', 'pg_curl_easy_response' LANGUAGE 'c';
+
 CREATE OR REPLACE FUNCTION pg_curl_easy_getinfo_char(info text) RETURNS text AS 'MODULE_PATHNAME', 'pg_curl_easy_getinfo_char' LANGUAGE 'c';
 CREATE OR REPLACE FUNCTION pg_curl_easy_getinfo_long(info text) RETURNS bigint AS 'MODULE_PATHNAME', 'pg_curl_easy_getinfo_long' LANGUAGE 'c';

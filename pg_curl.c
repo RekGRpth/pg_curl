@@ -531,16 +531,16 @@ EXTENSION(pg_curl_easy_perform) {
     PG_RETURN_BOOL(res == CURLE_OK);
 }
 
-EXTENSION(pg_curl_easy_getinfo_bytea) {
-    char *name, *value = NULL;
-    int len;
-    if (PG_ARGISNULL(0)) E("info is null!");
-    name = TextDatumGetCString(PG_GETARG_DATUM(0));
-    if (false);
-    else if (!pg_strcasecmp(name + sizeof("CURLINFO_") - 1, "HEADERS")) { value = header_buf.data; len = header_buf.len; }
-    else if (!pg_strcasecmp(name + sizeof("CURLINFO_") - 1, "RESPONSE")) { value = write_buf.data; len = write_buf.len; }
-    else E("unsupported option %s", name);
-    pfree(name);
+EXTENSION(pg_curl_easy_headers) {
+    char *value = header_buf.data;
+    int len = header_buf.len;
+    if (!value) PG_RETURN_NULL();
+    PG_RETURN_TEXT_P(cstring_to_text_with_len(value, len));
+}
+
+EXTENSION(pg_curl_easy_response) {
+    char *value = write_buf.data;
+    int len = write_buf.len;
     if (!value) PG_RETURN_NULL();
     PG_RETURN_BYTEA_P(cstring_to_text_with_len(value, len));
 }
