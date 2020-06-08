@@ -2,6 +2,7 @@
 
 #include <catalog/pg_type.h>
 #include <fmgr.h>
+#include <lib/stringinfo.h>
 #include <signal.h>
 #include <utils/builtins.h>
 
