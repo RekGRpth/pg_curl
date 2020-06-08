@@ -68,7 +68,7 @@ void _PG_init(void); void _PG_init(void) {
 }
 
 void _PG_fini(void); void _PG_fini(void) {
-    (pqsigfunc)pqsignal(SIGINT, pgsql_interrupt_handler);
+    pqsignal(SIGINT, pgsql_interrupt_handler);
     curl_easy_cleanup(curl);
     curl_mime_free(mime);
     curl_slist_free_all(header);
