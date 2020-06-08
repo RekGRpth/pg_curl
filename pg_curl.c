@@ -526,7 +526,7 @@ EXTENSION(pg_curl_easy_perform) {
     pg_curl_interrupt_requested = 0;
     switch (res = curl_easy_perform(curl)) {
         case CURLE_OK: break;
-        case CURLE_ABORTED_BY_CALLBACK: if (pgsql_interrupt_handler && pg_curl_interrupt_requested) { (*pgsql_interrupt_handler)(pg_curl_interrupt_requested); pg_curl_interrupt_requested = 0; }
+        case CURLE_ABORTED_BY_CALLBACK: if (pgsql_interrupt_handler && pg_curl_interrupt_requested) { (*pgsql_interrupt_handler)(pg_curl_interrupt_requested); pg_curl_interrupt_requested = 0; } // fall through
         default: E("curl_easy_perform: %s", curl_easy_strerror(res));
     }
     PG_RETURN_BOOL(res == CURLE_OK);
