@@ -501,7 +501,7 @@ static size_t header_callback(char *buffer, size_t size, size_t nitems, void *ou
 static size_t write_callback(char *buffer, size_t size, size_t nitems, void *outstream) {
     size_t realsize = size * nitems;
 //    L("buffer=%s, size=%lu, nitems=%lu, outstream=%p", buffer, size, nitems, outstream);
-    appendBinaryStringInfo(&write_buf, buffer, (int)realsize);
+    appendBinaryStringInfoNT(&write_buf, buffer, (int)realsize);
     return realsize;
 }
 
@@ -517,7 +517,7 @@ EXTENSION(pg_curl_easy_perform) {
     if ((res = curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, header_callback)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_HEADERFUNCTION): %s", curl_easy_strerror(res));
     if ((res = curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_NOPROGRESS): %s", curl_easy_strerror(res));
 //    if ((res = curl_easy_setopt(curl, CURLOPT_PROTOCOLS, CURLPROTO_HTTP | CURLPROTO_HTTPS)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_PROTOCOLS): %s", curl_easy_strerror(res));
-    if ((res = curl_easy_setopt(curl, CURLOPT_WRITEDATA, &write_buf)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_WRITEDATA): %s", curl_easy_strerror(res));
+    if ((res = curl_easy_setopt(curl, CURLOPT_WRITEDATA, NULL)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_WRITEDATA): %s", curl_easy_strerror(res));
     if ((res = curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_WRITEFUNCTION): %s", curl_easy_strerror(res));
     if ((res = curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION, progress_callback)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_XFERINFOFUNCTION): %s", curl_easy_strerror(res));
     if (header && ((res = curl_easy_setopt(curl, CURLOPT_HTTPHEADER, header)) != CURLE_OK)) E("curl_easy_setopt(CURLOPT_HTTPHEADER): %s", curl_easy_strerror(res));
@@ -533,17 +533,13 @@ EXTENSION(pg_curl_easy_perform) {
 }
 
 EXTENSION(pg_curl_easy_headers) {
-    char *value = header_buf.data;
-    int len = header_buf.len;
-    if (!value) PG_RETURN_NULL();
-    PG_RETURN_TEXT_P(cstring_to_text_with_len(value, len));
+    if (!header_buf.data) PG_RETURN_NULL();
+    PG_RETURN_TEXT_P(cstring_to_text_with_len(header_buf.data, header_buf.len));
 }
 
 EXTENSION(pg_curl_easy_response) {
-    char *value = write_buf.data;
-    int len = write_buf.len;
-    if (!value) PG_RETURN_NULL();
-    PG_RETURN_BYTEA_P(cstring_to_text_with_len(value, len));
+    if (!write_buf.data) PG_RETURN_NULL();
+    PG_RETURN_BYTEA_P(cstring_to_text_with_len(write_buf.data, write_buf.len));
 }
 
 EXTENSION(pg_curl_easy_getinfo_char) {
