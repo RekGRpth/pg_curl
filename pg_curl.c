@@ -44,16 +44,16 @@
 
 PG_MODULE_MAGIC;
 
-CURL *curl = NULL;
-StringInfoData header_buf;
-StringInfoData read_buf;
-StringInfoData write_buf;
-pqsigfunc pgsql_interrupt_handler = NULL;
-int pg_curl_interrupt_requested = 0;
-struct curl_slist *header = NULL;
-struct curl_slist *recipient = NULL;
-curl_mime *mime;
-bool has_mime;
+static CURL *curl = NULL;
+static StringInfoData header_buf;
+static StringInfoData read_buf;
+static StringInfoData write_buf;
+static pqsigfunc pgsql_interrupt_handler = NULL;
+static int pg_curl_interrupt_requested = 0;
+static struct curl_slist *header = NULL;
+static struct curl_slist *recipient = NULL;
+static curl_mime *mime;
+static bool has_mime;
 
 static void pg_curl_interrupt_handler(int sig) { pg_curl_interrupt_requested = sig; }
 
@@ -74,9 +74,9 @@ void _PG_fini(void); void _PG_fini(void) {
     curl_slist_free_all(header);
     curl_slist_free_all(recipient);
     curl_global_cleanup();
-    if (header_buf.data) pfree(header_buf.data);
-    pfree(read_buf.data);
-    if (write_buf.data) pfree(write_buf.data);
+//    if (header_buf.data) pfree(header_buf.data);
+//    pfree(read_buf.data);
+//    if (write_buf.data) pfree(write_buf.data);
 }
 
 EXTENSION(pg_curl_easy_reset) { 
@@ -509,9 +509,9 @@ static int progress_callback(void *clientp, curl_off_t dltotal, curl_off_t dlnow
 
 EXTENSION(pg_curl_easy_perform) {
     CURLcode res = CURL_LAST;
-    if (header_buf.data) pfree(header_buf.data);
+//    if (header_buf.data) pfree(header_buf.data);
     initStringInfo(&header_buf);
-    if (write_buf.data) pfree(write_buf.data);
+//    if (write_buf.data) pfree(write_buf.data);
     initStringInfo(&write_buf);
     if ((res = curl_easy_setopt(curl, CURLOPT_HEADERDATA, &header_buf)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_HEADERDATA): %s", curl_easy_strerror(res));
     if ((res = curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, header_callback)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_HEADERFUNCTION): %s", curl_easy_strerror(res));
