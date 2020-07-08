@@ -242,6 +242,27 @@ EXTENSION(pg_curl_mime_file) {
     PG_RETURN_BOOL(res == CURLE_OK);
 }
 
+EXTENSION(pg_curl_easy_setopt_bytea) {
+    CURLcode res = CURL_LAST;
+    char *name;
+    if (PG_ARGISNULL(0)) E("option is null!");
+    name = TextDatumGetCString(PG_GETARG_DATUM(0));
+    if (PG_ARGISNULL(1)) E("parameter is null!");
+    if (false);
+    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "COPYPOSTFIELDS")) {
+        bytea *value = DatumGetTextP(PG_GETARG_DATUM(1));
+        char *cvalue = TextDatumGetCString(PG_GETARG_DATUM(1));
+        if ((res = curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, VARSIZE_ANY_EXHDR(value))) != CURLE_OK) E("curl_easy_setopt(CURLOPT_POSTFIELDSIZE): %s", curl_easy_strerror(res));
+        if ((res = curl_easy_setopt(curl, CURLOPT_COPYPOSTFIELDS, cvalue)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_POSTFIELDSIZE): %s", curl_easy_strerror(res));
+        pfree(cvalue);
+        goto ret;
+    }
+    else E("unsupported option %s", name);
+ret:
+    pfree(name);
+    PG_RETURN_BOOL(res == CURLE_OK);
+}
+
 EXTENSION(pg_curl_easy_setopt_char) {
     CURLcode res = CURL_LAST;
     CURLoption option;
@@ -259,7 +280,6 @@ EXTENSION(pg_curl_easy_setopt_char) {
     else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "COOKIEJAR")) option = CURLOPT_COOKIEJAR;
     else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "COOKIELIST")) option = CURLOPT_COOKIELIST;
     else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "COOKIE")) option = CURLOPT_COOKIE;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "COPYPOSTFIELDS")) option = CURLOPT_COPYPOSTFIELDS;
     else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "CRLFILE")) option = CURLOPT_CRLFILE;
     else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "CUSTOMREQUEST")) option = CURLOPT_CUSTOMREQUEST;
     else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "DEFAULT_PROTOCOL")) option = CURLOPT_DEFAULT_PROTOCOL;
@@ -337,7 +357,6 @@ EXTENSION(pg_curl_easy_setopt_char) {
 //    L("%s = %s", name, value);
     if ((res = curl_easy_setopt(curl, option, value)) != CURLE_OK) E("curl_easy_setopt(%s, %s): %s", name, value, curl_easy_strerror(res));
     pfree(value);
-//ret:
     pfree(name);
     PG_RETURN_BOOL(res == CURLE_OK);
 }

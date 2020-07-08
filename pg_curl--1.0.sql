@@ -13,6 +13,7 @@ CREATE OR REPLACE FUNCTION pg_curl_mime_data(data bytea, name text default null,
 CREATE OR REPLACE FUNCTION pg_curl_mime_data(data text, name text default null, file text default null, type text default null, code text default null, head text default null) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_mime_data' LANGUAGE 'c';
 CREATE OR REPLACE FUNCTION pg_curl_mime_file(data text, name text default null, file text default null, type text default null, code text default null, head text default null) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_mime_file' LANGUAGE 'c';
 
+CREATE OR REPLACE FUNCTION pg_curl_easy_setopt(option text, parameter bytea) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_bytea' LANGUAGE 'c';
 CREATE OR REPLACE FUNCTION pg_curl_easy_setopt(option text, parameter text) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_char' LANGUAGE 'c';
 CREATE OR REPLACE FUNCTION pg_curl_easy_setopt(option text, parameter bigint) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_long' LANGUAGE 'c';
 
