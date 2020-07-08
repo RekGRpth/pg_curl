@@ -54,7 +54,6 @@ static bool has_mime;
 static CURL *curl = NULL;
 static curl_mime *mime;
 static FileString header_str = {NULL, NULL, 0};
-//static FileString read_str = {NULL, NULL, 0};
 static FileString write_str = {NULL, NULL, 0};
 static int pg_curl_interrupt_requested = 0;
 static pqsigfunc pgsql_interrupt_handler = NULL;
@@ -80,8 +79,6 @@ void _PG_fini(void); void _PG_fini(void) {
     curl_slist_free_all(recipient);
     curl_global_cleanup();
     if (header_str.data) { free(header_str.data); header_str.data = NULL; }
-//    if (read_str.data) { free(read_str.data); read_str.data = NULL; }
-//    if (read_str.file) { fclose(read_str.file); read_str.file = NULL; }
     if (write_str.data) { free(write_str.data); write_str.data = NULL; }
 }
 
@@ -95,8 +92,6 @@ EXTENSION(pg_curl_easy_reset) {
     if (!(mime = curl_mime_init(curl))) E("!curl_mime_init");
     has_mime = false;
     if (header_str.data) { free(header_str.data); header_str.data = NULL; }
-//    if (read_str.data) { free(read_str.data); read_str.data = NULL; }
-//    if (read_str.file) { fclose(read_str.file); read_str.file = NULL; }
     if (write_str.data) { free(write_str.data); write_str.data = NULL; }
     PG_RETURN_VOID();
 }
@@ -310,13 +305,6 @@ EXTENSION(pg_curl_easy_setopt_char) {
     else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "PROXYUSERPWD")) option = CURLOPT_PROXYUSERPWD;
     else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "RANDOM_FILE")) option = CURLOPT_RANDOM_FILE;
     else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "RANGE")) option = CURLOPT_RANGE;
-//    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "READDATA")) {
-//        text *value = DatumGetTextP(PG_GETARG_DATUM(1));
-//        if (!read_str.file && !(read_str.file = open_memstream(&read_str.data, &read_str.len))) E("!open_memstream");
-//        if (fwrite(VARDATA_ANY(value), sizeof(char), VARSIZE_ANY_EXHDR(value), read_str.file) != VARSIZE_ANY_EXHDR(value)) E("fwrite");
-//        if ((res = curl_easy_setopt(curl, CURLOPT_UPLOAD, 1L)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_UPLOAD): %s", curl_easy_strerror(res));
-//        goto ret;
-//    }
     else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "REFERER")) option = CURLOPT_REFERER;
     else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "REQUEST_TARGET")) option = CURLOPT_REQUEST_TARGET;
     else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "RTSP_SESSION_ID")) option = CURLOPT_RTSP_SESSION_ID;
@@ -491,17 +479,12 @@ static int progress_callback(void *clientp, curl_off_t dltotal, curl_off_t dlnow
 
 EXTENSION(pg_curl_easy_perform) {
     CURLcode res = CURL_LAST;
-//    FILE *file;
     if (header_str.data) { free(header_str.data); header_str.data = NULL; }
     if (write_str.data) { free(write_str.data); write_str.data = NULL; }
     if (!(header_str.file = open_memstream(&header_str.data, &header_str.len))) E("!open_memstream");
-//    if (fflush(read_str.file)) E("fflush");
-//    if (!(file = fmemopen(read_str.data, read_str.len, "rb"))) E("!fmemopen");
     if (!(write_str.file = open_memstream(&write_str.data, &write_str.len))) E("!open_memstream");
     if ((res = curl_easy_setopt(curl, CURLOPT_HEADERDATA, header_str.file)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_HEADERDATA): %s", curl_easy_strerror(res));
-//    if ((res = curl_easy_setopt(curl, CURLOPT_INFILESIZE, read_str.len)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_INFILESIZE): %s", curl_easy_strerror(res));
     if ((res = curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_NOPROGRESS): %s", curl_easy_strerror(res));
-//    if ((res = curl_easy_setopt(curl, CURLOPT_READDATA, file)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_READDATA): %s", curl_easy_strerror(res));
     if ((res = curl_easy_setopt(curl, CURLOPT_WRITEDATA, write_str.file)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_WRITEDATA): %s", curl_easy_strerror(res));
     if ((res = curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION, progress_callback)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_XFERINFOFUNCTION): %s", curl_easy_strerror(res));
     if (header && ((res = curl_easy_setopt(curl, CURLOPT_HTTPHEADER, header)) != CURLE_OK)) E("curl_easy_setopt(CURLOPT_HTTPHEADER): %s", curl_easy_strerror(res));
@@ -514,7 +497,6 @@ EXTENSION(pg_curl_easy_perform) {
         default: E("curl_easy_perform: %s", curl_easy_strerror(res));
     }
     fclose(header_str.file);
-//    fclose(file);
     fclose(write_str.file);
     PG_RETURN_BOOL(res == CURLE_OK);
 }
