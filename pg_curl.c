@@ -44,16 +44,18 @@
 
 PG_MODULE_MAGIC;
 
+static bool has_mime;
+static char *write_data = NULL;
 static CURL *curl = NULL;
+static curl_mime *mime;
+static int pg_curl_interrupt_requested = 0;
+static pqsigfunc pgsql_interrupt_handler = NULL;
+static size_t write_len;
 static StringInfoData header_buf;
 static StringInfoData read_buf;
-static StringInfoData write_buf;
-static pqsigfunc pgsql_interrupt_handler = NULL;
-static int pg_curl_interrupt_requested = 0;
+//static StringInfoData write_buf;
 static struct curl_slist *header = NULL;
 static struct curl_slist *recipient = NULL;
-static curl_mime *mime;
-static bool has_mime;
 
 static void pg_curl_interrupt_handler(int sig) { pg_curl_interrupt_requested = sig; }
 
@@ -74,12 +76,14 @@ void _PG_fini(void); void _PG_fini(void) {
     curl_slist_free_all(header);
     curl_slist_free_all(recipient);
     curl_global_cleanup();
+    if (write_data) free(write_data);
+    write_data = NULL;
 //    if (header_buf.data) pfree(header_buf.data);
 //    pfree(read_buf.data);
 //    if (write_buf.data) pfree(write_buf.data);
 }
 
-EXTENSION(pg_curl_easy_reset) { 
+EXTENSION(pg_curl_easy_reset) {
     curl_easy_reset(curl);
     curl_mime_free(mime);
     curl_slist_free_all(header);
@@ -89,6 +93,8 @@ EXTENSION(pg_curl_easy_reset) {
     if (!(mime = curl_mime_init(curl))) E("!curl_mime_init");
     has_mime = false;
     resetStringInfo(&read_buf);
+    if (write_data) free(write_data);
+    write_data = NULL;
     PG_RETURN_VOID();
 }
 
@@ -498,27 +504,30 @@ static size_t header_callback(char *buffer, size_t size, size_t nitems, void *ou
     return realsize;
 }
 
-static size_t write_callback(char *buffer, size_t size, size_t nitems, void *outstream) {
+/*static size_t write_callback(char *buffer, size_t size, size_t nitems, void *outstream) {
     size_t realsize = size * nitems;
 //    L("buffer=%s, size=%lu, nitems=%lu, outstream=%p", buffer, size, nitems, outstream);
     appendBinaryStringInfoNT(&write_buf, buffer, (int)realsize);
     return realsize;
-}
+}*/
 
 static int progress_callback(void *clientp, curl_off_t dltotal, curl_off_t dlnow, curl_off_t ultotal, curl_off_t ulnow) { return pg_curl_interrupt_requested; }
 
 EXTENSION(pg_curl_easy_perform) {
     CURLcode res = CURL_LAST;
+    FILE *out;
+    if (write_data) free(write_data);
+    if (!(out = open_memstream(&write_data, &write_len))) ereport(ERROR, (errmsg("!open_memstream")));
 //    if (header_buf.data) pfree(header_buf.data);
     initStringInfo(&header_buf);
 //    if (write_buf.data) pfree(write_buf.data);
-    initStringInfo(&write_buf);
+//    initStringInfo(&write_buf);
     if ((res = curl_easy_setopt(curl, CURLOPT_HEADERDATA, &header_buf)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_HEADERDATA): %s", curl_easy_strerror(res));
     if ((res = curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, header_callback)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_HEADERFUNCTION): %s", curl_easy_strerror(res));
     if ((res = curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_NOPROGRESS): %s", curl_easy_strerror(res));
 //    if ((res = curl_easy_setopt(curl, CURLOPT_PROTOCOLS, CURLPROTO_HTTP | CURLPROTO_HTTPS)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_PROTOCOLS): %s", curl_easy_strerror(res));
-    if ((res = curl_easy_setopt(curl, CURLOPT_WRITEDATA, NULL)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_WRITEDATA): %s", curl_easy_strerror(res));
-    if ((res = curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_WRITEFUNCTION): %s", curl_easy_strerror(res));
+    if ((res = curl_easy_setopt(curl, CURLOPT_WRITEDATA, out)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_WRITEDATA): %s", curl_easy_strerror(res));
+//    if ((res = curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_WRITEFUNCTION): %s", curl_easy_strerror(res));
     if ((res = curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION, progress_callback)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_XFERINFOFUNCTION): %s", curl_easy_strerror(res));
     if (header && ((res = curl_easy_setopt(curl, CURLOPT_HTTPHEADER, header)) != CURLE_OK)) E("curl_easy_setopt(CURLOPT_HTTPHEADER): %s", curl_easy_strerror(res));
     if (recipient && ((res = curl_easy_setopt(curl, CURLOPT_MAIL_RCPT, recipient)) != CURLE_OK)) E("curl_easy_setopt(CURLOPT_MAIL_RCPT): %s", curl_easy_strerror(res));
@@ -529,6 +538,7 @@ EXTENSION(pg_curl_easy_perform) {
         case CURLE_ABORTED_BY_CALLBACK: if (pgsql_interrupt_handler && pg_curl_interrupt_requested) { (*pgsql_interrupt_handler)(pg_curl_interrupt_requested); pg_curl_interrupt_requested = 0; } // fall through
         default: E("curl_easy_perform: %s", curl_easy_strerror(res));
     }
+    fclose(out);
     PG_RETURN_BOOL(res == CURLE_OK);
 }
 
@@ -538,8 +548,8 @@ EXTENSION(pg_curl_easy_headers) {
 }
 
 EXTENSION(pg_curl_easy_response) {
-    if (!write_buf.data) PG_RETURN_NULL();
-    PG_RETURN_BYTEA_P(cstring_to_text_with_len(write_buf.data, write_buf.len));
+    if (!write_data) PG_RETURN_NULL();
+    PG_RETURN_BYTEA_P(cstring_to_text_with_len(write_data, write_len));
 }
 
 EXTENSION(pg_curl_easy_getinfo_char) {
