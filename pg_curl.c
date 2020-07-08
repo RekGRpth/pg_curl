@@ -70,7 +70,6 @@ void _PG_init(void); void _PG_init(void) {
     has_mime = false;
     pg_curl_interrupt_requested = 0;
     pgsql_interrupt_handler = pqsignal(SIGINT, pg_curl_interrupt_handler);
-    if (!(read_str.file = open_memstream(&read_str.data, &read_str.len))) E("!open_memstream");
 }
 
 void _PG_fini(void); void _PG_fini(void) {
@@ -80,10 +79,10 @@ void _PG_fini(void); void _PG_fini(void) {
     curl_slist_free_all(header);
     curl_slist_free_all(recipient);
     curl_global_cleanup();
-    if (header_str.data) free(header_str.data);
-    if (read_str.data) free(read_str.data);
-    fclose(read_str.file);
-    if (write_str.data) free(write_str.data);
+    if (header_str.data) { free(header_str.data); header_str.data = NULL; }
+    if (read_str.data) { free(read_str.data); read_str.data = NULL; }
+    if (read_str.file) { fclose(read_str.file); read_str.file = NULL; }
+    if (write_str.data) { free(write_str.data); write_str.data = NULL; }
 }
 
 EXTENSION(pg_curl_easy_reset) {
@@ -95,13 +94,10 @@ EXTENSION(pg_curl_easy_reset) {
     recipient = NULL;
     if (!(mime = curl_mime_init(curl))) E("!curl_mime_init");
     has_mime = false;
-    if (header_str.data) free(header_str.data);
-    header_str.data = NULL;
-    if (read_str.data) free(read_str.data);
-    fclose(read_str.file);
-    if (!(read_str.file = open_memstream(&read_str.data, &read_str.len))) E("!open_memstream");
-    if (write_str.data) free(write_str.data);
-    write_str.data = NULL;
+    if (header_str.data) { free(header_str.data); header_str.data = NULL; }
+    if (read_str.data) { free(read_str.data); read_str.data = NULL; }
+    if (read_str.file) { fclose(read_str.file); read_str.file = NULL; }
+    if (write_str.data) { free(write_str.data); write_str.data = NULL; }
     PG_RETURN_VOID();
 }
 
@@ -316,7 +312,9 @@ EXTENSION(pg_curl_easy_setopt_char) {
     else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "RANGE")) option = CURLOPT_RANGE;
     else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "READDATA")) {
         text *value = DatumGetTextP(PG_GETARG_DATUM(1));
-        if (fwrite(VARDATA_ANY(value), VARSIZE_ANY_EXHDR(value), 1, read_str.file) != VARSIZE_ANY_EXHDR(value)) E("fwrite");
+        if (!read_str.file && !(read_str.file = open_memstream(&read_str.data, &read_str.len))) E("!open_memstream");
+        if (fwrite(VARDATA_ANY(value), sizeof(char), VARSIZE_ANY_EXHDR(value), read_str.file) != VARSIZE_ANY_EXHDR(value)) E("fwrite");
+        if (fflush(read_str.file)) E("fflush");
         if ((res = curl_easy_setopt(curl, CURLOPT_UPLOAD, 1L)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_UPLOAD): %s", curl_easy_strerror(res));
         goto ret;
     }
@@ -494,10 +492,9 @@ static int progress_callback(void *clientp, curl_off_t dltotal, curl_off_t dlnow
 
 EXTENSION(pg_curl_easy_perform) {
     CURLcode res = CURL_LAST;
-    if (header_str.data) free(header_str.data);
-    if (write_str.data) free(write_str.data);
+    if (header_str.data) { free(header_str.data); header_str.data = NULL; }
+    if (write_str.data) { free(write_str.data); write_str.data = NULL; }
     if (!(header_str.file = open_memstream(&header_str.data, &header_str.len))) E("!open_memstream");
-    if (fflush(read_str.file)) E("fflush");
     if (!(write_str.file = open_memstream(&write_str.data, &write_str.len))) E("!open_memstream");
     if ((res = curl_easy_setopt(curl, CURLOPT_HEADERDATA, header_str.file)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_HEADERDATA): %s", curl_easy_strerror(res));
     if ((res = curl_easy_setopt(curl, CURLOPT_INFILESIZE, read_str.len)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_INFILESIZE): %s", curl_easy_strerror(res));
