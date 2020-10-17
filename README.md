@@ -4,10 +4,9 @@ CREATE OR REPLACE FUNCTION get(url TEXT) RETURNS TEXT LANGUAGE SQL AS $BODY$
     WITH s AS (SELECT
         pg_curl_easy_reset(),
         pg_curl_easy_setopt('CURLOPT_URL', url),
-        pg_curl_header_append('Connection', 'close'),
         pg_curl_easy_perform(),
-        pg_curl_easy_getinfo_char('CURLINFO_RESPONSE')
-    ) SELECT pg_curl_easy_getinfo_char FROM s;
+        pg_curl_easy_response()
+    ) SELECT convert_from(pg_curl_easy_response, 'utf-8') FROM s;
 $BODY$;
 ```
 
@@ -17,18 +16,17 @@ CREATE OR REPLACE FUNCTION post(url TEXT, request JSON) RETURNS TEXT LANGUAGE SQ
     WITH s AS (SELECT
         pg_curl_easy_reset(),
         pg_curl_easy_setopt('CURLOPT_URL', url),
-        pg_curl_header_append('Connection', 'close'),
         pg_curl_easy_setopt('CURLOPT_COPYPOSTFIELDS', (
             WITH s AS (
                 SELECT (json_each_text(request)).*
-            ) SELECT array_to_string(array_agg(concat_ws('=',
+            ) SELECT convert_to(array_to_string(array_agg(concat_ws('=',
                 pg_curl_easy_escape(key),
                 pg_curl_easy_escape(value)
-            )), '&') FROM s
+            )), '&'), 'utf-8') FROM s
         )),
         pg_curl_easy_perform(),
-        pg_curl_easy_getinfo_char('CURLINFO_RESPONSE')
-    ) SELECT pg_curl_easy_getinfo_char FROM s;
+        pg_curl_easy_response()
+    ) SELECT convert_from(pg_curl_easy_response, 'utf-8') FROM s;
 $BODY$;
 ```
 
@@ -39,11 +37,10 @@ CREATE OR REPLACE FUNCTION post(url TEXT, request JSON) RETURNS TEXT LANGUAGE SQ
         pg_curl_easy_reset(),
         pg_curl_easy_setopt('CURLOPT_URL', url),
         pg_curl_header_append('Content-Type', 'application/json; charset=utf-8'),
-        pg_curl_header_append('Connection', 'close'),
-        pg_curl_easy_setopt('CURLOPT_COPYPOSTFIELDS', request::TEXT),
+        pg_curl_easy_setopt('CURLOPT_COPYPOSTFIELDS', convert_to(request::TEXT, 'utf-8')),
         pg_curl_easy_perform(),
-        pg_curl_easy_getinfo_char('CURLINFO_RESPONSE')
-    ) SELECT pg_curl_easy_getinfo_char FROM s;
+        pg_curl_easy_response()
+    ) SELECT convert_from(pg_curl_easy_response, 'utf-8') FROM s;
 $BODY$;
 ```
 
@@ -60,9 +57,8 @@ CREATE OR REPLACE FUNCTION email(url TEXT, username TEXT, password TEXT, subject
         pg_curl_header_append('From', "from"),
         pg_curl_header_append('To', "to"),
         pg_curl_mime_data(data, type:=type),
-        pg_curl_header_append('Connection', 'close'),
         pg_curl_easy_perform(),
-        pg_curl_easy_getinfo_char('CURLINFO_HEADERS')
-    ) SELECT pg_curl_easy_getinfo_char FROM s;
+        pg_curl_easy_headers()
+    ) SELECT pg_curl_easy_headers FROM s;
 $BODY$;
 ```
