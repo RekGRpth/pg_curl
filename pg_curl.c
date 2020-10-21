@@ -251,10 +251,8 @@ EXTENSION(pg_curl_easy_setopt_bytea) {
     if (false);
     else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "COPYPOSTFIELDS")) {
         bytea *value = DatumGetTextP(PG_GETARG_DATUM(1));
-        char *cvalue = TextDatumGetCString(PG_GETARG_DATUM(1));
         if ((res = curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, VARSIZE_ANY_EXHDR(value))) != CURLE_OK) E("curl_easy_setopt(CURLOPT_POSTFIELDSIZE): %s", curl_easy_strerror(res));
-        if ((res = curl_easy_setopt(curl, CURLOPT_COPYPOSTFIELDS, cvalue)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_POSTFIELDSIZE): %s", curl_easy_strerror(res));
-        pfree(cvalue);
+        if ((res = curl_easy_setopt(curl, CURLOPT_COPYPOSTFIELDS, VARDATA_ANY(value))) != CURLE_OK) E("curl_easy_setopt(CURLOPT_POSTFIELDSIZE): %s", curl_easy_strerror(res));
         goto ret;
     }
     else E("unsupported option %s", name);
