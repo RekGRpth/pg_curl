@@ -54,6 +54,7 @@ static bool has_mime;
 static CURL *curl = NULL;
 static curl_mime *mime;
 static FileString header_str = {NULL, NULL, 0};
+static FILE *read_str_file = NULL;
 static FileString write_str = {NULL, NULL, 0};
 static int pg_curl_interrupt_requested = 0;
 static pqsigfunc pgsql_interrupt_handler = NULL;
@@ -79,6 +80,7 @@ void _PG_fini(void); void _PG_fini(void) {
     curl_slist_free_all(recipient);
     curl_global_cleanup();
     if (header_str.data) { free(header_str.data); header_str.data = NULL; }
+    if (read_str_file) { fclose(read_str_file); read_str_file = NULL; }
     if (write_str.data) { free(write_str.data); write_str.data = NULL; }
 }
 
@@ -92,6 +94,7 @@ EXTENSION(pg_curl_easy_reset) {
     if (!(mime = curl_mime_init(curl))) E("!curl_mime_init");
     has_mime = false;
     if (header_str.data) { free(header_str.data); header_str.data = NULL; }
+    if (read_str_file) { fclose(read_str_file); read_str_file = NULL; }
     if (write_str.data) { free(write_str.data); write_str.data = NULL; }
     PG_RETURN_VOID();
 }
@@ -252,10 +255,17 @@ EXTENSION(pg_curl_easy_setopt_bytea) {
     else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "COPYPOSTFIELDS")) {
         bytea *value = DatumGetTextP(PG_GETARG_DATUM(1));
         if ((res = curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, VARSIZE_ANY_EXHDR(value))) != CURLE_OK) E("curl_easy_setopt(CURLOPT_POSTFIELDSIZE): %s", curl_easy_strerror(res));
-        if ((res = curl_easy_setopt(curl, CURLOPT_COPYPOSTFIELDS, VARDATA_ANY(value))) != CURLE_OK) E("curl_easy_setopt(CURLOPT_POSTFIELDSIZE): %s", curl_easy_strerror(res));
+        if ((res = curl_easy_setopt(curl, CURLOPT_COPYPOSTFIELDS, VARDATA_ANY(value))) != CURLE_OK) E("curl_easy_setopt(CURLOPT_COPYPOSTFIELDS): %s", curl_easy_strerror(res));
         goto ret;
-    }
-    else E("unsupported option %s", name);
+    } else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "READDATA")) {
+        bytea *value = DatumGetTextP(PG_GETARG_DATUM(1));
+        if (read_str_file) { fclose(read_str_file); read_str_file = NULL; }
+        if ((res = curl_easy_setopt(curl, CURLOPT_UPLOAD, 1L)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_UPLOAD): %s", curl_easy_strerror(res));
+        if ((res = curl_easy_setopt(curl, CURLOPT_INFILESIZE, VARSIZE_ANY_EXHDR(value))) != CURLE_OK) E("curl_easy_setopt(CURLOPT_INFILESIZE): %s", curl_easy_strerror(res));
+        if (!(read_str_file = fmemopen(VARDATA_ANY(value), VARSIZE_ANY_EXHDR(value), "rb"))) E("!fmemopen");
+        if ((res = curl_easy_setopt(curl, CURLOPT_READDATA, read_str_file)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_READDATA): %s", curl_easy_strerror(res));
+        goto ret;
+    } else E("unsupported option %s", name);
 ret:
     pfree(name);
     PG_RETURN_BOOL(res == CURLE_OK);
