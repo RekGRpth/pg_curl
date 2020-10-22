@@ -245,268 +245,247 @@ EXTENSION(pg_curl_mime_file) {
     PG_RETURN_BOOL(res == CURLE_OK);
 }
 
-EXTENSION(pg_curl_easy_setopt_bytea) {
+EXTENSION(pg_curl_easy_setopt_copypostfields) {
     CURLcode res = CURL_LAST;
-    char *name;
-    if (PG_ARGISNULL(0)) E("option is null!");
-    name = TextDatumGetCString(PG_GETARG_DATUM(0));
-    if (PG_ARGISNULL(1)) E("parameter is null!");
-    if (false);
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "COPYPOSTFIELDS")) {
-        bytea *value = DatumGetTextP(PG_GETARG_DATUM(1));
-        if ((res = curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, VARSIZE_ANY_EXHDR(value))) != CURLE_OK) E("curl_easy_setopt(CURLOPT_POSTFIELDSIZE): %s", curl_easy_strerror(res));
-        if ((res = curl_easy_setopt(curl, CURLOPT_COPYPOSTFIELDS, VARDATA_ANY(value))) != CURLE_OK) E("curl_easy_setopt(CURLOPT_COPYPOSTFIELDS): %s", curl_easy_strerror(res));
-        goto ret;
-    } else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "READDATA")) {
-        bytea *value = DatumGetTextP(PG_GETARG_DATUM(1));
-        if (read_str_file) { fclose(read_str_file); read_str_file = NULL; }
-        if ((res = curl_easy_setopt(curl, CURLOPT_UPLOAD, 1L)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_UPLOAD): %s", curl_easy_strerror(res));
-        if ((res = curl_easy_setopt(curl, CURLOPT_INFILESIZE, VARSIZE_ANY_EXHDR(value))) != CURLE_OK) E("curl_easy_setopt(CURLOPT_INFILESIZE): %s", curl_easy_strerror(res));
-        if (!(read_str_file = fmemopen(VARDATA_ANY(value), VARSIZE_ANY_EXHDR(value), "rb"))) E("!fmemopen");
-        if ((res = curl_easy_setopt(curl, CURLOPT_READDATA, read_str_file)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_READDATA): %s", curl_easy_strerror(res));
-        goto ret;
-    } else E("unsupported option %s", name);
-ret:
-    pfree(name);
+    bytea *parameter;
+    if (PG_ARGISNULL(0)) E("parameter is null!");
+    parameter = DatumGetTextP(PG_GETARG_DATUM(0));
+    if ((res = curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, VARSIZE_ANY_EXHDR(parameter))) != CURLE_OK) E("curl_easy_setopt(CURLOPT_POSTFIELDSIZE): %s", curl_easy_strerror(res));
+    if ((res = curl_easy_setopt(curl, CURLOPT_COPYPOSTFIELDS, VARDATA_ANY(parameter))) != CURLE_OK) E("curl_easy_setopt(CURLOPT_COPYPOSTFIELDS): %s", curl_easy_strerror(res));
     PG_RETURN_BOOL(res == CURLE_OK);
 }
 
-EXTENSION(pg_curl_easy_setopt_char) {
+EXTENSION(pg_curl_easy_setopt_readdata) {
     CURLcode res = CURL_LAST;
-    CURLoption option;
-    char *name, *value;
-    if (PG_ARGISNULL(0)) E("option is null!");
-    name = TextDatumGetCString(PG_GETARG_DATUM(0));
-    if (PG_ARGISNULL(1)) E("parameter is null!");
-    if (false);
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "ABSTRACT_UNIX_SOCKET")) option = CURLOPT_ABSTRACT_UNIX_SOCKET;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "ACCEPT_ENCODING")) option = CURLOPT_ACCEPT_ENCODING;
-//    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "ALTSVC")) option = CURLOPT_ALTSVC;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "CAINFO")) option = CURLOPT_CAINFO;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "CAPATH")) option = CURLOPT_CAPATH;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "COOKIEFILE")) option = CURLOPT_COOKIEFILE;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "COOKIEJAR")) option = CURLOPT_COOKIEJAR;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "COOKIELIST")) option = CURLOPT_COOKIELIST;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "COOKIE")) option = CURLOPT_COOKIE;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "CRLFILE")) option = CURLOPT_CRLFILE;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "CUSTOMREQUEST")) option = CURLOPT_CUSTOMREQUEST;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "DEFAULT_PROTOCOL")) option = CURLOPT_DEFAULT_PROTOCOL;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "DNS_INTERFACE")) option = CURLOPT_DNS_INTERFACE;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "DNS_LOCAL_IP4")) option = CURLOPT_DNS_LOCAL_IP4;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "DNS_LOCAL_IP6")) option = CURLOPT_DNS_LOCAL_IP6;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "DNS_SERVERS")) option = CURLOPT_DNS_SERVERS;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "DOH_URL")) option = CURLOPT_DOH_URL;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "EGDSOCKET")) option = CURLOPT_EGDSOCKET;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "FTP_ACCOUNT")) option = CURLOPT_FTP_ACCOUNT;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "FTP_ALTERNATIVE_TO_USER")) option = CURLOPT_FTP_ALTERNATIVE_TO_USER;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "FTPPORT")) option = CURLOPT_FTPPORT;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "INTERFACE")) option = CURLOPT_INTERFACE;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "ISSUERCERT")) option = CURLOPT_ISSUERCERT;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "KEYPASSWD")) option = CURLOPT_KEYPASSWD;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "KRBLEVEL")) option = CURLOPT_KRBLEVEL;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "LOGIN_OPTIONS")) option = CURLOPT_LOGIN_OPTIONS;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "MAIL_AUTH")) option = CURLOPT_MAIL_AUTH;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "MAIL_FROM")) option = CURLOPT_MAIL_FROM;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "NOPROXY")) option = CURLOPT_NOPROXY;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "PASSWORD")) option = CURLOPT_PASSWORD;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "PINNEDPUBLICKEY")) option = CURLOPT_PINNEDPUBLICKEY;
-//    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "POSTFIELDS")) option = CURLOPT_POSTFIELDS;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "PRE_PROXY")) option = CURLOPT_PRE_PROXY;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "PROXY_CAINFO")) option = CURLOPT_PROXY_CAINFO;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "PROXY_CAPATH")) option = CURLOPT_PROXY_CAPATH;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "PROXY_CRLFILE")) option = CURLOPT_PROXY_CRLFILE;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "PROXY_KEYPASSWD")) option = CURLOPT_PROXY_KEYPASSWD;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "PROXYPASSWORD")) option = CURLOPT_PROXYPASSWORD;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "PROXY_PINNEDPUBLICKEY")) option = CURLOPT_PROXY_PINNEDPUBLICKEY;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "PROXY_SERVICE_NAME")) option = CURLOPT_PROXY_SERVICE_NAME;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "PROXY")) option = CURLOPT_PROXY;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "PROXY_SSLCERT")) option = CURLOPT_PROXY_SSLCERT;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "PROXY_SSLCERTTYPE")) option = CURLOPT_PROXY_SSLCERTTYPE;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "PROXY_SSL_CIPHER_LIST")) option = CURLOPT_PROXY_SSL_CIPHER_LIST;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "PROXY_SSLKEY")) option = CURLOPT_PROXY_SSLKEY;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "PROXY_SSLKEYTYPE")) option = CURLOPT_PROXY_SSLKEYTYPE;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "PROXY_TLS13_CIPHERS")) option = CURLOPT_PROXY_TLS13_CIPHERS;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "PROXY_TLSAUTH_PASSWORD")) option = CURLOPT_PROXY_TLSAUTH_PASSWORD;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "PROXY_TLSAUTH_TYPE")) option = CURLOPT_PROXY_TLSAUTH_TYPE;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "PROXY_TLSAUTH_USERNAME")) option = CURLOPT_PROXY_TLSAUTH_USERNAME;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "PROXYUSERNAME")) option = CURLOPT_PROXYUSERNAME;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "PROXYUSERPWD")) option = CURLOPT_PROXYUSERPWD;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "RANDOM_FILE")) option = CURLOPT_RANDOM_FILE;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "RANGE")) option = CURLOPT_RANGE;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "REFERER")) option = CURLOPT_REFERER;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "REQUEST_TARGET")) option = CURLOPT_REQUEST_TARGET;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "RTSP_SESSION_ID")) option = CURLOPT_RTSP_SESSION_ID;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "RTSP_STREAM_URI")) option = CURLOPT_RTSP_STREAM_URI;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "RTSP_TRANSPORT")) option = CURLOPT_RTSP_TRANSPORT;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "SERVICE_NAME")) option = CURLOPT_SERVICE_NAME;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "SOCKS5_GSSAPI_SERVICE")) option = CURLOPT_SOCKS5_GSSAPI_SERVICE;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "SSH_HOST_PUBLIC_KEY_MD5")) option = CURLOPT_SSH_HOST_PUBLIC_KEY_MD5;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "SSH_KNOWNHOSTS")) option = CURLOPT_SSH_KNOWNHOSTS;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "SSH_PRIVATE_KEYFILE")) option = CURLOPT_SSH_PRIVATE_KEYFILE;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "SSH_PUBLIC_KEYFILE")) option = CURLOPT_SSH_PUBLIC_KEYFILE;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "SSLCERT")) option = CURLOPT_SSLCERT;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "SSLCERTTYPE")) option = CURLOPT_SSLCERTTYPE;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "SSL_CIPHER_LIST")) option = CURLOPT_SSL_CIPHER_LIST;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "SSLENGINE")) option = CURLOPT_SSLENGINE;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "SSLKEY")) option = CURLOPT_SSLKEY;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "SSLKEYTYPE")) option = CURLOPT_SSLKEYTYPE;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "TLS13_CIPHERS")) option = CURLOPT_TLS13_CIPHERS;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "TLSAUTH_PASSWORD")) option = CURLOPT_TLSAUTH_PASSWORD;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "TLSAUTH_TYPE")) option = CURLOPT_TLSAUTH_TYPE;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "TLSAUTH_USERNAME")) option = CURLOPT_TLSAUTH_USERNAME;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "UNIX_SOCKET_PATH")) option = CURLOPT_UNIX_SOCKET_PATH;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "URL")) option = CURLOPT_URL;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "USERAGENT")) option = CURLOPT_USERAGENT;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "USERNAME")) option = CURLOPT_USERNAME;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "USERPWD")) option = CURLOPT_USERPWD;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "XOAUTH2_BEARER")) option = CURLOPT_XOAUTH2_BEARER;
-    else E("unsupported option %s", name);
-    value = TextDatumGetCString(PG_GETARG_DATUM(1));
-//    L("%s = %s", name, value);
-    if ((res = curl_easy_setopt(curl, option, value)) != CURLE_OK) E("curl_easy_setopt(%s, %s): %s", name, value, curl_easy_strerror(res));
-    pfree(value);
-    pfree(name);
+    bytea *parameter;
+    if (PG_ARGISNULL(0)) E("parameter is null!");
+    parameter = DatumGetTextP(PG_GETARG_DATUM(0));
+    if (read_str_file) { fclose(read_str_file); read_str_file = NULL; }
+    if ((res = curl_easy_setopt(curl, CURLOPT_UPLOAD, 1L)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_UPLOAD): %s", curl_easy_strerror(res));
+    if ((res = curl_easy_setopt(curl, CURLOPT_INFILESIZE, VARSIZE_ANY_EXHDR(parameter))) != CURLE_OK) E("curl_easy_setopt(CURLOPT_INFILESIZE): %s", curl_easy_strerror(res));
+    if (!(read_str_file = fmemopen(VARDATA_ANY(parameter), VARSIZE_ANY_EXHDR(parameter), "rb"))) E("!fmemopen");
+    if ((res = curl_easy_setopt(curl, CURLOPT_READDATA, read_str_file)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_READDATA): %s", curl_easy_strerror(res));
     PG_RETURN_BOOL(res == CURLE_OK);
 }
 
-EXTENSION(pg_curl_easy_setopt_long) {
+static Datum pg_curl_easy_setopt_char(PG_FUNCTION_ARGS, CURLoption option) {
     CURLcode res = CURL_LAST;
-    CURLoption option;
-    char *name;
-    long value;
-    if (PG_ARGISNULL(0)) E("option is null!");
-    name = TextDatumGetCString(PG_GETARG_DATUM(0));
-    if (PG_ARGISNULL(1)) E("parameter is null!");
-    value = PG_GETARG_INT64(1);
-//    L("%s = %li", name, value);
-    if (false);
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "ACCEPTTIMEOUT_MS")) option = CURLOPT_ACCEPTTIMEOUT_MS;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "ADDRESS_SCOPE")) option = CURLOPT_ADDRESS_SCOPE;
-//    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "ALTSVC_CTRL")) option = CURLOPT_ALTSVC_CTRL;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "APPEND")) option = CURLOPT_APPEND;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "AUTOREFERER")) option = CURLOPT_AUTOREFERER;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "BUFFERSIZE")) option = CURLOPT_BUFFERSIZE;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "CERTINFO")) option = CURLOPT_CERTINFO;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "CONNECT_ONLY")) option = CURLOPT_CONNECT_ONLY;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "CONNECTTIMEOUT_MS")) option = CURLOPT_CONNECTTIMEOUT_MS;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "CONNECTTIMEOUT")) option = CURLOPT_CONNECTTIMEOUT;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "COOKIESESSION")) option = CURLOPT_COOKIESESSION;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "CRLF")) option = CURLOPT_CRLF;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "DIRLISTONLY")) option = CURLOPT_DIRLISTONLY;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "DISALLOW_USERNAME_IN_URL")) option = CURLOPT_DISALLOW_USERNAME_IN_URL;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "DNS_CACHE_TIMEOUT")) option = CURLOPT_DNS_CACHE_TIMEOUT;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "DNS_SHUFFLE_ADDRESSES")) option = CURLOPT_DNS_SHUFFLE_ADDRESSES;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "DNS_USE_GLOBAL_CACHE")) option = CURLOPT_DNS_USE_GLOBAL_CACHE;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "EXPECT_100_TIMEOUT_MS")) option = CURLOPT_EXPECT_100_TIMEOUT_MS;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "FAILONERROR")) option = CURLOPT_FAILONERROR;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "FILETIME")) option = CURLOPT_FILETIME;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "FOLLOWLOCATION")) option = CURLOPT_FOLLOWLOCATION;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "FORBID_REUSE")) option = CURLOPT_FORBID_REUSE;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "FRESH_CONNECT")) option = CURLOPT_FRESH_CONNECT;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "FTP_CREATE_MISSING_DIRS")) option = CURLOPT_FTP_CREATE_MISSING_DIRS;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "FTP_FILEMETHOD")) option = CURLOPT_FTP_FILEMETHOD;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "FTP_SKIP_PASV_IP")) option = CURLOPT_FTP_SKIP_PASV_IP;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "FTPSSLAUTH")) option = CURLOPT_FTPSSLAUTH;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "FTP_SSL_CCC")) option = CURLOPT_FTP_SSL_CCC;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "FTP_USE_EPRT")) option = CURLOPT_FTP_USE_EPRT;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "FTP_USE_EPSV")) option = CURLOPT_FTP_USE_EPSV;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "FTP_USE_PRET")) option = CURLOPT_FTP_USE_PRET;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "GSSAPI_DELEGATION")) option = CURLOPT_GSSAPI_DELEGATION;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "HAPPY_EYEBALLS_TIMEOUT_MS")) option = CURLOPT_HAPPY_EYEBALLS_TIMEOUT_MS;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "HAPROXYPROTOCOL")) option = CURLOPT_HAPROXYPROTOCOL;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "HEADER")) option = CURLOPT_HEADER;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "HTTP09_ALLOWED")) option = CURLOPT_HTTP09_ALLOWED;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "HTTPAUTH")) option = CURLOPT_HTTPAUTH;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "HTTP_CONTENT_DECODING")) option = CURLOPT_HTTP_CONTENT_DECODING;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "HTTPGET")) option = CURLOPT_HTTPGET;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "HTTPPROXYTUNNEL")) option = CURLOPT_HTTPPROXYTUNNEL;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "HTTP_TRANSFER_DECODING")) option = CURLOPT_HTTP_TRANSFER_DECODING;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "HTTP_VERSION")) option = CURLOPT_HTTP_VERSION;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "IGNORE_CONTENT_LENGTH")) option = CURLOPT_IGNORE_CONTENT_LENGTH;
-//    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "INFILESIZE")) option = CURLOPT_INFILESIZE;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "IPRESOLVE")) option = CURLOPT_IPRESOLVE;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "KEEP_SENDING_ON_ERROR")) option = CURLOPT_KEEP_SENDING_ON_ERROR;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "LOCALPORTRANGE")) option = CURLOPT_LOCALPORTRANGE;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "LOCALPORT")) option = CURLOPT_LOCALPORT;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "LOW_SPEED_LIMIT")) option = CURLOPT_LOW_SPEED_LIMIT;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "LOW_SPEED_TIME")) option = CURLOPT_LOW_SPEED_TIME;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "MAXCONNECTS")) option = CURLOPT_MAXCONNECTS;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "MAXFILESIZE")) option = CURLOPT_MAXFILESIZE;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "MAXREDIRS")) option = CURLOPT_MAXREDIRS;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "NETRC")) option = CURLOPT_NETRC;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "NEW_DIRECTORY_PERMS")) option = CURLOPT_NEW_DIRECTORY_PERMS;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "NEW_FILE_PERMS")) option = CURLOPT_NEW_FILE_PERMS;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "NOBODY")) option = CURLOPT_NOBODY;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "NOSIGNAL")) option = CURLOPT_NOSIGNAL;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "PATH_AS_IS")) option = CURLOPT_PATH_AS_IS;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "PIPEWAIT")) option = CURLOPT_PIPEWAIT;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "PORT")) option = CURLOPT_PORT;
-//    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "POSTFIELDSIZE")) option = CURLOPT_POSTFIELDSIZE;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "POSTREDIR")) option = CURLOPT_POSTREDIR;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "POST")) option = CURLOPT_POST;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "PROTOCOLS")) option = CURLOPT_PROTOCOLS;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "PROXYAUTH")) option = CURLOPT_PROXYAUTH;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "PROXYPORT")) option = CURLOPT_PROXYPORT;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "PROXY_SSL_OPTIONS")) option = CURLOPT_PROXY_SSL_OPTIONS;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "PROXY_SSL_VERIFYHOST")) option = CURLOPT_PROXY_SSL_VERIFYHOST;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "PROXY_SSL_VERIFYPEER")) option = CURLOPT_PROXY_SSL_VERIFYPEER;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "PROXY_SSLVERSION")) option = CURLOPT_PROXY_SSLVERSION;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "PROXY_TRANSFER_MODE")) option = CURLOPT_PROXY_TRANSFER_MODE;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "PROXYTYPE")) option = CURLOPT_PROXYTYPE;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "PUT")) option = CURLOPT_PUT;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "REDIR_PROTOCOLS")) option = CURLOPT_REDIR_PROTOCOLS;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "RESUME_FROM")) option = CURLOPT_RESUME_FROM;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "RTSP_CLIENT_CSEQ")) option = CURLOPT_RTSP_CLIENT_CSEQ;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "RTSP_REQUEST")) option = CURLOPT_RTSP_REQUEST;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "RTSP_SERVER_CSEQ")) option = CURLOPT_RTSP_SERVER_CSEQ;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "SASL_IR")) option = CURLOPT_SASL_IR;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "SERVER_RESPONSE_TIMEOUT")) option = CURLOPT_SERVER_RESPONSE_TIMEOUT;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "SOCKS5_AUTH")) option = CURLOPT_SOCKS5_AUTH;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "SOCKS5_GSSAPI_NEC")) option = CURLOPT_SOCKS5_GSSAPI_NEC;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "SSH_AUTH_TYPES")) option = CURLOPT_SSH_AUTH_TYPES;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "SSH_COMPRESSION")) option = CURLOPT_SSH_COMPRESSION;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "SSL_ENABLE_ALPN")) option = CURLOPT_SSL_ENABLE_ALPN;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "SSL_ENABLE_NPN")) option = CURLOPT_SSL_ENABLE_NPN;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "SSL_FALSESTART")) option = CURLOPT_SSL_FALSESTART;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "SSL_OPTIONS")) option = CURLOPT_SSL_OPTIONS;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "SSL_SESSIONID_CACHE")) option = CURLOPT_SSL_SESSIONID_CACHE;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "SSL_VERIFYHOST")) option = CURLOPT_SSL_VERIFYHOST;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "SSL_VERIFYPEER")) option = CURLOPT_SSL_VERIFYPEER;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "SSL_VERIFYSTATUS")) option = CURLOPT_SSL_VERIFYSTATUS;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "SSLVERSION")) option = CURLOPT_SSLVERSION;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "STREAM_WEIGHT")) option = CURLOPT_STREAM_WEIGHT;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "SUPPRESS_CONNECT_HEADERS")) option = CURLOPT_SUPPRESS_CONNECT_HEADERS;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "TCP_FASTOPEN")) option = CURLOPT_TCP_FASTOPEN;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "TCP_KEEPALIVE")) option = CURLOPT_TCP_KEEPALIVE;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "TCP_KEEPIDLE")) option = CURLOPT_TCP_KEEPIDLE;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "TCP_KEEPINTVL")) option = CURLOPT_TCP_KEEPINTVL;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "TCP_NODELAY")) option = CURLOPT_TCP_NODELAY;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "TFTP_BLKSIZE")) option = CURLOPT_TFTP_BLKSIZE;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "TFTP_NO_OPTIONS")) option = CURLOPT_TFTP_NO_OPTIONS;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "TIMECONDITION")) option = CURLOPT_TIMECONDITION;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "TIMEOUT_MS")) option = CURLOPT_TIMEOUT_MS;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "TIMEOUT")) option = CURLOPT_TIMEOUT;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "TIMEVALUE")) option = CURLOPT_TIMEVALUE;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "TRANSFER_ENCODING")) option = CURLOPT_TRANSFER_ENCODING;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "TRANSFERTEXT")) option = CURLOPT_TRANSFERTEXT;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "UNRESTRICTED_AUTH")) option = CURLOPT_UNRESTRICTED_AUTH;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "UPKEEP_INTERVAL_MS")) option = CURLOPT_UPKEEP_INTERVAL_MS;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "UPLOAD_BUFFERSIZE")) option = CURLOPT_UPLOAD_BUFFERSIZE;
-//    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "UPLOAD")) option = CURLOPT_UPLOAD;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "USE_SSL")) option = CURLOPT_USE_SSL;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "VERBOSE")) option = CURLOPT_VERBOSE;
-    else if (!pg_strcasecmp(name + sizeof("CURLOPT_") - 1, "WILDCARDMATCH")) option = CURLOPT_WILDCARDMATCH;
-    else E("unsupported option %s", name);
-    if ((res = curl_easy_setopt(curl, option, value)) != CURLE_OK) E("curl_easy_setopt(%s, %li): %s", name, value, curl_easy_strerror(res));
-    pfree(name);
+    char *parameter;
+    if (PG_ARGISNULL(0)) E("parameter is null!");
+    parameter = TextDatumGetCString(PG_GETARG_DATUM(0));
+    if ((res = curl_easy_setopt(curl, option, parameter)) != CURLE_OK) E("curl_easy_setopt(%i, %s): %s", option, parameter, curl_easy_strerror(res));
+    pfree(parameter);
     PG_RETURN_BOOL(res == CURLE_OK);
 }
+
+EXTENSION(pg_curl_easy_setopt_abstract_unix_socket) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_ABSTRACT_UNIX_SOCKET); }
+EXTENSION(pg_curl_easy_setopt_accept_encoding) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_ACCEPT_ENCODING); }
+EXTENSION(pg_curl_easy_setopt_cainfo) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_CAINFO); }
+EXTENSION(pg_curl_easy_setopt_capath) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_CAPATH); }
+EXTENSION(pg_curl_easy_setopt_cookiefile) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_COOKIEFILE); }
+EXTENSION(pg_curl_easy_setopt_cookiejar) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_COOKIEJAR); }
+EXTENSION(pg_curl_easy_setopt_cookielist) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_COOKIELIST); }
+EXTENSION(pg_curl_easy_setopt_cookie) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_COOKIE); }
+EXTENSION(pg_curl_easy_setopt_crlfile) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_CRLFILE); }
+EXTENSION(pg_curl_easy_setopt_customrequest) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_CUSTOMREQUEST); }
+EXTENSION(pg_curl_easy_setopt_default_protocol) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_DEFAULT_PROTOCOL); }
+EXTENSION(pg_curl_easy_setopt_dns_interface) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_DNS_INTERFACE); }
+EXTENSION(pg_curl_easy_setopt_dns_local_ip4) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_DNS_LOCAL_IP4); }
+EXTENSION(pg_curl_easy_setopt_dns_local_ip6) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_DNS_LOCAL_IP6); }
+EXTENSION(pg_curl_easy_setopt_dns_servers) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_DNS_SERVERS); }
+EXTENSION(pg_curl_easy_setopt_doh_url) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_DOH_URL); }
+EXTENSION(pg_curl_easy_setopt_egdsocket) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_EGDSOCKET); }
+EXTENSION(pg_curl_easy_setopt_ftp_account) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_FTP_ACCOUNT); }
+EXTENSION(pg_curl_easy_setopt_ftp_alternative_to_user) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_FTP_ALTERNATIVE_TO_USER); }
+EXTENSION(pg_curl_easy_setopt_ftpport) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_FTPPORT); }
+EXTENSION(pg_curl_easy_setopt_interface) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_INTERFACE); }
+EXTENSION(pg_curl_easy_setopt_issuercert) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_ISSUERCERT); }
+EXTENSION(pg_curl_easy_setopt_keypasswd) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_KEYPASSWD); }
+EXTENSION(pg_curl_easy_setopt_krblevel) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_KRBLEVEL); }
+EXTENSION(pg_curl_easy_setopt_login_options) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_LOGIN_OPTIONS); }
+EXTENSION(pg_curl_easy_setopt_mail_auth) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_MAIL_AUTH); }
+EXTENSION(pg_curl_easy_setopt_mail_from) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_MAIL_FROM); }
+EXTENSION(pg_curl_easy_setopt_noproxy) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_NOPROXY); }
+EXTENSION(pg_curl_easy_setopt_password) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_PASSWORD); }
+EXTENSION(pg_curl_easy_setopt_pinnedpublickey) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_PINNEDPUBLICKEY); }
+EXTENSION(pg_curl_easy_setopt_pre_proxy) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_PRE_PROXY); }
+EXTENSION(pg_curl_easy_setopt_proxy_cainfo) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_PROXY_CAINFO); }
+EXTENSION(pg_curl_easy_setopt_proxy_capath) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_PROXY_CAPATH); }
+EXTENSION(pg_curl_easy_setopt_proxy_crlfile) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_PROXY_CRLFILE); }
+EXTENSION(pg_curl_easy_setopt_proxy_keypasswd) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_PROXY_KEYPASSWD); }
+EXTENSION(pg_curl_easy_setopt_proxypassword) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_PROXYPASSWORD); }
+EXTENSION(pg_curl_easy_setopt_proxy_pinnedpublickey) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_PROXY_PINNEDPUBLICKEY); }
+EXTENSION(pg_curl_easy_setopt_proxy_service_name) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_PROXY_SERVICE_NAME); }
+EXTENSION(pg_curl_easy_setopt_proxy) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_PROXY); }
+EXTENSION(pg_curl_easy_setopt_proxy_sslcert) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_PROXY_SSLCERT); }
+EXTENSION(pg_curl_easy_setopt_proxy_sslcerttype) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_PROXY_SSLCERTTYPE); }
+EXTENSION(pg_curl_easy_setopt_proxy_ssl_cipher_list) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_PROXY_SSL_CIPHER_LIST); }
+EXTENSION(pg_curl_easy_setopt_proxy_sslkey) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_PROXY_SSLKEY); }
+EXTENSION(pg_curl_easy_setopt_proxy_sslkeytype) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_PROXY_SSLKEYTYPE); }
+EXTENSION(pg_curl_easy_setopt_proxy_tls13_ciphers) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_PROXY_TLS13_CIPHERS); }
+EXTENSION(pg_curl_easy_setopt_proxy_tlsauth_password) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_PROXY_TLSAUTH_PASSWORD); }
+EXTENSION(pg_curl_easy_setopt_proxy_tlsauth_type) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_PROXY_TLSAUTH_TYPE); }
+EXTENSION(pg_curl_easy_setopt_proxy_tlsauth_username) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_PROXY_TLSAUTH_USERNAME); }
+EXTENSION(pg_curl_easy_setopt_proxyusername) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_PROXYUSERNAME); }
+EXTENSION(pg_curl_easy_setopt_proxyuserpwd) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_PROXYUSERPWD); }
+EXTENSION(pg_curl_easy_setopt_random_file) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_RANDOM_FILE); }
+EXTENSION(pg_curl_easy_setopt_range) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_RANGE); }
+EXTENSION(pg_curl_easy_setopt_referer) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_REFERER); }
+EXTENSION(pg_curl_easy_setopt_request_target) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_REQUEST_TARGET); }
+EXTENSION(pg_curl_easy_setopt_rtsp_session_id) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_RTSP_SESSION_ID); }
+EXTENSION(pg_curl_easy_setopt_rtsp_stream_uri) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_RTSP_STREAM_URI); }
+EXTENSION(pg_curl_easy_setopt_rtsp_transport) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_RTSP_TRANSPORT); }
+EXTENSION(pg_curl_easy_setopt_service_name) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_SERVICE_NAME); }
+EXTENSION(pg_curl_easy_setopt_socks5_gssapi_service) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_SOCKS5_GSSAPI_SERVICE); }
+EXTENSION(pg_curl_easy_setopt_ssh_host_public_key_md5) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_SSH_HOST_PUBLIC_KEY_MD5); }
+EXTENSION(pg_curl_easy_setopt_ssh_knownhosts) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_SSH_KNOWNHOSTS); }
+EXTENSION(pg_curl_easy_setopt_ssh_private_keyfile) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_SSH_PRIVATE_KEYFILE); }
+EXTENSION(pg_curl_easy_setopt_ssh_public_keyfile) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_SSH_PUBLIC_KEYFILE); }
+EXTENSION(pg_curl_easy_setopt_sslcert) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_SSLCERT); }
+EXTENSION(pg_curl_easy_setopt_sslcerttype) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_SSLCERTTYPE); }
+EXTENSION(pg_curl_easy_setopt_ssl_cipher_list) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_SSL_CIPHER_LIST); }
+EXTENSION(pg_curl_easy_setopt_sslengine) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_SSLENGINE); }
+EXTENSION(pg_curl_easy_setopt_sslkey) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_SSLKEY); }
+EXTENSION(pg_curl_easy_setopt_sslkeytype) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_SSLKEYTYPE); }
+EXTENSION(pg_curl_easy_setopt_tls13_ciphers) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_TLS13_CIPHERS); }
+EXTENSION(pg_curl_easy_setopt_tlsauth_password) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_TLSAUTH_PASSWORD); }
+EXTENSION(pg_curl_easy_setopt_tlsauth_type) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_TLSAUTH_TYPE); }
+EXTENSION(pg_curl_easy_setopt_tlsauth_username) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_TLSAUTH_USERNAME); }
+EXTENSION(pg_curl_easy_setopt_unix_socket_path) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_UNIX_SOCKET_PATH); }
+EXTENSION(pg_curl_easy_setopt_url) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_URL); }
+EXTENSION(pg_curl_easy_setopt_useragent) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_USERAGENT); }
+EXTENSION(pg_curl_easy_setopt_username) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_USERNAME); }
+EXTENSION(pg_curl_easy_setopt_userpwd) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_USERPWD); }
+EXTENSION(pg_curl_easy_setopt_xoauth2_bearer) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_XOAUTH2_BEARER); }
+
+static Datum pg_curl_easy_setopt_long(PG_FUNCTION_ARGS, CURLoption option) {
+    CURLcode res = CURL_LAST;
+    long parameter;
+    if (PG_ARGISNULL(0)) E("parameter is null!");
+    parameter = PG_GETARG_INT64(0);
+    if ((res = curl_easy_setopt(curl, option, parameter)) != CURLE_OK) E("curl_easy_setopt(%i, %li): %s", option, parameter, curl_easy_strerror(res));
+    PG_RETURN_BOOL(res == CURLE_OK);
+}
+
+EXTENSION(pg_curl_easy_setopt_accepttimeout_ms) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_ACCEPTTIMEOUT_MS); }
+EXTENSION(pg_curl_easy_setopt_address_scope) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_ADDRESS_SCOPE); }
+EXTENSION(pg_curl_easy_setopt_append) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_APPEND); }
+EXTENSION(pg_curl_easy_setopt_autoreferer) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_AUTOREFERER); }
+EXTENSION(pg_curl_easy_setopt_buffersize) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_BUFFERSIZE); }
+EXTENSION(pg_curl_easy_setopt_certinfo) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_CERTINFO); }
+EXTENSION(pg_curl_easy_setopt_connect_only) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_CONNECT_ONLY); }
+EXTENSION(pg_curl_easy_setopt_connecttimeout_ms) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_CONNECTTIMEOUT_MS); }
+EXTENSION(pg_curl_easy_setopt_connecttimeout) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_CONNECTTIMEOUT); }
+EXTENSION(pg_curl_easy_setopt_cookiesession) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_COOKIESESSION); }
+EXTENSION(pg_curl_easy_setopt_crlf) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_CRLF); }
+EXTENSION(pg_curl_easy_setopt_dirlistonly) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_DIRLISTONLY); }
+EXTENSION(pg_curl_easy_setopt_disallow_username_in_url) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_DISALLOW_USERNAME_IN_URL); }
+EXTENSION(pg_curl_easy_setopt_dns_cache_timeout) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_DNS_CACHE_TIMEOUT); }
+EXTENSION(pg_curl_easy_setopt_dns_shuffle_addresses) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_DNS_SHUFFLE_ADDRESSES); }
+EXTENSION(pg_curl_easy_setopt_dns_use_global_cache) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_DNS_USE_GLOBAL_CACHE); }
+EXTENSION(pg_curl_easy_setopt_expect_100_timeout_ms) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_EXPECT_100_TIMEOUT_MS); }
+EXTENSION(pg_curl_easy_setopt_failonerror) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_FAILONERROR); }
+EXTENSION(pg_curl_easy_setopt_filetime) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_FILETIME); }
+EXTENSION(pg_curl_easy_setopt_followlocation) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_FOLLOWLOCATION); }
+EXTENSION(pg_curl_easy_setopt_forbid_reuse) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_FORBID_REUSE); }
+EXTENSION(pg_curl_easy_setopt_fresh_connect) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_FRESH_CONNECT); }
+EXTENSION(pg_curl_easy_setopt_ftp_create_missing_dirs) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_FTP_CREATE_MISSING_DIRS); }
+EXTENSION(pg_curl_easy_setopt_ftp_filemethod) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_FTP_FILEMETHOD); }
+EXTENSION(pg_curl_easy_setopt_ftp_skip_pasv_ip) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_FTP_SKIP_PASV_IP); }
+EXTENSION(pg_curl_easy_setopt_ftpsslauth) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_FTPSSLAUTH); }
+EXTENSION(pg_curl_easy_setopt_ftp_ssl_ccc) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_FTP_SSL_CCC); }
+EXTENSION(pg_curl_easy_setopt_ftp_use_eprt) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_FTP_USE_EPRT); }
+EXTENSION(pg_curl_easy_setopt_ftp_use_epsv) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_FTP_USE_EPSV); }
+EXTENSION(pg_curl_easy_setopt_ftp_use_pret) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_FTP_USE_PRET); }
+EXTENSION(pg_curl_easy_setopt_gssapi_delegation) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_GSSAPI_DELEGATION); }
+EXTENSION(pg_curl_easy_setopt_happy_eyeballs_timeout_ms) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_HAPPY_EYEBALLS_TIMEOUT_MS); }
+EXTENSION(pg_curl_easy_setopt_haproxyprotocol) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_HAPROXYPROTOCOL); }
+EXTENSION(pg_curl_easy_setopt_header) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_HEADER); }
+EXTENSION(pg_curl_easy_setopt_http09_allowed) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_HTTP09_ALLOWED); }
+EXTENSION(pg_curl_easy_setopt_httpauth) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_HTTPAUTH); }
+EXTENSION(pg_curl_easy_setopt_http_content_decoding) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_HTTP_CONTENT_DECODING); }
+EXTENSION(pg_curl_easy_setopt_httpget) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_HTTPGET); }
+EXTENSION(pg_curl_easy_setopt_httpproxytunnel) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_HTTPPROXYTUNNEL); }
+EXTENSION(pg_curl_easy_setopt_http_transfer_decoding) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_HTTP_TRANSFER_DECODING); }
+EXTENSION(pg_curl_easy_setopt_http_version) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_HTTP_VERSION); }
+EXTENSION(pg_curl_easy_setopt_ignore_content_length) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_IGNORE_CONTENT_LENGTH); }
+EXTENSION(pg_curl_easy_setopt_ipresolve) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_IPRESOLVE); }
+EXTENSION(pg_curl_easy_setopt_keep_sending_on_error) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_KEEP_SENDING_ON_ERROR); }
+EXTENSION(pg_curl_easy_setopt_localportrange) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_LOCALPORTRANGE); }
+EXTENSION(pg_curl_easy_setopt_localport) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_LOCALPORT); }
+EXTENSION(pg_curl_easy_setopt_low_speed_limit) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_LOW_SPEED_LIMIT); }
+EXTENSION(pg_curl_easy_setopt_low_speed_time) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_LOW_SPEED_TIME); }
+EXTENSION(pg_curl_easy_setopt_maxconnects) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_MAXCONNECTS); }
+EXTENSION(pg_curl_easy_setopt_maxfilesize) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_MAXFILESIZE); }
+EXTENSION(pg_curl_easy_setopt_maxredirs) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_MAXREDIRS); }
+EXTENSION(pg_curl_easy_setopt_netrc) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_NETRC); }
+EXTENSION(pg_curl_easy_setopt_new_directory_perms) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_NEW_DIRECTORY_PERMS); }
+EXTENSION(pg_curl_easy_setopt_new_file_perms) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_NEW_FILE_PERMS); }
+EXTENSION(pg_curl_easy_setopt_nobody) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_NOBODY); }
+EXTENSION(pg_curl_easy_setopt_nosignal) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_NOSIGNAL); }
+EXTENSION(pg_curl_easy_setopt_path_as_is) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_PATH_AS_IS); }
+EXTENSION(pg_curl_easy_setopt_pipewait) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_PIPEWAIT); }
+EXTENSION(pg_curl_easy_setopt_port) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_PORT); }
+EXTENSION(pg_curl_easy_setopt_postredir) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_POSTREDIR); }
+EXTENSION(pg_curl_easy_setopt_post) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_POST); }
+EXTENSION(pg_curl_easy_setopt_protocols) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_PROTOCOLS); }
+EXTENSION(pg_curl_easy_setopt_proxyauth) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_PROXYAUTH); }
+EXTENSION(pg_curl_easy_setopt_proxyport) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_PROXYPORT); }
+EXTENSION(pg_curl_easy_setopt_proxy_ssl_options) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_PROXY_SSL_OPTIONS); }
+EXTENSION(pg_curl_easy_setopt_proxy_ssl_verifyhost) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_PROXY_SSL_VERIFYHOST); }
+EXTENSION(pg_curl_easy_setopt_proxy_ssl_verifypeer) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_PROXY_SSL_VERIFYPEER); }
+EXTENSION(pg_curl_easy_setopt_proxy_sslversion) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_PROXY_SSLVERSION); }
+EXTENSION(pg_curl_easy_setopt_proxy_transfer_mode) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_PROXY_TRANSFER_MODE); }
+EXTENSION(pg_curl_easy_setopt_proxytype) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_PROXYTYPE); }
+EXTENSION(pg_curl_easy_setopt_put) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_PUT); }
+EXTENSION(pg_curl_easy_setopt_redir_protocols) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_REDIR_PROTOCOLS); }
+EXTENSION(pg_curl_easy_setopt_resume_from) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_RESUME_FROM); }
+EXTENSION(pg_curl_easy_setopt_rtsp_client_cseq) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_RTSP_CLIENT_CSEQ); }
+EXTENSION(pg_curl_easy_setopt_rtsp_request) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_RTSP_REQUEST); }
+EXTENSION(pg_curl_easy_setopt_rtsp_server_cseq) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_RTSP_SERVER_CSEQ); }
+EXTENSION(pg_curl_easy_setopt_sasl_ir) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_SASL_IR); }
+EXTENSION(pg_curl_easy_setopt_server_response_timeout) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_SERVER_RESPONSE_TIMEOUT); }
+EXTENSION(pg_curl_easy_setopt_socks5_auth) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_SOCKS5_AUTH); }
+EXTENSION(pg_curl_easy_setopt_socks5_gssapi_nec) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_SOCKS5_GSSAPI_NEC); }
+EXTENSION(pg_curl_easy_setopt_ssh_auth_types) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_SSH_AUTH_TYPES); }
+EXTENSION(pg_curl_easy_setopt_ssh_compression) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_SSH_COMPRESSION); }
+EXTENSION(pg_curl_easy_setopt_ssl_enable_alpn) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_SSL_ENABLE_ALPN); }
+EXTENSION(pg_curl_easy_setopt_ssl_enable_npn) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_SSL_ENABLE_NPN); }
+EXTENSION(pg_curl_easy_setopt_ssl_falsestart) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_SSL_FALSESTART); }
+EXTENSION(pg_curl_easy_setopt_ssl_options) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_SSL_OPTIONS); }
+EXTENSION(pg_curl_easy_setopt_ssl_sessionid_cache) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_SSL_SESSIONID_CACHE); }
+EXTENSION(pg_curl_easy_setopt_ssl_verifyhost) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_SSL_VERIFYHOST); }
+EXTENSION(pg_curl_easy_setopt_ssl_verifypeer) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_SSL_VERIFYPEER); }
+EXTENSION(pg_curl_easy_setopt_ssl_verifystatus) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_SSL_VERIFYSTATUS); }
+EXTENSION(pg_curl_easy_setopt_sslversion) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_SSLVERSION); }
+EXTENSION(pg_curl_easy_setopt_stream_weight) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_STREAM_WEIGHT); }
+EXTENSION(pg_curl_easy_setopt_suppress_connect_headers) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_SUPPRESS_CONNECT_HEADERS); }
+EXTENSION(pg_curl_easy_setopt_tcp_fastopen) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_TCP_FASTOPEN); }
+EXTENSION(pg_curl_easy_setopt_tcp_keepalive) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_TCP_KEEPALIVE); }
+EXTENSION(pg_curl_easy_setopt_tcp_keepidle) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_TCP_KEEPIDLE); }
+EXTENSION(pg_curl_easy_setopt_tcp_keepintvl) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_TCP_KEEPINTVL); }
+EXTENSION(pg_curl_easy_setopt_tcp_nodelay) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_TCP_NODELAY); }
+EXTENSION(pg_curl_easy_setopt_tftp_blksize) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_TFTP_BLKSIZE); }
+EXTENSION(pg_curl_easy_setopt_tftp_no_options) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_TFTP_NO_OPTIONS); }
+EXTENSION(pg_curl_easy_setopt_timecondition) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_TIMECONDITION); }
+EXTENSION(pg_curl_easy_setopt_timeout_ms) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_TIMEOUT_MS); }
+EXTENSION(pg_curl_easy_setopt_timeout) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_TIMEOUT); }
+EXTENSION(pg_curl_easy_setopt_timevalue) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_TIMEVALUE); }
+EXTENSION(pg_curl_easy_setopt_transfer_encoding) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_TRANSFER_ENCODING); }
+EXTENSION(pg_curl_easy_setopt_transfertext) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_TRANSFERTEXT); }
+EXTENSION(pg_curl_easy_setopt_unrestricted_auth) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_UNRESTRICTED_AUTH); }
+EXTENSION(pg_curl_easy_setopt_upkeep_interval_ms) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_UPKEEP_INTERVAL_MS); }
+EXTENSION(pg_curl_easy_setopt_upload_buffersize) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_UPLOAD_BUFFERSIZE); }
+EXTENSION(pg_curl_easy_setopt_use_ssl) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_USE_SSL); }
+EXTENSION(pg_curl_easy_setopt_verbose) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_VERBOSE); }
+EXTENSION(pg_curl_easy_setopt_wildcardmatch) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_WILDCARDMATCH); }
 
 static int progress_callback(void *clientp, curl_off_t dltotal, curl_off_t dlnow, curl_off_t ultotal, curl_off_t ulnow) { return pg_curl_interrupt_requested; }
 
 EXTENSION(pg_curl_easy_perform) {
     CURLcode res = CURL_LAST;
     if (header_str.data) { free(header_str.data); header_str.data = NULL; }
+    if (read_str_file) { if (!fseek(read_str_file, 0, SEEK_SET)) E("!fseek"); }
     if (write_str.data) { free(write_str.data); write_str.data = NULL; }
     if (!(header_str.file = open_memstream(&header_str.data, &header_str.len))) E("!open_memstream");
     if (!(write_str.file = open_memstream(&write_str.data, &write_str.len))) E("!open_memstream");
@@ -528,72 +507,61 @@ EXTENSION(pg_curl_easy_perform) {
     PG_RETURN_BOOL(res == CURLE_OK);
 }
 
-EXTENSION(pg_curl_easy_headers) {
+EXTENSION(pg_curl_easy_getinfo_headers) {
     if (!header_str.data) PG_RETURN_NULL();
     PG_RETURN_TEXT_P(cstring_to_text_with_len(header_str.data, header_str.len));
 }
 
-EXTENSION(pg_curl_easy_response) {
+EXTENSION(pg_curl_easy_getinfo_response) {
     if (!write_str.data) PG_RETURN_NULL();
     PG_RETURN_BYTEA_P(cstring_to_text_with_len(write_str.data, write_str.len));
 }
 
-EXTENSION(pg_curl_easy_getinfo_char) {
+static Datum pg_curl_easy_getinfo_char(PG_FUNCTION_ARGS, CURLINFO info) {
     CURLcode res = CURL_LAST;
-    CURLINFO info;
-    char *name, *value = NULL;
+    char *value = NULL;
     int len;
-    if (PG_ARGISNULL(0)) E("info is null!");
-    name = TextDatumGetCString(PG_GETARG_DATUM(0));
-    if (false);
-    else if (!pg_strcasecmp(name + sizeof("CURLINFO_") - 1, "CONTENT_TYPE")) info = CURLINFO_CONTENT_TYPE;
-    else if (!pg_strcasecmp(name + sizeof("CURLINFO_") - 1, "EFFECTIVE_URL")) info = CURLINFO_EFFECTIVE_URL;
-    else if (!pg_strcasecmp(name + sizeof("CURLINFO_") - 1, "FTP_ENTRY_PATH")) info = CURLINFO_FTP_ENTRY_PATH;
-    else if (!pg_strcasecmp(name + sizeof("CURLINFO_") - 1, "LOCAL_IP")) info = CURLINFO_LOCAL_IP;
-    else if (!pg_strcasecmp(name + sizeof("CURLINFO_") - 1, "PRIMARY_IP")) info = CURLINFO_PRIMARY_IP;
-    else if (!pg_strcasecmp(name + sizeof("CURLINFO_") - 1, "PRIVATE")) info = CURLINFO_PRIVATE;
-    else if (!pg_strcasecmp(name + sizeof("CURLINFO_") - 1, "REDIRECT_URL")) info = CURLINFO_REDIRECT_URL;
-    else if (!pg_strcasecmp(name + sizeof("CURLINFO_") - 1, "RTSP_SESSION_ID")) info = CURLINFO_RTSP_SESSION_ID;
-    else if (!pg_strcasecmp(name + sizeof("CURLINFO_") - 1, "SCHEME")) info = CURLINFO_SCHEME;
-    else E("unsupported option %s", name);
-    pfree(name);
-    if ((res = curl_easy_getinfo(curl, info, &value)) != CURLE_OK) E("curl_easy_getinfo(%s): %s", name, curl_easy_strerror(res));
+    if ((res = curl_easy_getinfo(curl, info, &value)) != CURLE_OK) E("curl_easy_getinfo(%i): %s", info, curl_easy_strerror(res));
     len = value ? strlen(value) : 0;
     if (!value) PG_RETURN_NULL();
     PG_RETURN_TEXT_P(cstring_to_text_with_len(value, len));
 }
 
-EXTENSION(pg_curl_easy_getinfo_long) {
+EXTENSION(pg_curl_easy_getinfo_content_type) { return pg_curl_easy_getinfo_char(fcinfo, CURLINFO_CONTENT_TYPE); }
+EXTENSION(pg_curl_easy_getinfo_effective_url) { return pg_curl_easy_getinfo_char(fcinfo, CURLINFO_EFFECTIVE_URL); }
+EXTENSION(pg_curl_easy_getinfo_ftp_entry_path) { return pg_curl_easy_getinfo_char(fcinfo, CURLINFO_FTP_ENTRY_PATH); }
+EXTENSION(pg_curl_easy_getinfo_local_ip) { return pg_curl_easy_getinfo_char(fcinfo, CURLINFO_LOCAL_IP); }
+EXTENSION(pg_curl_easy_getinfo_primary_ip) { return pg_curl_easy_getinfo_char(fcinfo, CURLINFO_PRIMARY_IP); }
+EXTENSION(pg_curl_easy_getinfo_private) { return pg_curl_easy_getinfo_char(fcinfo, CURLINFO_PRIVATE); }
+EXTENSION(pg_curl_easy_getinfo_redirect_url) { return pg_curl_easy_getinfo_char(fcinfo, CURLINFO_REDIRECT_URL); }
+EXTENSION(pg_curl_easy_getinfo_rtsp_session_id) { return pg_curl_easy_getinfo_char(fcinfo, CURLINFO_RTSP_SESSION_ID); }
+EXTENSION(pg_curl_easy_getinfo_scheme) { return pg_curl_easy_getinfo_char(fcinfo, CURLINFO_SCHEME); }
+
+static Datum pg_curl_easy_getinfo_long(PG_FUNCTION_ARGS, CURLINFO info) {
     CURLcode res = CURL_LAST;
-    CURLINFO info;
-    char *name;
     long value;
-    if (PG_ARGISNULL(0)) E("info is null!");
-    name = TextDatumGetCString(PG_GETARG_DATUM(0));
-    if (false);
-    else if (!pg_strcasecmp(name + sizeof("CURLINFO_") - 1, "CONDITION_UNMET")) info = CURLINFO_CONDITION_UNMET;
-    else if (!pg_strcasecmp(name + sizeof("CURLINFO_") - 1, "FILETIME")) info = CURLINFO_FILETIME;
-    else if (!pg_strcasecmp(name + sizeof("CURLINFO_") - 1, "HEADER_SIZE")) info = CURLINFO_HEADER_SIZE;
-    else if (!pg_strcasecmp(name + sizeof("CURLINFO_") - 1, "HTTPAUTH_AVAIL")) info = CURLINFO_HTTPAUTH_AVAIL;
-    else if (!pg_strcasecmp(name + sizeof("CURLINFO_") - 1, "HTTP_CONNECTCODE")) info = CURLINFO_HTTP_CONNECTCODE;
-    else if (!pg_strcasecmp(name + sizeof("CURLINFO_") - 1, "HTTP_VERSION")) info = CURLINFO_HTTP_VERSION;
-    else if (!pg_strcasecmp(name + sizeof("CURLINFO_") - 1, "LASTSOCKET")) info = CURLINFO_LASTSOCKET;
-    else if (!pg_strcasecmp(name + sizeof("CURLINFO_") - 1, "LOCAL_PORT")) info = CURLINFO_LOCAL_PORT;
-    else if (!pg_strcasecmp(name + sizeof("CURLINFO_") - 1, "NUM_CONNECTS")) info = CURLINFO_NUM_CONNECTS;
-    else if (!pg_strcasecmp(name + sizeof("CURLINFO_") - 1, "OS_ERRNO")) info = CURLINFO_OS_ERRNO;
-    else if (!pg_strcasecmp(name + sizeof("CURLINFO_") - 1, "PRIMARY_PORT")) info = CURLINFO_PRIMARY_PORT;
-    else if (!pg_strcasecmp(name + sizeof("CURLINFO_") - 1, "PROTOCOL")) info = CURLINFO_PROTOCOL;
-    else if (!pg_strcasecmp(name + sizeof("CURLINFO_") - 1, "PROXYAUTH_AVAIL")) info = CURLINFO_PROXYAUTH_AVAIL;
-    else if (!pg_strcasecmp(name + sizeof("CURLINFO_") - 1, "PROXY_SSL_VERIFYRESULT")) info = CURLINFO_PROXY_SSL_VERIFYRESULT;
-    else if (!pg_strcasecmp(name + sizeof("CURLINFO_") - 1, "REDIRECT_COUNT")) info = CURLINFO_REDIRECT_COUNT;
-    else if (!pg_strcasecmp(name + sizeof("CURLINFO_") - 1, "REQUEST_SIZE")) info = CURLINFO_REQUEST_SIZE;
-    else if (!pg_strcasecmp(name + sizeof("CURLINFO_") - 1, "RESPONSE_CODE")) info = CURLINFO_RESPONSE_CODE;
-    else if (!pg_strcasecmp(name + sizeof("CURLINFO_") - 1, "RTSP_CLIENT_CSEQ")) info = CURLINFO_RTSP_CLIENT_CSEQ;
-    else if (!pg_strcasecmp(name + sizeof("CURLINFO_") - 1, "RTSP_CSEQ_RECV")) info = CURLINFO_RTSP_CSEQ_RECV;
-    else if (!pg_strcasecmp(name + sizeof("CURLINFO_") - 1, "RTSP_SERVER_CSEQ")) info = CURLINFO_RTSP_SERVER_CSEQ;
-    else if (!pg_strcasecmp(name + sizeof("CURLINFO_") - 1, "SSL_VERIFYRESULT")) info = CURLINFO_SSL_VERIFYRESULT;
-    else E("unsupported option %s", name);
-    pfree(name);
-    if ((res = curl_easy_getinfo(curl, info, &value)) != CURLE_OK) E("curl_easy_getinfo(%s): %s", name, curl_easy_strerror(res));
+    if ((res = curl_easy_getinfo(curl, info, &value)) != CURLE_OK) E("curl_easy_getinfo(%i): %s", info, curl_easy_strerror(res));
     PG_RETURN_INT64(value);
 }
+
+EXTENSION(pg_curl_easy_getinfo_condition_unmet) { return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_CONDITION_UNMET); }
+EXTENSION(pg_curl_easy_getinfo_filetime) { return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_FILETIME); }
+EXTENSION(pg_curl_easy_getinfo_header_size) { return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_HEADER_SIZE); }
+EXTENSION(pg_curl_easy_getinfo_httpauth_avail) { return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_HTTPAUTH_AVAIL); }
+EXTENSION(pg_curl_easy_getinfo_http_connectcode) { return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_HTTP_CONNECTCODE); }
+EXTENSION(pg_curl_easy_getinfo_http_version) { return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_HTTP_VERSION); }
+EXTENSION(pg_curl_easy_getinfo_lastsocket) { return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_LASTSOCKET); }
+EXTENSION(pg_curl_easy_getinfo_local_port) { return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_LOCAL_PORT); }
+EXTENSION(pg_curl_easy_getinfo_num_connects) { return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_NUM_CONNECTS); }
+EXTENSION(pg_curl_easy_getinfo_os_errno) { return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_OS_ERRNO); }
+EXTENSION(pg_curl_easy_getinfo_primary_port) { return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_PRIMARY_PORT); }
+EXTENSION(pg_curl_easy_getinfo_protocol) { return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_PROTOCOL); }
+EXTENSION(pg_curl_easy_getinfo_proxyauth_avail) { return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_PROXYAUTH_AVAIL); }
+EXTENSION(pg_curl_easy_getinfo_proxy_ssl_verifyresult) { return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_PROXY_SSL_VERIFYRESULT); }
+EXTENSION(pg_curl_easy_getinfo_redirect_count) { return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_REDIRECT_COUNT); }
+EXTENSION(pg_curl_easy_getinfo_request_size) { return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_REQUEST_SIZE); }
+EXTENSION(pg_curl_easy_getinfo_response_code) { return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_RESPONSE_CODE); }
+EXTENSION(pg_curl_easy_getinfo_rtsp_client_cseq) { return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_RTSP_CLIENT_CSEQ); }
+EXTENSION(pg_curl_easy_getinfo_rtsp_cseq_recv) { return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_RTSP_CSEQ_RECV); }
+EXTENSION(pg_curl_easy_getinfo_rtsp_server_cseq) { return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_RTSP_SERVER_CSEQ); }
+EXTENSION(pg_curl_easy_getinfo_ssl_verifyresult) { return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_SSL_VERIFYRESULT); }
