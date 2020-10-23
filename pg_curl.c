@@ -485,7 +485,7 @@ static int progress_callback(void *clientp, curl_off_t dltotal, curl_off_t dlnow
 EXTENSION(pg_curl_easy_perform) {
     CURLcode res = CURL_LAST;
     if (header_str.data) { free(header_str.data); header_str.data = NULL; }
-    if (read_str_file) { if (!fseek(read_str_file, 0, SEEK_SET)) E("!fseek"); }
+    if (read_str_file) { rewind(read_str_file); }
     if (write_str.data) { free(write_str.data); write_str.data = NULL; }
     if (!(header_str.file = open_memstream(&header_str.data, &header_str.len))) E("!open_memstream");
     if (!(write_str.file = open_memstream(&write_str.data, &write_str.len))) E("!open_memstream");
