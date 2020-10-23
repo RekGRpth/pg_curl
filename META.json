@@ -1,0 +1,53 @@
+{
+    "name": "pg_curl",
+    "abstract": "PostgreSQL cURL",
+    "description": "PostgreSQL curl allows most curl actions, including data transfer with URL syntax via HTTP, HTTPS, FTP, FTPS, GOPHER, TFTP, SCP, SSH, SFTP, SMB, TELNET, DICT, LDAP, LDAPS, FILE, IMAP, SMTP, POP3, RTSP and RTMP",
+    "version": "1.0.0",
+    "maintainer": "RekGRpth <rekgrpth@gmail.com>",
+    "license": "mit",
+    "provides": {
+        "pg_curl": {
+            "file": "pg_curl--1.0.sql",
+            "version": "1.0.0"
+        }
+    },
+    "resources": {
+        "bugtracker": {
+            "web": "https://github.com/RekGRpth/pg_curl/issues"
+        },
+        "repository": {
+            "url": "git://github.com/RekGRpth/pg_curl.git",
+            "web": "https://github.com/RekGRpth/pg_curl",
+            "type": "git"
+        }
+    },
+    "generated_by": "RekGRpth",
+    "meta-spec": {
+        "version": "1.0.0",
+        "url": "http://pgxn.org/meta/spec.txt"
+    },
+    "tags": [
+        "curl",
+        "url",
+        "http",
+        "https",
+        "ftp",
+        "ftps",
+        "gopher",
+        "tftp",
+        "scp",
+        "ssh",
+        "sftp",
+        "smb",
+        "telnet",
+        "dict",
+        "ldap",
+        "ldaps",
+        "file",
+        "imap",
+        "smtp",
+        "pop3",
+        "rtsp",
+        "rtmp"
+    ]
+}
