@@ -14,6 +14,7 @@ CREATE OR REPLACE FUNCTION curl_mime_data(data text, name text default null, fil
 CREATE OR REPLACE FUNCTION curl_mime_file(data text, name text default null, file text default null, type text default null, code text default null, head text default null) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_mime_file' LANGUAGE 'c';
 
 CREATE OR REPLACE FUNCTION curl_easy_setopt_copypostfields(parameter bytea) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_copypostfields' LANGUAGE 'c';
+CREATE OR REPLACE FUNCTION curl_easy_setopt_readdata(parameter bytea) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_readdata' LANGUAGE 'c';
 
 CREATE OR REPLACE FUNCTION curl_easy_setopt_abstract_unix_socket(parameter text) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_abstract_unix_socket' LANGUAGE 'c';
 CREATE OR REPLACE FUNCTION curl_easy_setopt_accept_encoding(parameter text) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_accept_encoding' LANGUAGE 'c';
