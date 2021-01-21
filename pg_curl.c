@@ -51,6 +51,7 @@ typedef struct FileString {
 } FileString;
 
 static bool has_mime;
+static char errbuf[CURL_ERROR_SIZE];
 static CURL *curl = NULL;
 static curl_mime *mime;
 static FileString header_str = {NULL, NULL, 0};
@@ -468,10 +469,12 @@ static int progress_callback(void *clientp, curl_off_t dltotal, curl_off_t dlnow
 
 EXTENSION(pg_curl_easy_perform) {
     CURLcode res = CURL_LAST;
+    errbuf[0] = 0;
     if (header_str.data) { free(header_str.data); header_str.data = NULL; }
     if (write_str.data) { free(write_str.data); write_str.data = NULL; }
     if (!(header_str.file = open_memstream(&header_str.data, &header_str.len))) E("!open_memstream");
     if (!(write_str.file = open_memstream(&write_str.data, &write_str.len))) E("!open_memstream");
+    if ((res = curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, errbuf)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_ERRORBUFFER): %s", curl_easy_strerror(res));
     if ((res = curl_easy_setopt(curl, CURLOPT_HEADERDATA, header_str.file)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_HEADERDATA): %s", curl_easy_strerror(res));
     if ((res = curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_NOPROGRESS): %s", curl_easy_strerror(res));
     if ((res = curl_easy_setopt(curl, CURLOPT_WRITEDATA, write_str.file)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_WRITEDATA): %s", curl_easy_strerror(res));
@@ -483,7 +486,10 @@ EXTENSION(pg_curl_easy_perform) {
     switch (res = curl_easy_perform(curl)) {
         case CURLE_OK: break;
         case CURLE_ABORTED_BY_CALLBACK: if (pgsql_interrupt_handler && pg_curl_interrupt_requested) { (*pgsql_interrupt_handler)(pg_curl_interrupt_requested); pg_curl_interrupt_requested = 0; } // fall through
-        default: E("curl_easy_perform: %s", curl_easy_strerror(res));
+        default: {
+            if (strlen(errbuf)) E("curl_easy_perform: %s: %s", curl_easy_strerror(res), errbuf);
+            E("curl_easy_perform: %s", curl_easy_strerror(res));
+        }
     }
     fclose(header_str.file);
     fclose(write_str.file);
