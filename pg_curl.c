@@ -485,30 +485,46 @@ static int progress_callback(void *clientp, curl_off_t dltotal, curl_off_t dlnow
 
 EXTENSION(pg_curl_easy_perform) {
     CURLcode res = CURL_LAST;
-    errbuf[0] = 0;
-    if (header_str.data) { free(header_str.data); header_str.data = NULL; }
-    if (write_str.data) { free(write_str.data); write_str.data = NULL; }
-    if (!(header_str.file = open_memstream(&header_str.data, &header_str.len))) E("!open_memstream");
-    if (!(write_str.file = open_memstream(&write_str.data, &write_str.len))) E("!open_memstream");
-    if ((res = curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, errbuf)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_ERRORBUFFER): %s", curl_easy_strerror(res));
-    if ((res = curl_easy_setopt(curl, CURLOPT_HEADERDATA, header_str.file)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_HEADERDATA): %s", curl_easy_strerror(res));
-    if ((res = curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_NOPROGRESS): %s", curl_easy_strerror(res));
-    if ((res = curl_easy_setopt(curl, CURLOPT_WRITEDATA, write_str.file)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_WRITEDATA): %s", curl_easy_strerror(res));
-    if ((res = curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION, progress_callback)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_XFERINFOFUNCTION): %s", curl_easy_strerror(res));
-    if (header && ((res = curl_easy_setopt(curl, CURLOPT_HTTPHEADER, header)) != CURLE_OK)) E("curl_easy_setopt(CURLOPT_HTTPHEADER): %s", curl_easy_strerror(res));
-    if (recipient && ((res = curl_easy_setopt(curl, CURLOPT_MAIL_RCPT, recipient)) != CURLE_OK)) E("curl_easy_setopt(CURLOPT_MAIL_RCPT): %s", curl_easy_strerror(res));
-    if (has_mime && ((res = curl_easy_setopt(curl, CURLOPT_MIMEPOST, mime)) != CURLE_OK)) E("curl_easy_setopt(CURLOPT_MIMEPOST): %s", curl_easy_strerror(res));
-    pg_curl_interrupt_requested = 0;
-    switch (res = curl_easy_perform(curl)) {
-        case CURLE_OK: break;
-        case CURLE_ABORTED_BY_CALLBACK: if (pgsql_interrupt_handler && pg_curl_interrupt_requested) { (*pgsql_interrupt_handler)(pg_curl_interrupt_requested); pg_curl_interrupt_requested = 0; } // fall through
-        default: {
-            if (strlen(errbuf)) E("curl_easy_perform: %s: %s", curl_easy_strerror(res), errbuf);
-            E("curl_easy_perform: %s", curl_easy_strerror(res));
+    int try;
+    long sleep;
+    if (PG_ARGISNULL(0)) E("try is null!");
+    try = PG_GETARG_INT32(0);
+    if (try <= 0) E("try <= 0!");
+    if (PG_ARGISNULL(1)) E("sleep is null!");
+    sleep = PG_GETARG_INT64(1);
+    if (sleep < 0) E("sleep < 0!");
+    while (try--) {
+        errbuf[0] = 0;
+        if (header_str.data) { free(header_str.data); header_str.data = NULL; }
+        if (write_str.data) { free(write_str.data); write_str.data = NULL; }
+        if (!(header_str.file = open_memstream(&header_str.data, &header_str.len))) E("!open_memstream");
+        if (!(write_str.file = open_memstream(&write_str.data, &write_str.len))) E("!open_memstream");
+        if ((res = curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, errbuf)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_ERRORBUFFER): %s", curl_easy_strerror(res));
+        if ((res = curl_easy_setopt(curl, CURLOPT_HEADERDATA, header_str.file)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_HEADERDATA): %s", curl_easy_strerror(res));
+        if ((res = curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_NOPROGRESS): %s", curl_easy_strerror(res));
+        if ((res = curl_easy_setopt(curl, CURLOPT_WRITEDATA, write_str.file)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_WRITEDATA): %s", curl_easy_strerror(res));
+        if ((res = curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION, progress_callback)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_XFERINFOFUNCTION): %s", curl_easy_strerror(res));
+        if (header && ((res = curl_easy_setopt(curl, CURLOPT_HTTPHEADER, header)) != CURLE_OK)) E("curl_easy_setopt(CURLOPT_HTTPHEADER): %s", curl_easy_strerror(res));
+        if (recipient && ((res = curl_easy_setopt(curl, CURLOPT_MAIL_RCPT, recipient)) != CURLE_OK)) E("curl_easy_setopt(CURLOPT_MAIL_RCPT): %s", curl_easy_strerror(res));
+        if (has_mime && ((res = curl_easy_setopt(curl, CURLOPT_MIMEPOST, mime)) != CURLE_OK)) E("curl_easy_setopt(CURLOPT_MIMEPOST): %s", curl_easy_strerror(res));
+        pg_curl_interrupt_requested = 0;
+        switch (res = curl_easy_perform(curl)) {
+            case CURLE_OK: try = 0; break;
+            case CURLE_ABORTED_BY_CALLBACK: if (pgsql_interrupt_handler && pg_curl_interrupt_requested) { (*pgsql_interrupt_handler)(pg_curl_interrupt_requested); pg_curl_interrupt_requested = 0; } // fall through
+            default: {
+                if (try) {
+                    if (strlen(errbuf)) W("curl_easy_perform: %s: %s", curl_easy_strerror(res), errbuf);
+                    else W("curl_easy_perform: %s", curl_easy_strerror(res));
+                    if (sleep) pg_usleep(sleep);
+                } else {
+                    if (strlen(errbuf)) E("curl_easy_perform: %s: %s", curl_easy_strerror(res), errbuf);
+                    else E("curl_easy_perform: %s", curl_easy_strerror(res));
+                }
+            }
         }
+        fclose(header_str.file);
+        fclose(write_str.file);
     }
-    fclose(header_str.file);
-    fclose(write_str.file);
     PG_RETURN_BOOL(res == CURLE_OK);
 }
 
