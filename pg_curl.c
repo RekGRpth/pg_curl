@@ -510,7 +510,7 @@ EXTENSION(pg_curl_easy_perform) {
         pg_curl_interrupt_requested = 0;
         switch (res = curl_easy_perform(curl)) {
             case CURLE_OK: try = 0; break;
-            case CURLE_ABORTED_BY_CALLBACK: if (pgsql_interrupt_handler && pg_curl_interrupt_requested) { (*pgsql_interrupt_handler)(pg_curl_interrupt_requested); pg_curl_interrupt_requested = 0; } // fall through
+            case CURLE_ABORTED_BY_CALLBACK: try = 0; if (pgsql_interrupt_handler && pg_curl_interrupt_requested) { (*pgsql_interrupt_handler)(pg_curl_interrupt_requested); pg_curl_interrupt_requested = 0; } // fall through
             default: {
                 if (try) {
                     if (strlen(errbuf)) W("curl_easy_perform: %s: %s", curl_easy_strerror(res), errbuf);
