@@ -510,6 +510,14 @@ EXTENSION(pg_curl_easy_perform) {
         pg_curl_interrupt_requested = 0;
         switch (res = curl_easy_perform(curl)) {
             case CURLE_OK: try = 0; break;
+            case CURLE_UNSUPPORTED_PROTOCOL:
+            case CURLE_FAILED_INIT:
+            case CURLE_URL_MALFORMAT:
+            case CURLE_NOT_BUILT_IN:
+            case CURLE_FUNCTION_NOT_FOUND:
+            case CURLE_BAD_FUNCTION_ARGUMENT:
+            case CURLE_UNKNOWN_OPTION:
+            case CURLE_LDAP_INVALID_URL:
             case CURLE_ABORTED_BY_CALLBACK: try = 0; if (pgsql_interrupt_handler && pg_curl_interrupt_requested) { (*pgsql_interrupt_handler)(pg_curl_interrupt_requested); pg_curl_interrupt_requested = 0; } // fall through
             default: {
                 if (try) {
