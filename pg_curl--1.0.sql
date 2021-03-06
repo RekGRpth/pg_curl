@@ -1,6 +1,10 @@
 -- complain if script is sourced in psql, rather than via CREATE EXTENSION
 \echo Use "CREATE EXTENSION pg_curl" to load this file. \quit
 
+CREATE OR REPLACE FUNCTION curl_easy_header_reset() RETURNS void AS 'MODULE_PATHNAME', 'pg_curl_easy_header_reset' LANGUAGE 'c';
+CREATE OR REPLACE FUNCTION curl_easy_mime_reset() RETURNS void AS 'MODULE_PATHNAME', 'pg_curl_easy_mime_reset' LANGUAGE 'c';
+CREATE OR REPLACE FUNCTION curl_easy_readdata_reset() RETURNS void AS 'MODULE_PATHNAME', 'pg_curl_easy_readdata_reset' LANGUAGE 'c';
+CREATE OR REPLACE FUNCTION curl_easy_recipient_reset() RETURNS void AS 'MODULE_PATHNAME', 'pg_curl_easy_recipient_reset' LANGUAGE 'c';
 CREATE OR REPLACE FUNCTION curl_easy_reset() RETURNS void AS 'MODULE_PATHNAME', 'pg_curl_easy_reset' LANGUAGE 'c';
 
 CREATE OR REPLACE FUNCTION curl_easy_escape(string text) RETURNS text AS 'MODULE_PATHNAME', 'pg_curl_easy_escape' LANGUAGE 'c';

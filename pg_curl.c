@@ -75,28 +75,46 @@ void _PG_init(void); void _PG_init(void) {
 
 void _PG_fini(void); void _PG_fini(void) {
     pqsignal(SIGINT, pgsql_interrupt_handler);
-    curl_easy_cleanup(curl);
     curl_mime_free(mime);
     curl_slist_free_all(header);
     curl_slist_free_all(recipient);
+    curl_easy_cleanup(curl);
     curl_global_cleanup();
     if (header_str.data) { free(header_str.data); header_str.data = NULL; }
     if (read_str_file) { fclose(read_str_file); read_str_file = NULL; }
     if (write_str.data) { free(write_str.data); write_str.data = NULL; }
 }
 
-EXTENSION(pg_curl_easy_reset) {
-    curl_easy_reset(curl);
-    curl_mime_free(mime);
+EXTENSION(pg_curl_easy_header_reset) {
     curl_slist_free_all(header);
-    curl_slist_free_all(recipient);
     header = NULL;
-    recipient = NULL;
+    PG_RETURN_VOID();
+}
+
+EXTENSION(pg_curl_easy_mime_reset) {
+    curl_mime_free(mime);
     if (!(mime = curl_mime_init(curl))) E("!curl_mime_init");
     has_mime = false;
-    if (header_str.data) { free(header_str.data); header_str.data = NULL; }
+    PG_RETURN_VOID();
+}
+
+EXTENSION(pg_curl_easy_readdata_reset) {
     if (read_str_file) { fclose(read_str_file); read_str_file = NULL; }
-    if (write_str.data) { free(write_str.data); write_str.data = NULL; }
+    PG_RETURN_VOID();
+}
+
+EXTENSION(pg_curl_easy_recipient_reset) {
+    curl_slist_free_all(recipient);
+    recipient = NULL;
+    PG_RETURN_VOID();
+}
+
+EXTENSION(pg_curl_easy_reset) {
+    pg_curl_easy_header_reset(fcinfo);
+    pg_curl_easy_mime_reset(fcinfo);
+    pg_curl_easy_readdata_reset(fcinfo);
+    pg_curl_easy_recipient_reset(fcinfo);
+    curl_easy_reset(curl);
     PG_RETURN_VOID();
 }
 
