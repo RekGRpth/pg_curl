@@ -5,7 +5,17 @@ on:
       - master
   workflow_dispatch:
 jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          GITHUB_TOKEN: ${{ github.token }}
+        uses: rekgrpth/github-publish-action-shell-action@v1
+      - env:
+          INPUTS_PASSWORD: ${{ secrets.PGXN_PASSWORD }}
+        uses: rekgrpth/pgxn-release-shell-action@v1
   dispatch:
+    needs: release
     runs-on: ubuntu-latest
     steps:
       - env:
@@ -18,13 +28,3 @@ jobs:
       matrix:
         repo:
           - postgres.docker
-  release:
-    needs: dispatch
-    runs-on: ubuntu-latest
-    steps:
-      - env:
-          GITHUB_TOKEN: ${{ github.token }}
-        uses: rekgrpth/github-publish-action-shell-action@v1
-      - env:
-          INPUTS_PASSWORD: ${{ secrets.PGXN_PASSWORD }}
-        uses: rekgrpth/pgxn-release-shell-action@v1
