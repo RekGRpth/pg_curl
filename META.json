@@ -7,7 +7,7 @@
     "license": "mit",
     "provides": {
         "pg_curl": {
-            "file": "pg_curl--1.0.sql",
+            "file": "pg_curl--1.0.sql"
         }
     },
     "resources": {
