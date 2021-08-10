@@ -18,3 +18,10 @@ jobs:
       matrix:
         repo:
           - postgres.docker
+  release:
+    needs: dispatch
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          GITHUB_TOKEN: ${{ github.token }}
+        uses: rekgrpth/github-publish-action-shell-action@v1
