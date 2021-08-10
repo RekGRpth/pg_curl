@@ -25,13 +25,6 @@ jobs:
       - env:
           GITHUB_TOKEN: ${{ github.token }}
         uses: rekgrpth/github-publish-action-shell-action@v1
-  pgxn:
-    needs: release
-    runs-on: ubuntu-latest
-    steps:
-      - env:
-          GITHUB_TOKEN: ${{ github.token }}
-        uses: rekgrpth/git-clone-shell-action@v1
       - env:
           INPUTS_PASSWORD: ${{ secrets.PGXN_PASSWORD }}
         uses: rekgrpth/pgxn-release-shell-action@v1
