@@ -221,6 +221,7 @@ CREATE OR REPLACE FUNCTION curl_easy_perform(try int default 1, sleep bigint def
 CREATE OR REPLACE FUNCTION curl_easy_getinfo_headers() RETURNS text AS 'MODULE_PATHNAME', 'pg_curl_easy_getinfo_headers' LANGUAGE 'c';
 CREATE OR REPLACE FUNCTION curl_easy_getinfo_response() RETURNS bytea AS 'MODULE_PATHNAME', 'pg_curl_easy_getinfo_response' LANGUAGE 'c';
 
+CREATE OR REPLACE FUNCTION curl_easy_getinfo(info integer) RETURNS text AS 'MODULE_PATHNAME', 'pg_curl_easy_getinfo' LANGUAGE 'c';
 CREATE OR REPLACE FUNCTION curl_easy_getinfo_text(info integer) RETURNS text AS 'MODULE_PATHNAME', 'pg_curl_easy_getinfo_char2' LANGUAGE 'c';
 CREATE OR REPLACE FUNCTION curl_easy_getinfo_bigint(info integer) RETURNS bigint AS 'MODULE_PATHNAME', 'pg_curl_easy_getinfo_long2' LANGUAGE 'c';
 
