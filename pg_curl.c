@@ -243,6 +243,19 @@ EXTENSION(pg_curl_mime_file) {
     PG_RETURN_BOOL(res == CURLE_OK);
 }
 
+EXTENSION(pg_curl_easy_setopt_char2) {
+    char *parameter;
+    CURLcode res = CURL_LAST;
+    CURLoption option;
+    if (PG_ARGISNULL(0)) E("option is null!");
+    if (PG_ARGISNULL(1)) E("parameter is null!");
+    option = PG_GETARG_INT32(0);
+    parameter = TextDatumGetCString(PG_GETARG_DATUM(1));
+    if ((res = curl_easy_setopt(curl, option, parameter)) != CURLE_OK) E("curl_easy_setopt(%i, %s): %s", option, parameter, curl_easy_strerror(res));
+    pfree(parameter);
+    PG_RETURN_BOOL(res == CURLE_OK);
+}
+
 EXTENSION(pg_curl_easy_setopt_copypostfields) {
     CURLcode res = CURL_LAST;
     bytea *parameter;
@@ -250,6 +263,18 @@ EXTENSION(pg_curl_easy_setopt_copypostfields) {
     parameter = DatumGetTextP(PG_GETARG_DATUM(0));
     if ((res = curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, VARSIZE_ANY_EXHDR(parameter))) != CURLE_OK) E("curl_easy_setopt(CURLOPT_POSTFIELDSIZE): %s", curl_easy_strerror(res));
     if ((res = curl_easy_setopt(curl, CURLOPT_COPYPOSTFIELDS, VARDATA_ANY(parameter))) != CURLE_OK) E("curl_easy_setopt(CURLOPT_COPYPOSTFIELDS): %s", curl_easy_strerror(res));
+    PG_RETURN_BOOL(res == CURLE_OK);
+}
+
+EXTENSION(pg_curl_easy_setopt_long2) {
+    CURLcode res = CURL_LAST;
+    CURLoption option;
+    long parameter;
+    if (PG_ARGISNULL(1)) E("option is null!");
+    if (PG_ARGISNULL(0)) E("parameter is null!");
+    option = PG_GETARG_INT32(0);
+    parameter = PG_GETARG_INT64(1);
+    if ((res = curl_easy_setopt(curl, option, parameter)) != CURLE_OK) E("curl_easy_setopt(%i, %li): %s", option, parameter, curl_easy_strerror(res));
     PG_RETURN_BOOL(res == CURLE_OK);
 }
 
@@ -587,3 +612,196 @@ EXTENSION(pg_curl_easy_getinfo_rtsp_client_cseq) { return pg_curl_easy_getinfo_l
 EXTENSION(pg_curl_easy_getinfo_rtsp_cseq_recv) { return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_RTSP_CSEQ_RECV); }
 EXTENSION(pg_curl_easy_getinfo_rtsp_server_cseq) { return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_RTSP_SERVER_CSEQ); }
 EXTENSION(pg_curl_easy_getinfo_ssl_verifyresult) { return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_SSL_VERIFYRESULT); }
+
+EXTENSION(pg_curlopt_abstract_unix_socket) { PG_RETURN_INT32(CURLOPT_ABSTRACT_UNIX_SOCKET); }
+EXTENSION(pg_curlopt_accept_encoding) { PG_RETURN_INT32(CURLOPT_ACCEPT_ENCODING); }
+EXTENSION(pg_curlopt_cainfo) { PG_RETURN_INT32(CURLOPT_CAINFO); }
+EXTENSION(pg_curlopt_capath) { PG_RETURN_INT32(CURLOPT_CAPATH); }
+EXTENSION(pg_curlopt_cookiefile) { PG_RETURN_INT32(CURLOPT_COOKIEFILE); }
+EXTENSION(pg_curlopt_cookiejar) { PG_RETURN_INT32(CURLOPT_COOKIEJAR); }
+EXTENSION(pg_curlopt_cookielist) { PG_RETURN_INT32(CURLOPT_COOKIELIST); }
+EXTENSION(pg_curlopt_cookie) { PG_RETURN_INT32(CURLOPT_COOKIE); }
+EXTENSION(pg_curlopt_crlfile) { PG_RETURN_INT32(CURLOPT_CRLFILE); }
+EXTENSION(pg_curlopt_customrequest) { PG_RETURN_INT32(CURLOPT_CUSTOMREQUEST); }
+EXTENSION(pg_curlopt_default_protocol) { PG_RETURN_INT32(CURLOPT_DEFAULT_PROTOCOL); }
+EXTENSION(pg_curlopt_dns_interface) { PG_RETURN_INT32(CURLOPT_DNS_INTERFACE); }
+EXTENSION(pg_curlopt_dns_local_ip4) { PG_RETURN_INT32(CURLOPT_DNS_LOCAL_IP4); }
+EXTENSION(pg_curlopt_dns_local_ip6) { PG_RETURN_INT32(CURLOPT_DNS_LOCAL_IP6); }
+EXTENSION(pg_curlopt_dns_servers) { PG_RETURN_INT32(CURLOPT_DNS_SERVERS); }
+EXTENSION(pg_curlopt_doh_url) { PG_RETURN_INT32(CURLOPT_DOH_URL); }
+EXTENSION(pg_curlopt_egdsocket) { PG_RETURN_INT32(CURLOPT_EGDSOCKET); }
+EXTENSION(pg_curlopt_ftp_account) { PG_RETURN_INT32(CURLOPT_FTP_ACCOUNT); }
+EXTENSION(pg_curlopt_ftp_alternative_to_user) { PG_RETURN_INT32(CURLOPT_FTP_ALTERNATIVE_TO_USER); }
+EXTENSION(pg_curlopt_ftpport) { PG_RETURN_INT32(CURLOPT_FTPPORT); }
+EXTENSION(pg_curlopt_interface) { PG_RETURN_INT32(CURLOPT_INTERFACE); }
+EXTENSION(pg_curlopt_issuercert) { PG_RETURN_INT32(CURLOPT_ISSUERCERT); }
+EXTENSION(pg_curlopt_keypasswd) { PG_RETURN_INT32(CURLOPT_KEYPASSWD); }
+EXTENSION(pg_curlopt_krblevel) { PG_RETURN_INT32(CURLOPT_KRBLEVEL); }
+EXTENSION(pg_curlopt_login_options) { PG_RETURN_INT32(CURLOPT_LOGIN_OPTIONS); }
+EXTENSION(pg_curlopt_mail_auth) { PG_RETURN_INT32(CURLOPT_MAIL_AUTH); }
+EXTENSION(pg_curlopt_mail_from) { PG_RETURN_INT32(CURLOPT_MAIL_FROM); }
+EXTENSION(pg_curlopt_noproxy) { PG_RETURN_INT32(CURLOPT_NOPROXY); }
+EXTENSION(pg_curlopt_password) { PG_RETURN_INT32(CURLOPT_PASSWORD); }
+EXTENSION(pg_curlopt_pinnedpublickey) { PG_RETURN_INT32(CURLOPT_PINNEDPUBLICKEY); }
+EXTENSION(pg_curlopt_pre_proxy) { PG_RETURN_INT32(CURLOPT_PRE_PROXY); }
+EXTENSION(pg_curlopt_proxy_cainfo) { PG_RETURN_INT32(CURLOPT_PROXY_CAINFO); }
+EXTENSION(pg_curlopt_proxy_capath) { PG_RETURN_INT32(CURLOPT_PROXY_CAPATH); }
+EXTENSION(pg_curlopt_proxy_crlfile) { PG_RETURN_INT32(CURLOPT_PROXY_CRLFILE); }
+EXTENSION(pg_curlopt_proxy_keypasswd) { PG_RETURN_INT32(CURLOPT_PROXY_KEYPASSWD); }
+EXTENSION(pg_curlopt_proxypassword) { PG_RETURN_INT32(CURLOPT_PROXYPASSWORD); }
+EXTENSION(pg_curlopt_proxy_pinnedpublickey) { PG_RETURN_INT32(CURLOPT_PROXY_PINNEDPUBLICKEY); }
+EXTENSION(pg_curlopt_proxy_service_name) { PG_RETURN_INT32(CURLOPT_PROXY_SERVICE_NAME); }
+EXTENSION(pg_curlopt_proxy) { PG_RETURN_INT32(CURLOPT_PROXY); }
+EXTENSION(pg_curlopt_proxy_sslcert) { PG_RETURN_INT32(CURLOPT_PROXY_SSLCERT); }
+EXTENSION(pg_curlopt_proxy_sslcerttype) { PG_RETURN_INT32(CURLOPT_PROXY_SSLCERTTYPE); }
+EXTENSION(pg_curlopt_proxy_ssl_cipher_list) { PG_RETURN_INT32(CURLOPT_PROXY_SSL_CIPHER_LIST); }
+EXTENSION(pg_curlopt_proxy_sslkey) { PG_RETURN_INT32(CURLOPT_PROXY_SSLKEY); }
+EXTENSION(pg_curlopt_proxy_sslkeytype) { PG_RETURN_INT32(CURLOPT_PROXY_SSLKEYTYPE); }
+EXTENSION(pg_curlopt_proxy_tls13_ciphers) { PG_RETURN_INT32(CURLOPT_PROXY_TLS13_CIPHERS); }
+EXTENSION(pg_curlopt_proxy_tlsauth_password) { PG_RETURN_INT32(CURLOPT_PROXY_TLSAUTH_PASSWORD); }
+EXTENSION(pg_curlopt_proxy_tlsauth_type) { PG_RETURN_INT32(CURLOPT_PROXY_TLSAUTH_TYPE); }
+EXTENSION(pg_curlopt_proxy_tlsauth_username) { PG_RETURN_INT32(CURLOPT_PROXY_TLSAUTH_USERNAME); }
+EXTENSION(pg_curlopt_proxyusername) { PG_RETURN_INT32(CURLOPT_PROXYUSERNAME); }
+EXTENSION(pg_curlopt_proxyuserpwd) { PG_RETURN_INT32(CURLOPT_PROXYUSERPWD); }
+EXTENSION(pg_curlopt_random_file) { PG_RETURN_INT32(CURLOPT_RANDOM_FILE); }
+EXTENSION(pg_curlopt_range) { PG_RETURN_INT32(CURLOPT_RANGE); }
+EXTENSION(pg_curlopt_referer) { PG_RETURN_INT32(CURLOPT_REFERER); }
+EXTENSION(pg_curlopt_request_target) { PG_RETURN_INT32(CURLOPT_REQUEST_TARGET); }
+EXTENSION(pg_curlopt_rtsp_session_id) { PG_RETURN_INT32(CURLOPT_RTSP_SESSION_ID); }
+EXTENSION(pg_curlopt_rtsp_stream_uri) { PG_RETURN_INT32(CURLOPT_RTSP_STREAM_URI); }
+EXTENSION(pg_curlopt_rtsp_transport) { PG_RETURN_INT32(CURLOPT_RTSP_TRANSPORT); }
+EXTENSION(pg_curlopt_service_name) { PG_RETURN_INT32(CURLOPT_SERVICE_NAME); }
+EXTENSION(pg_curlopt_socks5_gssapi_service) { PG_RETURN_INT32(CURLOPT_SOCKS5_GSSAPI_SERVICE); }
+EXTENSION(pg_curlopt_ssh_host_public_key_md5) { PG_RETURN_INT32(CURLOPT_SSH_HOST_PUBLIC_KEY_MD5); }
+EXTENSION(pg_curlopt_ssh_knownhosts) { PG_RETURN_INT32(CURLOPT_SSH_KNOWNHOSTS); }
+EXTENSION(pg_curlopt_ssh_private_keyfile) { PG_RETURN_INT32(CURLOPT_SSH_PRIVATE_KEYFILE); }
+EXTENSION(pg_curlopt_ssh_public_keyfile) { PG_RETURN_INT32(CURLOPT_SSH_PUBLIC_KEYFILE); }
+EXTENSION(pg_curlopt_sslcert) { PG_RETURN_INT32(CURLOPT_SSLCERT); }
+EXTENSION(pg_curlopt_sslcerttype) { PG_RETURN_INT32(CURLOPT_SSLCERTTYPE); }
+EXTENSION(pg_curlopt_ssl_cipher_list) { PG_RETURN_INT32(CURLOPT_SSL_CIPHER_LIST); }
+EXTENSION(pg_curlopt_sslengine) { PG_RETURN_INT32(CURLOPT_SSLENGINE); }
+EXTENSION(pg_curlopt_sslkey) { PG_RETURN_INT32(CURLOPT_SSLKEY); }
+EXTENSION(pg_curlopt_sslkeytype) { PG_RETURN_INT32(CURLOPT_SSLKEYTYPE); }
+EXTENSION(pg_curlopt_tls13_ciphers) { PG_RETURN_INT32(CURLOPT_TLS13_CIPHERS); }
+EXTENSION(pg_curlopt_tlsauth_password) { PG_RETURN_INT32(CURLOPT_TLSAUTH_PASSWORD); }
+EXTENSION(pg_curlopt_tlsauth_type) { PG_RETURN_INT32(CURLOPT_TLSAUTH_TYPE); }
+EXTENSION(pg_curlopt_tlsauth_username) { PG_RETURN_INT32(CURLOPT_TLSAUTH_USERNAME); }
+EXTENSION(pg_curlopt_unix_socket_path) { PG_RETURN_INT32(CURLOPT_UNIX_SOCKET_PATH); }
+EXTENSION(pg_curlopt_url) { PG_RETURN_INT32(CURLOPT_URL); }
+EXTENSION(pg_curlopt_useragent) { PG_RETURN_INT32(CURLOPT_USERAGENT); }
+EXTENSION(pg_curlopt_username) { PG_RETURN_INT32(CURLOPT_USERNAME); }
+EXTENSION(pg_curlopt_userpwd) { PG_RETURN_INT32(CURLOPT_USERPWD); }
+EXTENSION(pg_curlopt_xoauth2_bearer) { PG_RETURN_INT32(CURLOPT_XOAUTH2_BEARER); }
+
+EXTENSION(pg_curlopt_accepttimeout_ms) { PG_RETURN_INT32(CURLOPT_ACCEPTTIMEOUT_MS); }
+EXTENSION(pg_curlopt_address_scope) { PG_RETURN_INT32(CURLOPT_ADDRESS_SCOPE); }
+EXTENSION(pg_curlopt_append) { PG_RETURN_INT32(CURLOPT_APPEND); }
+EXTENSION(pg_curlopt_autoreferer) { PG_RETURN_INT32(CURLOPT_AUTOREFERER); }
+EXTENSION(pg_curlopt_buffersize) { PG_RETURN_INT32(CURLOPT_BUFFERSIZE); }
+EXTENSION(pg_curlopt_certinfo) { PG_RETURN_INT32(CURLOPT_CERTINFO); }
+EXTENSION(pg_curlopt_connect_only) { PG_RETURN_INT32(CURLOPT_CONNECT_ONLY); }
+EXTENSION(pg_curlopt_connecttimeout_ms) { PG_RETURN_INT32(CURLOPT_CONNECTTIMEOUT_MS); }
+EXTENSION(pg_curlopt_connecttimeout) { PG_RETURN_INT32(CURLOPT_CONNECTTIMEOUT); }
+EXTENSION(pg_curlopt_cookiesession) { PG_RETURN_INT32(CURLOPT_COOKIESESSION); }
+EXTENSION(pg_curlopt_crlf) { PG_RETURN_INT32(CURLOPT_CRLF); }
+EXTENSION(pg_curlopt_dirlistonly) { PG_RETURN_INT32(CURLOPT_DIRLISTONLY); }
+EXTENSION(pg_curlopt_disallow_username_in_url) { PG_RETURN_INT32(CURLOPT_DISALLOW_USERNAME_IN_URL); }
+EXTENSION(pg_curlopt_dns_cache_timeout) { PG_RETURN_INT32(CURLOPT_DNS_CACHE_TIMEOUT); }
+EXTENSION(pg_curlopt_dns_shuffle_addresses) { PG_RETURN_INT32(CURLOPT_DNS_SHUFFLE_ADDRESSES); }
+EXTENSION(pg_curlopt_dns_use_global_cache) { PG_RETURN_INT32(CURLOPT_DNS_USE_GLOBAL_CACHE); }
+EXTENSION(pg_curlopt_expect_100_timeout_ms) { PG_RETURN_INT32(CURLOPT_EXPECT_100_TIMEOUT_MS); }
+EXTENSION(pg_curlopt_failonerror) { PG_RETURN_INT32(CURLOPT_FAILONERROR); }
+EXTENSION(pg_curlopt_filetime) { PG_RETURN_INT32(CURLOPT_FILETIME); }
+EXTENSION(pg_curlopt_followlocation) { PG_RETURN_INT32(CURLOPT_FOLLOWLOCATION); }
+EXTENSION(pg_curlopt_forbid_reuse) { PG_RETURN_INT32(CURLOPT_FORBID_REUSE); }
+EXTENSION(pg_curlopt_fresh_connect) { PG_RETURN_INT32(CURLOPT_FRESH_CONNECT); }
+EXTENSION(pg_curlopt_ftp_create_missing_dirs) { PG_RETURN_INT32(CURLOPT_FTP_CREATE_MISSING_DIRS); }
+EXTENSION(pg_curlopt_ftp_filemethod) { PG_RETURN_INT32(CURLOPT_FTP_FILEMETHOD); }
+EXTENSION(pg_curlopt_ftp_skip_pasv_ip) { PG_RETURN_INT32(CURLOPT_FTP_SKIP_PASV_IP); }
+EXTENSION(pg_curlopt_ftpsslauth) { PG_RETURN_INT32(CURLOPT_FTPSSLAUTH); }
+EXTENSION(pg_curlopt_ftp_ssl_ccc) { PG_RETURN_INT32(CURLOPT_FTP_SSL_CCC); }
+EXTENSION(pg_curlopt_ftp_use_eprt) { PG_RETURN_INT32(CURLOPT_FTP_USE_EPRT); }
+EXTENSION(pg_curlopt_ftp_use_epsv) { PG_RETURN_INT32(CURLOPT_FTP_USE_EPSV); }
+EXTENSION(pg_curlopt_ftp_use_pret) { PG_RETURN_INT32(CURLOPT_FTP_USE_PRET); }
+EXTENSION(pg_curlopt_gssapi_delegation) { PG_RETURN_INT32(CURLOPT_GSSAPI_DELEGATION); }
+EXTENSION(pg_curlopt_happy_eyeballs_timeout_ms) { PG_RETURN_INT32(CURLOPT_HAPPY_EYEBALLS_TIMEOUT_MS); }
+EXTENSION(pg_curlopt_haproxyprotocol) { PG_RETURN_INT32(CURLOPT_HAPROXYPROTOCOL); }
+EXTENSION(pg_curlopt_header) { PG_RETURN_INT32(CURLOPT_HEADER); }
+EXTENSION(pg_curlopt_http09_allowed) { PG_RETURN_INT32(CURLOPT_HTTP09_ALLOWED); }
+EXTENSION(pg_curlopt_httpauth) { PG_RETURN_INT32(CURLOPT_HTTPAUTH); }
+EXTENSION(pg_curlopt_http_content_decoding) { PG_RETURN_INT32(CURLOPT_HTTP_CONTENT_DECODING); }
+EXTENSION(pg_curlopt_httpget) { PG_RETURN_INT32(CURLOPT_HTTPGET); }
+EXTENSION(pg_curlopt_httpproxytunnel) { PG_RETURN_INT32(CURLOPT_HTTPPROXYTUNNEL); }
+EXTENSION(pg_curlopt_http_transfer_decoding) { PG_RETURN_INT32(CURLOPT_HTTP_TRANSFER_DECODING); }
+EXTENSION(pg_curlopt_http_version) { PG_RETURN_INT32(CURLOPT_HTTP_VERSION); }
+EXTENSION(pg_curlopt_ignore_content_length) { PG_RETURN_INT32(CURLOPT_IGNORE_CONTENT_LENGTH); }
+EXTENSION(pg_curlopt_ipresolve) { PG_RETURN_INT32(CURLOPT_IPRESOLVE); }
+EXTENSION(pg_curlopt_keep_sending_on_error) { PG_RETURN_INT32(CURLOPT_KEEP_SENDING_ON_ERROR); }
+EXTENSION(pg_curlopt_localportrange) { PG_RETURN_INT32(CURLOPT_LOCALPORTRANGE); }
+EXTENSION(pg_curlopt_localport) { PG_RETURN_INT32(CURLOPT_LOCALPORT); }
+EXTENSION(pg_curlopt_low_speed_limit) { PG_RETURN_INT32(CURLOPT_LOW_SPEED_LIMIT); }
+EXTENSION(pg_curlopt_low_speed_time) { PG_RETURN_INT32(CURLOPT_LOW_SPEED_TIME); }
+EXTENSION(pg_curlopt_maxconnects) { PG_RETURN_INT32(CURLOPT_MAXCONNECTS); }
+EXTENSION(pg_curlopt_maxfilesize) { PG_RETURN_INT32(CURLOPT_MAXFILESIZE); }
+EXTENSION(pg_curlopt_maxredirs) { PG_RETURN_INT32(CURLOPT_MAXREDIRS); }
+EXTENSION(pg_curlopt_netrc) { PG_RETURN_INT32(CURLOPT_NETRC); }
+EXTENSION(pg_curlopt_new_directory_perms) { PG_RETURN_INT32(CURLOPT_NEW_DIRECTORY_PERMS); }
+EXTENSION(pg_curlopt_new_file_perms) { PG_RETURN_INT32(CURLOPT_NEW_FILE_PERMS); }
+EXTENSION(pg_curlopt_nobody) { PG_RETURN_INT32(CURLOPT_NOBODY); }
+EXTENSION(pg_curlopt_nosignal) { PG_RETURN_INT32(CURLOPT_NOSIGNAL); }
+EXTENSION(pg_curlopt_path_as_is) { PG_RETURN_INT32(CURLOPT_PATH_AS_IS); }
+EXTENSION(pg_curlopt_pipewait) { PG_RETURN_INT32(CURLOPT_PIPEWAIT); }
+EXTENSION(pg_curlopt_port) { PG_RETURN_INT32(CURLOPT_PORT); }
+EXTENSION(pg_curlopt_postredir) { PG_RETURN_INT32(CURLOPT_POSTREDIR); }
+EXTENSION(pg_curlopt_post) { PG_RETURN_INT32(CURLOPT_POST); }
+EXTENSION(pg_curlopt_protocols) { PG_RETURN_INT32(CURLOPT_PROTOCOLS); }
+EXTENSION(pg_curlopt_proxyauth) { PG_RETURN_INT32(CURLOPT_PROXYAUTH); }
+EXTENSION(pg_curlopt_proxyport) { PG_RETURN_INT32(CURLOPT_PROXYPORT); }
+EXTENSION(pg_curlopt_proxy_ssl_options) { PG_RETURN_INT32(CURLOPT_PROXY_SSL_OPTIONS); }
+EXTENSION(pg_curlopt_proxy_ssl_verifyhost) { PG_RETURN_INT32(CURLOPT_PROXY_SSL_VERIFYHOST); }
+EXTENSION(pg_curlopt_proxy_ssl_verifypeer) { PG_RETURN_INT32(CURLOPT_PROXY_SSL_VERIFYPEER); }
+EXTENSION(pg_curlopt_proxy_sslversion) { PG_RETURN_INT32(CURLOPT_PROXY_SSLVERSION); }
+EXTENSION(pg_curlopt_proxy_transfer_mode) { PG_RETURN_INT32(CURLOPT_PROXY_TRANSFER_MODE); }
+EXTENSION(pg_curlopt_proxytype) { PG_RETURN_INT32(CURLOPT_PROXYTYPE); }
+EXTENSION(pg_curlopt_put) { PG_RETURN_INT32(CURLOPT_PUT); }
+EXTENSION(pg_curlopt_redir_protocols) { PG_RETURN_INT32(CURLOPT_REDIR_PROTOCOLS); }
+EXTENSION(pg_curlopt_resume_from) { PG_RETURN_INT32(CURLOPT_RESUME_FROM); }
+EXTENSION(pg_curlopt_rtsp_client_cseq) { PG_RETURN_INT32(CURLOPT_RTSP_CLIENT_CSEQ); }
+EXTENSION(pg_curlopt_rtsp_request) { PG_RETURN_INT32(CURLOPT_RTSP_REQUEST); }
+EXTENSION(pg_curlopt_rtsp_server_cseq) { PG_RETURN_INT32(CURLOPT_RTSP_SERVER_CSEQ); }
+EXTENSION(pg_curlopt_sasl_ir) { PG_RETURN_INT32(CURLOPT_SASL_IR); }
+EXTENSION(pg_curlopt_server_response_timeout) { PG_RETURN_INT32(CURLOPT_SERVER_RESPONSE_TIMEOUT); }
+EXTENSION(pg_curlopt_socks5_auth) { PG_RETURN_INT32(CURLOPT_SOCKS5_AUTH); }
+EXTENSION(pg_curlopt_socks5_gssapi_nec) { PG_RETURN_INT32(CURLOPT_SOCKS5_GSSAPI_NEC); }
+EXTENSION(pg_curlopt_ssh_auth_types) { PG_RETURN_INT32(CURLOPT_SSH_AUTH_TYPES); }
+EXTENSION(pg_curlopt_ssh_compression) { PG_RETURN_INT32(CURLOPT_SSH_COMPRESSION); }
+EXTENSION(pg_curlopt_ssl_enable_alpn) { PG_RETURN_INT32(CURLOPT_SSL_ENABLE_ALPN); }
+EXTENSION(pg_curlopt_ssl_enable_npn) { PG_RETURN_INT32(CURLOPT_SSL_ENABLE_NPN); }
+EXTENSION(pg_curlopt_ssl_falsestart) { PG_RETURN_INT32(CURLOPT_SSL_FALSESTART); }
+EXTENSION(pg_curlopt_ssl_options) { PG_RETURN_INT32(CURLOPT_SSL_OPTIONS); }
+EXTENSION(pg_curlopt_ssl_sessionid_cache) { PG_RETURN_INT32(CURLOPT_SSL_SESSIONID_CACHE); }
+EXTENSION(pg_curlopt_ssl_verifyhost) { PG_RETURN_INT32(CURLOPT_SSL_VERIFYHOST); }
+EXTENSION(pg_curlopt_ssl_verifypeer) { PG_RETURN_INT32(CURLOPT_SSL_VERIFYPEER); }
+EXTENSION(pg_curlopt_ssl_verifystatus) { PG_RETURN_INT32(CURLOPT_SSL_VERIFYSTATUS); }
+EXTENSION(pg_curlopt_sslversion) { PG_RETURN_INT32(CURLOPT_SSLVERSION); }
+EXTENSION(pg_curlopt_stream_weight) { PG_RETURN_INT32(CURLOPT_STREAM_WEIGHT); }
+EXTENSION(pg_curlopt_suppress_connect_headers) { PG_RETURN_INT32(CURLOPT_SUPPRESS_CONNECT_HEADERS); }
+EXTENSION(pg_curlopt_tcp_fastopen) { PG_RETURN_INT32(CURLOPT_TCP_FASTOPEN); }
+EXTENSION(pg_curlopt_tcp_keepalive) { PG_RETURN_INT32(CURLOPT_TCP_KEEPALIVE); }
+EXTENSION(pg_curlopt_tcp_keepidle) { PG_RETURN_INT32(CURLOPT_TCP_KEEPIDLE); }
+EXTENSION(pg_curlopt_tcp_keepintvl) { PG_RETURN_INT32(CURLOPT_TCP_KEEPINTVL); }
+EXTENSION(pg_curlopt_tcp_nodelay) { PG_RETURN_INT32(CURLOPT_TCP_NODELAY); }
+EXTENSION(pg_curlopt_tftp_blksize) { PG_RETURN_INT32(CURLOPT_TFTP_BLKSIZE); }
+EXTENSION(pg_curlopt_tftp_no_options) { PG_RETURN_INT32(CURLOPT_TFTP_NO_OPTIONS); }
+EXTENSION(pg_curlopt_timecondition) { PG_RETURN_INT32(CURLOPT_TIMECONDITION); }
+EXTENSION(pg_curlopt_timeout_ms) { PG_RETURN_INT32(CURLOPT_TIMEOUT_MS); }
+EXTENSION(pg_curlopt_timeout) { PG_RETURN_INT32(CURLOPT_TIMEOUT); }
+EXTENSION(pg_curlopt_timevalue) { PG_RETURN_INT32(CURLOPT_TIMEVALUE); }
+EXTENSION(pg_curlopt_transfer_encoding) { PG_RETURN_INT32(CURLOPT_TRANSFER_ENCODING); }
+EXTENSION(pg_curlopt_transfertext) { PG_RETURN_INT32(CURLOPT_TRANSFERTEXT); }
+EXTENSION(pg_curlopt_unrestricted_auth) { PG_RETURN_INT32(CURLOPT_UNRESTRICTED_AUTH); }
+EXTENSION(pg_curlopt_upkeep_interval_ms) { PG_RETURN_INT32(CURLOPT_UPKEEP_INTERVAL_MS); }
+EXTENSION(pg_curlopt_upload_buffersize) { PG_RETURN_INT32(CURLOPT_UPLOAD_BUFFERSIZE); }
+EXTENSION(pg_curlopt_use_ssl) { PG_RETURN_INT32(CURLOPT_USE_SSL); }
+EXTENSION(pg_curlopt_verbose) { PG_RETURN_INT32(CURLOPT_VERBOSE); }
+EXTENSION(pg_curlopt_wildcardmatch) { PG_RETURN_INT32(CURLOPT_WILDCARDMATCH); }
