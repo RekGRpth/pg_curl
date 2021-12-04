@@ -270,8 +270,8 @@ EXTENSION(pg_curl_easy_setopt_long2) {
     CURLcode res = CURL_LAST;
     CURLoption option;
     long parameter;
-    if (PG_ARGISNULL(1)) E("option is null!");
-    if (PG_ARGISNULL(0)) E("parameter is null!");
+    if (PG_ARGISNULL(0)) E("option is null!");
+    if (PG_ARGISNULL(1)) E("parameter is null!");
     option = PG_GETARG_INT32(0);
     parameter = PG_GETARG_INT64(1);
     if ((res = curl_easy_setopt(curl, option, parameter)) != CURLE_OK) E("curl_easy_setopt(%i, %li): %s", option, parameter, curl_easy_strerror(res));
@@ -564,6 +564,19 @@ EXTENSION(pg_curl_easy_getinfo_response) {
     PG_RETURN_BYTEA_P(cstring_to_text_with_len(write_str.data, write_str.len));
 }
 
+EXTENSION(pg_curl_easy_getinfo_char2) {
+    char *value = NULL;
+    CURLcode res = CURL_LAST;
+    CURLINFO info;
+    int len;
+    if (PG_ARGISNULL(0)) E("info is null!");
+    info = PG_GETARG_INT32(0);
+    if ((res = curl_easy_getinfo(curl, info, &value)) != CURLE_OK) E("curl_easy_getinfo(%i): %s", info, curl_easy_strerror(res));
+    len = value ? strlen(value) : 0;
+    if (!value) PG_RETURN_NULL();
+    PG_RETURN_TEXT_P(cstring_to_text_with_len(value, len));
+}
+
 static Datum pg_curl_easy_getinfo_char(PG_FUNCTION_ARGS, CURLINFO info) {
     CURLcode res = CURL_LAST;
     char *value = NULL;
@@ -583,6 +596,16 @@ EXTENSION(pg_curl_easy_getinfo_private) { return pg_curl_easy_getinfo_char(fcinf
 EXTENSION(pg_curl_easy_getinfo_redirect_url) { return pg_curl_easy_getinfo_char(fcinfo, CURLINFO_REDIRECT_URL); }
 EXTENSION(pg_curl_easy_getinfo_rtsp_session_id) { return pg_curl_easy_getinfo_char(fcinfo, CURLINFO_RTSP_SESSION_ID); }
 EXTENSION(pg_curl_easy_getinfo_scheme) { return pg_curl_easy_getinfo_char(fcinfo, CURLINFO_SCHEME); }
+
+EXTENSION(pg_curl_easy_getinfo_long2) {
+    CURLcode res = CURL_LAST;
+    CURLINFO info;
+    long value;
+    if (PG_ARGISNULL(0)) E("info is null!");
+    info = PG_GETARG_INT32(0);
+    if ((res = curl_easy_getinfo(curl, info, &value)) != CURLE_OK) E("curl_easy_getinfo(%i): %s", info, curl_easy_strerror(res));
+    PG_RETURN_INT64(value);
+}
 
 static Datum pg_curl_easy_getinfo_long(PG_FUNCTION_ARGS, CURLINFO info) {
     CURLcode res = CURL_LAST;
@@ -953,3 +976,35 @@ EXTENSION(pg_curlftp_create_dir_retry) { PG_RETURN_INT64(CURLFTP_CREATE_DIR_RETR
 EXTENSION(pg_curlftp_create_dir_none) { PG_RETURN_INT64(CURLFTP_CREATE_DIR_NONE); }
 
 EXTENSION(pg_curl_max_write_size) { PG_RETURN_INT64(CURL_MAX_WRITE_SIZE); }
+
+EXTENSION(pg_curlinfo_content_type) { PG_RETURN_INT32(CURLINFO_CONTENT_TYPE); }
+EXTENSION(pg_curlinfo_effective_url) { PG_RETURN_INT32(CURLINFO_EFFECTIVE_URL); }
+EXTENSION(pg_curlinfo_ftp_entry_path) { PG_RETURN_INT32(CURLINFO_FTP_ENTRY_PATH); }
+EXTENSION(pg_curlinfo_local_ip) { PG_RETURN_INT32(CURLINFO_LOCAL_IP); }
+EXTENSION(pg_curlinfo_primary_ip) { PG_RETURN_INT32(CURLINFO_PRIMARY_IP); }
+EXTENSION(pg_curlinfo_private) { PG_RETURN_INT32(CURLINFO_PRIVATE); }
+EXTENSION(pg_curlinfo_redirect_url) { PG_RETURN_INT32(CURLINFO_REDIRECT_URL); }
+EXTENSION(pg_curlinfo_rtsp_session_id) { PG_RETURN_INT32(CURLINFO_RTSP_SESSION_ID); }
+EXTENSION(pg_curlinfo_scheme) { PG_RETURN_INT32(CURLINFO_SCHEME); }
+
+EXTENSION(pg_curlinfo_condition_unmet) { PG_RETURN_INT32(CURLINFO_CONDITION_UNMET); }
+EXTENSION(pg_curlinfo_filetime) { PG_RETURN_INT32(CURLINFO_FILETIME); }
+EXTENSION(pg_curlinfo_header_size) { PG_RETURN_INT32(CURLINFO_HEADER_SIZE); }
+EXTENSION(pg_curlinfo_httpauth_avail) { PG_RETURN_INT32(CURLINFO_HTTPAUTH_AVAIL); }
+EXTENSION(pg_curlinfo_http_connectcode) { PG_RETURN_INT32(CURLINFO_HTTP_CONNECTCODE); }
+EXTENSION(pg_curlinfo_http_version) { PG_RETURN_INT32(CURLINFO_HTTP_VERSION); }
+EXTENSION(pg_curlinfo_lastsocket) { PG_RETURN_INT32(CURLINFO_LASTSOCKET); }
+EXTENSION(pg_curlinfo_local_port) { PG_RETURN_INT32(CURLINFO_LOCAL_PORT); }
+EXTENSION(pg_curlinfo_num_connects) { PG_RETURN_INT32(CURLINFO_NUM_CONNECTS); }
+EXTENSION(pg_curlinfo_os_errno) { PG_RETURN_INT32(CURLINFO_OS_ERRNO); }
+EXTENSION(pg_curlinfo_primary_port) { PG_RETURN_INT32(CURLINFO_PRIMARY_PORT); }
+EXTENSION(pg_curlinfo_protocol) { PG_RETURN_INT32(CURLINFO_PROTOCOL); }
+EXTENSION(pg_curlinfo_proxyauth_avail) { PG_RETURN_INT32(CURLINFO_PROXYAUTH_AVAIL); }
+EXTENSION(pg_curlinfo_proxy_ssl_verifyresult) { PG_RETURN_INT32(CURLINFO_PROXY_SSL_VERIFYRESULT); }
+EXTENSION(pg_curlinfo_redirect_count) { PG_RETURN_INT32(CURLINFO_REDIRECT_COUNT); }
+EXTENSION(pg_curlinfo_request_size) { PG_RETURN_INT32(CURLINFO_REQUEST_SIZE); }
+EXTENSION(pg_curlinfo_response_code) { PG_RETURN_INT32(CURLINFO_RESPONSE_CODE); }
+EXTENSION(pg_curlinfo_rtsp_client_cseq) { PG_RETURN_INT32(CURLINFO_RTSP_CLIENT_CSEQ); }
+EXTENSION(pg_curlinfo_rtsp_cseq_recv) { PG_RETURN_INT32(CURLINFO_RTSP_CSEQ_RECV); }
+EXTENSION(pg_curlinfo_rtsp_server_cseq) { PG_RETURN_INT32(CURLINFO_RTSP_SERVER_CSEQ); }
+EXTENSION(pg_curlinfo_ssl_verifyresult) { PG_RETURN_INT32(CURLINFO_SSL_VERIFYRESULT); }

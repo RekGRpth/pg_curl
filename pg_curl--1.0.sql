@@ -221,6 +221,9 @@ CREATE OR REPLACE FUNCTION curl_easy_perform(try int default 1, sleep bigint def
 CREATE OR REPLACE FUNCTION curl_easy_getinfo_headers() RETURNS text AS 'MODULE_PATHNAME', 'pg_curl_easy_getinfo_headers' LANGUAGE 'c';
 CREATE OR REPLACE FUNCTION curl_easy_getinfo_response() RETURNS bytea AS 'MODULE_PATHNAME', 'pg_curl_easy_getinfo_response' LANGUAGE 'c';
 
+CREATE OR REPLACE FUNCTION curl_easy_getinfo_text(info integer) RETURNS text AS 'MODULE_PATHNAME', 'pg_curl_easy_getinfo_char2' LANGUAGE 'c';
+CREATE OR REPLACE FUNCTION curl_easy_getinfo_bigint(info integer) RETURNS bigint AS 'MODULE_PATHNAME', 'pg_curl_easy_getinfo_long2' LANGUAGE 'c';
+
 CREATE OR REPLACE FUNCTION curl_easy_getinfo_content_type() RETURNS text AS 'MODULE_PATHNAME', 'pg_curl_easy_getinfo_content_type' LANGUAGE 'c';
 CREATE OR REPLACE FUNCTION curl_easy_getinfo_effective_url() RETURNS text AS 'MODULE_PATHNAME', 'pg_curl_easy_getinfo_effective_url' LANGUAGE 'c';
 CREATE OR REPLACE FUNCTION curl_easy_getinfo_ftp_entry_path() RETURNS text AS 'MODULE_PATHNAME', 'pg_curl_easy_getinfo_ftp_entry_path' LANGUAGE 'c';
@@ -593,3 +596,35 @@ CREATE OR REPLACE FUNCTION curlftp_create_dir_retry() RETURNS bigint AS 'MODULE_
 CREATE OR REPLACE FUNCTION curlftp_create_dir_none() RETURNS bigint AS 'MODULE_PATHNAME', 'pg_curlftp_create_dir_none' LANGUAGE 'c' IMMUTABLE PARALLEL SAFE;
 
 CREATE OR REPLACE FUNCTION curl_max_write_size() RETURNS bigint AS 'MODULE_PATHNAME', 'pg_curl_max_write_size' LANGUAGE 'c' IMMUTABLE PARALLEL SAFE;
+
+CREATE OR REPLACE FUNCTION curlinfo_content_type() RETURNS integer AS 'MODULE_PATHNAME', 'pg_curlinfo_content_type' LANGUAGE 'c' IMMUTABLE PARALLEL SAFE;
+CREATE OR REPLACE FUNCTION curlinfo_effective_url() RETURNS integer AS 'MODULE_PATHNAME', 'pg_curlinfo_effective_url' LANGUAGE 'c' IMMUTABLE PARALLEL SAFE;
+CREATE OR REPLACE FUNCTION curlinfo_ftp_entry_path() RETURNS integer AS 'MODULE_PATHNAME', 'pg_curlinfo_ftp_entry_path' LANGUAGE 'c' IMMUTABLE PARALLEL SAFE;
+CREATE OR REPLACE FUNCTION curlinfo_local_ip() RETURNS integer AS 'MODULE_PATHNAME', 'pg_curlinfo_local_ip' LANGUAGE 'c' IMMUTABLE PARALLEL SAFE;
+CREATE OR REPLACE FUNCTION curlinfo_primary_ip() RETURNS integer AS 'MODULE_PATHNAME', 'pg_curlinfo_primary_ip' LANGUAGE 'c' IMMUTABLE PARALLEL SAFE;
+CREATE OR REPLACE FUNCTION curlinfo_private() RETURNS integer AS 'MODULE_PATHNAME', 'pg_curlinfo_private' LANGUAGE 'c' IMMUTABLE PARALLEL SAFE;
+CREATE OR REPLACE FUNCTION curlinfo_redirect_url() RETURNS integer AS 'MODULE_PATHNAME', 'pg_curlinfo_redirect_url' LANGUAGE 'c' IMMUTABLE PARALLEL SAFE;
+CREATE OR REPLACE FUNCTION curlinfo_rtsp_session_id() RETURNS integer AS 'MODULE_PATHNAME', 'pg_curlinfo_rtsp_session_id' LANGUAGE 'c' IMMUTABLE PARALLEL SAFE;
+CREATE OR REPLACE FUNCTION curlinfo_scheme() RETURNS integer AS 'MODULE_PATHNAME', 'pg_curlinfo_scheme' LANGUAGE 'c' IMMUTABLE PARALLEL SAFE;
+
+CREATE OR REPLACE FUNCTION curlinfo_condition_unmet() RETURNS integer AS 'MODULE_PATHNAME', 'pg_curlinfo_condition_unmet' LANGUAGE 'c' IMMUTABLE PARALLEL SAFE;
+CREATE OR REPLACE FUNCTION curlinfo_filetime() RETURNS integer AS 'MODULE_PATHNAME', 'pg_curlinfo_filetime' LANGUAGE 'c' IMMUTABLE PARALLEL SAFE;
+CREATE OR REPLACE FUNCTION curlinfo_header_size() RETURNS integer AS 'MODULE_PATHNAME', 'pg_curlinfo_header_size' LANGUAGE 'c' IMMUTABLE PARALLEL SAFE;
+CREATE OR REPLACE FUNCTION curlinfo_httpauth_avail() RETURNS integer AS 'MODULE_PATHNAME', 'pg_curlinfo_httpauth_avail' LANGUAGE 'c' IMMUTABLE PARALLEL SAFE;
+CREATE OR REPLACE FUNCTION curlinfo_http_connectcode() RETURNS integer AS 'MODULE_PATHNAME', 'pg_curlinfo_http_connectcode' LANGUAGE 'c' IMMUTABLE PARALLEL SAFE;
+CREATE OR REPLACE FUNCTION curlinfo_http_version() RETURNS integer AS 'MODULE_PATHNAME', 'pg_curlinfo_http_version' LANGUAGE 'c' IMMUTABLE PARALLEL SAFE;
+CREATE OR REPLACE FUNCTION curlinfo_lastsocket() RETURNS integer AS 'MODULE_PATHNAME', 'pg_curlinfo_lastsocket' LANGUAGE 'c' IMMUTABLE PARALLEL SAFE;
+CREATE OR REPLACE FUNCTION curlinfo_local_port() RETURNS integer AS 'MODULE_PATHNAME', 'pg_curlinfo_local_port' LANGUAGE 'c' IMMUTABLE PARALLEL SAFE;
+CREATE OR REPLACE FUNCTION curlinfo_num_connects() RETURNS integer AS 'MODULE_PATHNAME', 'pg_curlinfo_num_connects' LANGUAGE 'c' IMMUTABLE PARALLEL SAFE;
+CREATE OR REPLACE FUNCTION curlinfo_os_errno() RETURNS integer AS 'MODULE_PATHNAME', 'pg_curlinfo_os_errno' LANGUAGE 'c' IMMUTABLE PARALLEL SAFE;
+CREATE OR REPLACE FUNCTION curlinfo_primary_port() RETURNS integer AS 'MODULE_PATHNAME', 'pg_curlinfo_primary_port' LANGUAGE 'c' IMMUTABLE PARALLEL SAFE;
+CREATE OR REPLACE FUNCTION curlinfo_protocol() RETURNS integer AS 'MODULE_PATHNAME', 'pg_curlinfo_protocol' LANGUAGE 'c' IMMUTABLE PARALLEL SAFE;
+CREATE OR REPLACE FUNCTION curlinfo_proxyauth_avail() RETURNS integer AS 'MODULE_PATHNAME', 'pg_curlinfo_proxyauth_avail' LANGUAGE 'c' IMMUTABLE PARALLEL SAFE;
+CREATE OR REPLACE FUNCTION curlinfo_proxy_ssl_verifyresult() RETURNS integer AS 'MODULE_PATHNAME', 'pg_curlinfo_proxy_ssl_verifyresult' LANGUAGE 'c' IMMUTABLE PARALLEL SAFE;
+CREATE OR REPLACE FUNCTION curlinfo_redirect_count() RETURNS integer AS 'MODULE_PATHNAME', 'pg_curlinfo_redirect_count' LANGUAGE 'c' IMMUTABLE PARALLEL SAFE;
+CREATE OR REPLACE FUNCTION curlinfo_request_size() RETURNS integer AS 'MODULE_PATHNAME', 'pg_curlinfo_request_size' LANGUAGE 'c' IMMUTABLE PARALLEL SAFE;
+CREATE OR REPLACE FUNCTION curlinfo_response_code() RETURNS integer AS 'MODULE_PATHNAME', 'pg_curlinfo_response_code' LANGUAGE 'c' IMMUTABLE PARALLEL SAFE;
+CREATE OR REPLACE FUNCTION curlinfo_rtsp_client_cseq() RETURNS integer AS 'MODULE_PATHNAME', 'pg_curlinfo_rtsp_client_cseq' LANGUAGE 'c' IMMUTABLE PARALLEL SAFE;
+CREATE OR REPLACE FUNCTION curlinfo_rtsp_cseq_recv() RETURNS integer AS 'MODULE_PATHNAME', 'pg_curlinfo_rtsp_cseq_recv' LANGUAGE 'c' IMMUTABLE PARALLEL SAFE;
+CREATE OR REPLACE FUNCTION curlinfo_rtsp_server_cseq() RETURNS integer AS 'MODULE_PATHNAME', 'pg_curlinfo_rtsp_server_cseq' LANGUAGE 'c' IMMUTABLE PARALLEL SAFE;
+CREATE OR REPLACE FUNCTION curlinfo_ssl_verifyresult() RETURNS integer AS 'MODULE_PATHNAME', 'pg_curlinfo_ssl_verifyresult' LANGUAGE 'c' IMMUTABLE PARALLEL SAFE;
