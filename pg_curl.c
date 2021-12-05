@@ -294,6 +294,7 @@ EXTENSION(pg_curl_easy_setopt_readdata) {
 static Datum pg_curl_easy_setopt_char(PG_FUNCTION_ARGS, CURLoption option) {
     CURLcode res = CURL_LAST;
     char *parameter;
+    W("Deprecated and will be removed! Use curl_easy_setopt instead.");
     if (PG_ARGISNULL(0)) E("parameter is null!");
     parameter = TextDatumGetCString(PG_GETARG_DATUM(0));
     if ((res = curl_easy_setopt(curl, option, parameter)) != CURLE_OK) E("curl_easy_setopt(%i, %s): %s", option, parameter, curl_easy_strerror(res));
@@ -384,6 +385,7 @@ EXTENSION(pg_curl_easy_setopt_xoauth2_bearer) { return pg_curl_easy_setopt_char(
 static Datum pg_curl_easy_setopt_long(PG_FUNCTION_ARGS, CURLoption option) {
     CURLcode res = CURL_LAST;
     long parameter;
+    W("Deprecated and will be removed! Use curl_easy_setopt instead.");
     if (PG_ARGISNULL(0)) E("parameter is null!");
     parameter = PG_GETARG_INT64(0);
     if ((res = curl_easy_setopt(curl, option, parameter)) != CURLE_OK) E("curl_easy_setopt(%i, %li): %s", option, parameter, curl_easy_strerror(res));
@@ -600,6 +602,7 @@ EXTENSION(pg_curl_easy_getinfo_char2) {
     char *value = NULL;
     CURLcode res = CURL_LAST;
     CURLINFO info;
+    W("Deprecated and will be removed! Use curl_easy_getinfo instead.");
     if (PG_ARGISNULL(0)) E("info is null!");
     info = PG_GETARG_INT32(0);
     if ((res = curl_easy_getinfo(curl, info, &value)) != CURLE_OK) E("curl_easy_getinfo(%i): %s", info, curl_easy_strerror(res));
@@ -610,6 +613,7 @@ EXTENSION(pg_curl_easy_getinfo_char2) {
 static Datum pg_curl_easy_getinfo_char(PG_FUNCTION_ARGS, CURLINFO info) {
     CURLcode res = CURL_LAST;
     char *value = NULL;
+    W("Deprecated and will be removed! Use curl_easy_getinfo instead.");
     if ((res = curl_easy_getinfo(curl, info, &value)) != CURLE_OK) E("curl_easy_getinfo(%i): %s", info, curl_easy_strerror(res));
     if (!value) PG_RETURN_NULL();
     PG_RETURN_TEXT_P(cstring_to_text(value));
@@ -629,6 +633,7 @@ EXTENSION(pg_curl_easy_getinfo_long2) {
     CURLcode res = CURL_LAST;
     CURLINFO info;
     long value;
+    W("Deprecated and will be removed! Use curl_easy_getinfo instead.");
     if (PG_ARGISNULL(0)) E("info is null!");
     info = PG_GETARG_INT32(0);
     if ((res = curl_easy_getinfo(curl, info, &value)) != CURLE_OK) E("curl_easy_getinfo(%i): %s", info, curl_easy_strerror(res));
@@ -638,6 +643,7 @@ EXTENSION(pg_curl_easy_getinfo_long2) {
 static Datum pg_curl_easy_getinfo_long(PG_FUNCTION_ARGS, CURLINFO info) {
     CURLcode res = CURL_LAST;
     long value;
+    W("Deprecated and will be removed! Use curl_easy_getinfo instead.");
     if ((res = curl_easy_getinfo(curl, info, &value)) != CURLE_OK) E("curl_easy_getinfo(%i): %s", info, curl_easy_strerror(res));
     PG_RETURN_INT64(value);
 }
