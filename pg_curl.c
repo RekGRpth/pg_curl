@@ -30,9 +30,13 @@ typedef struct FileString {
     size_t len;
 } FileString;
 
+#if CURL_AT_LEAST_VERSION(7, 56, 0)
 static bool has_mime;
+#endif
 static CURL *curl = NULL;
+#if CURL_AT_LEAST_VERSION(7, 56, 0)
 static curl_mime *mime;
+#endif
 static FileString header_str = {NULL, NULL, 0};
 static FILE *read_str_file = NULL;
 static FileString write_str = {NULL, NULL, 0};
@@ -46,15 +50,19 @@ static void pg_curl_interrupt_handler(int sig) { pg_curl_interrupt_requested = s
 void _PG_init(void); void _PG_init(void) {
     if (curl_global_init(CURL_GLOBAL_ALL)) E("curl_global_init");
     if (!(curl = curl_easy_init())) E("!curl_easy_init");
+#if CURL_AT_LEAST_VERSION(7, 56, 0)
     if (!(curl_mime_init(curl))) E("!curl_mime_init");
     has_mime = false;
+#endif
     pg_curl_interrupt_requested = 0;
     pgsql_interrupt_handler = pqsignal(SIGINT, pg_curl_interrupt_handler);
 }
 
 void _PG_fini(void); void _PG_fini(void) {
     pqsignal(SIGINT, pgsql_interrupt_handler);
+#if CURL_AT_LEAST_VERSION(7, 56, 0)
     curl_mime_free(mime);
+#endif
     curl_slist_free_all(header);
     curl_slist_free_all(recipient);
     curl_easy_cleanup(curl);
@@ -71,10 +79,14 @@ EXTENSION(pg_curl_easy_header_reset) {
 }
 
 EXTENSION(pg_curl_easy_mime_reset) {
+#if CURL_AT_LEAST_VERSION(7, 56, 0)
     curl_mime_free(mime);
     if (!(mime = curl_mime_init(curl))) E("!curl_mime_init");
     has_mime = false;
     PG_RETURN_VOID();
+#else
+    E("curl_easy_mime_reset requires curl 7.56.0 or later");
+#endif
 }
 
 EXTENSION(pg_curl_easy_readdata_reset) {
@@ -90,7 +102,9 @@ EXTENSION(pg_curl_easy_recipient_reset) {
 
 EXTENSION(pg_curl_easy_reset) {
     pg_curl_easy_header_reset(fcinfo);
+#if CURL_AT_LEAST_VERSION(7, 56, 0)
     pg_curl_easy_mime_reset(fcinfo);
+#endif
     pg_curl_easy_readdata_reset(fcinfo);
     pg_curl_easy_recipient_reset(fcinfo);
     curl_easy_reset(curl);
@@ -148,6 +162,7 @@ EXTENSION(pg_curl_recipient_append) {
 }
 
 EXTENSION(pg_curl_mime_data) {
+#if CURL_AT_LEAST_VERSION(7, 56, 0)
     char *name = NULL, *file = NULL, *type = NULL, *code = NULL, *head = NULL;
     CURLcode res = CURL_LAST;
     curl_mimepart *part;
@@ -177,9 +192,13 @@ EXTENSION(pg_curl_mime_data) {
     if (head) pfree(head);
     has_mime = true;
     PG_RETURN_BOOL(res == CURLE_OK);
+#else
+    E("curl_mime_data requires curl 7.56.0 or later");
+#endif
 }
 
 EXTENSION(pg_curl_mime_data_bytea) {
+#if CURL_AT_LEAST_VERSION(7, 56, 0)
     CURLcode res = CURL_LAST;
     bytea *data;
     char *name = NULL, *file = NULL, *type = NULL, *code = NULL, *head = NULL;
@@ -209,9 +228,13 @@ EXTENSION(pg_curl_mime_data_bytea) {
     if (head) pfree(head);
     has_mime = true;
     PG_RETURN_BOOL(res == CURLE_OK);
+#else
+    E("curl_mime_data requires curl 7.56.0 or later");
+#endif
 }
 
 EXTENSION(pg_curl_mime_file) {
+#if CURL_AT_LEAST_VERSION(7, 56, 0)
     CURLcode res = CURL_LAST;
     char *data, *name = NULL, *file = NULL, *type = NULL, *code = NULL, *head = NULL;
     curl_mimepart *part;
@@ -241,6 +264,9 @@ EXTENSION(pg_curl_mime_file) {
     if (head) pfree(head);
     has_mime = true;
     PG_RETURN_BOOL(res == CURLE_OK);
+#else
+    E("curl_mime_file requires curl 7.56.0 or later");
+#endif
 }
 
 EXTENSION(pg_curl_easy_setopt_char2) {
@@ -529,7 +555,9 @@ EXTENSION(pg_curl_easy_perform) {
     if ((res = curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION, progress_callback)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_XFERINFOFUNCTION): %s", curl_easy_strerror(res));
     if (header && ((res = curl_easy_setopt(curl, CURLOPT_HTTPHEADER, header)) != CURLE_OK)) E("curl_easy_setopt(CURLOPT_HTTPHEADER): %s", curl_easy_strerror(res));
     if (recipient && ((res = curl_easy_setopt(curl, CURLOPT_MAIL_RCPT, recipient)) != CURLE_OK)) E("curl_easy_setopt(CURLOPT_MAIL_RCPT): %s", curl_easy_strerror(res));
+#if CURL_AT_LEAST_VERSION(7, 56, 0)
     if (has_mime && ((res = curl_easy_setopt(curl, CURLOPT_MIMEPOST, mime)) != CURLE_OK)) E("curl_easy_setopt(CURLOPT_MIMEPOST): %s", curl_easy_strerror(res));
+#endif
     pg_curl_interrupt_requested = 0;
     while (try--) switch (res = curl_easy_perform(curl)) {
         case CURLE_OK: try = 0; break;
