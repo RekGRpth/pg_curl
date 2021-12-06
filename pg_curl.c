@@ -1478,7 +1478,13 @@ EXTENSION(pg_curlssh_auth_any) { PG_RETURN_INT64(CURLSSH_AUTH_ANY); }
 EXTENSION(pg_curlauth_basic) { PG_RETURN_INT64(CURLAUTH_BASIC); }
 EXTENSION(pg_curlauth_digest) { PG_RETURN_INT64(CURLAUTH_DIGEST); }
 EXTENSION(pg_curlauth_digest_ie) { PG_RETURN_INT64(CURLAUTH_DIGEST_IE); }
-EXTENSION(pg_curlauth_bearer) { PG_RETURN_INT64(CURLAUTH_BEARER); }
+EXTENSION(pg_curlauth_bearer) {
+#if CURL_AT_LEAST_VERSION(7, 61, 0)
+    PG_RETURN_INT64(CURLAUTH_BEARER);
+#else
+    E("curlauth_bearer requires curl 7.61.0 or later");
+#endif
+}
 EXTENSION(pg_curlauth_negotiate) { PG_RETURN_INT64(CURLAUTH_NEGOTIATE); }
 EXTENSION(pg_curlauth_ntlm) { PG_RETURN_INT64(CURLAUTH_NTLM); }
 EXTENSION(pg_curlauth_ntlm_wb) { PG_RETURN_INT64(CURLAUTH_NTLM_WB); }
@@ -1492,7 +1498,13 @@ EXTENSION(pg_curlauth_aws_sigv4) {
     E("!CURLAUTH_AWS_SIGV4");
 #endif
 }
-EXTENSION(pg_curlauth_gssapi) { PG_RETURN_INT64(CURLAUTH_GSSAPI); }
+EXTENSION(pg_curlauth_gssapi) {
+#ifdef CURLAUTH_GSSAPI
+    PG_RETURN_INT64(CURLAUTH_GSSAPI);
+#else
+    E("!CURLAUTH_GSSAPI");
+#endif
+}
 EXTENSION(pg_curlauth_none) { PG_RETURN_INT64(CURLAUTH_NONE); }
 
 EXTENSION(pg_curl_rtspreq_options) { PG_RETURN_INT64(CURL_RTSPREQ_OPTIONS); }
@@ -1538,7 +1550,13 @@ EXTENSION(pg_curlproto_tftp) { PG_RETURN_INT64(CURLPROTO_TFTP); }
 EXTENSION(pg_curlproto_all) { PG_RETURN_INT64(CURLPROTO_ALL); }
 
 EXTENSION(pg_curlproxy_http) { PG_RETURN_INT64(CURLPROXY_HTTP); }
-EXTENSION(pg_curlproxy_https) { PG_RETURN_INT64(CURLPROXY_HTTPS); }
+EXTENSION(pg_curlproxy_https) {
+#if CURL_AT_LEAST_VERSION(7, 52, 0)
+    PG_RETURN_INT64(CURLPROXY_HTTPS);
+#else
+    E("curlproxy_https requires curl 7.52.0 or later");
+#endif
+}
 EXTENSION(pg_curlproxy_http_1_0) { PG_RETURN_INT64(CURLPROXY_HTTP_1_0); }
 EXTENSION(pg_curlproxy_socks4) { PG_RETURN_INT64(CURLPROXY_SOCKS4); }
 EXTENSION(pg_curlproxy_socks4a) { PG_RETURN_INT64(CURLPROXY_SOCKS4A); }
@@ -1558,7 +1576,13 @@ EXTENSION(pg_curl_ipresolve_whatever) { PG_RETURN_INT64(CURL_IPRESOLVE_WHATEVER)
 EXTENSION(pg_curl_ipresolve_v4) { PG_RETURN_INT64(CURL_IPRESOLVE_V4); }
 EXTENSION(pg_curl_ipresolve_v6) { PG_RETURN_INT64(CURL_IPRESOLVE_V6); }
 
-EXTENSION(pg_curl_het_default) { PG_RETURN_INT64(CURL_HET_DEFAULT); }
+EXTENSION(pg_curl_het_default) {
+#ifdef CURL_HET_DEFAULT
+    PG_RETURN_INT64(CURL_HET_DEFAULT);
+#else
+    E("!CURL_HET_DEFAULT");
+#endif
+}
 
 EXTENSION(pg_curlgssapi_delegation_flag) { PG_RETURN_INT64(CURLGSSAPI_DELEGATION_FLAG); }
 EXTENSION(pg_curlgssapi_delegation_policy_flag) { PG_RETURN_INT64(CURLGSSAPI_DELEGATION_POLICY_FLAG); }
