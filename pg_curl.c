@@ -632,11 +632,42 @@ EXTENSION(pg_curl_easy_setopt_request_target) {
     E("curl_easy_setopt_request_target requires curl 7.55.0 or later");
 #endif
 }
-EXTENSION(pg_curl_easy_setopt_rtsp_session_id) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_RTSP_SESSION_ID); }
-EXTENSION(pg_curl_easy_setopt_rtsp_stream_uri) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_RTSP_STREAM_URI); }
-EXTENSION(pg_curl_easy_setopt_rtsp_transport) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_RTSP_TRANSPORT); }
-EXTENSION(pg_curl_easy_setopt_service_name) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_SERVICE_NAME); }
-EXTENSION(pg_curl_easy_setopt_socks5_gssapi_service) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_SOCKS5_GSSAPI_SERVICE); }
+EXTENSION(pg_curl_easy_setopt_rtsp_session_id) {
+#if CURL_AT_LEAST_VERSION(7, 20, 0)
+    return pg_curl_easy_setopt_char(fcinfo, CURLOPT_RTSP_SESSION_ID);
+#else
+    E("curl_easy_setopt_rtsp_session_id requires curl 7.20.0 or later");
+#endif
+}
+EXTENSION(pg_curl_easy_setopt_rtsp_stream_uri) {
+#if CURL_AT_LEAST_VERSION(7, 20, 0)
+    return pg_curl_easy_setopt_char(fcinfo, CURLOPT_RTSP_STREAM_URI);
+#else
+    E("curl_easy_setopt_rtsp_stream_uri requires curl 7.20.0 or later");
+#endif
+}
+EXTENSION(pg_curl_easy_setopt_rtsp_transport) {
+#if CURL_AT_LEAST_VERSION(7, 20, 0)
+    return pg_curl_easy_setopt_char(fcinfo, CURLOPT_RTSP_TRANSPORT);
+#else
+    E("curl_easy_setopt_rtsp_transport requires curl 7.20.0 or later");
+#endif
+}
+EXTENSION(pg_curl_easy_setopt_service_name) {
+#if CURL_AT_LEAST_VERSION(7, 43, 0)
+    return pg_curl_easy_setopt_char(fcinfo, CURLOPT_SERVICE_NAME);
+#else
+    E("curl_easy_setopt_service_name requires curl 7.43.0 or later");
+#endif
+}
+EXTENSION(pg_curl_easy_setopt_socks5_gssapi_service) {
+#if CURL_AT_LEAST_VERSION(7, 19, 4)
+    W("curl_easy_setopt_socks5_gssapi_service deprecated, use curl_easy_setopt_proxy_service_name instead");
+    return pg_curl_easy_setopt_char(fcinfo, CURLOPT_SOCKS5_GSSAPI_SERVICE);
+#else
+    E("curl_easy_setopt_socks5_gssapi_service requires curl 7.19.4 or later");
+#endif
+}
 EXTENSION(pg_curl_easy_setopt_ssh_host_public_key_md5) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_SSH_HOST_PUBLIC_KEY_MD5); }
 EXTENSION(pg_curl_easy_setopt_ssh_knownhosts) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_SSH_KNOWNHOSTS); }
 EXTENSION(pg_curl_easy_setopt_ssh_private_keyfile) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_SSH_PRIVATE_KEYFILE); }
