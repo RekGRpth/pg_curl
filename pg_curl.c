@@ -72,14 +72,14 @@ void _PG_fini(void); void _PG_fini(void) {
     curl_slist_free_all(recipient);
     curl_easy_cleanup(curl);
     curl_global_cleanup();
-    if (data_in_str.data) { free(data_in_str.data); data_in_str.data = NULL; }
-    if (data_out_str.data) { free(data_out_str.data); data_out_str.data = NULL; }
-    if (header_in_str.data) { free(header_in_str.data); header_in_str.data = NULL; }
-    if (header_out_str.data) { free(header_out_str.data); header_out_str.data = NULL; }
-    if (header_str.data) { free(header_str.data); header_str.data = NULL; }
-    if (read_str) { fclose(read_str); read_str = NULL; }
-    if (text_str.data) { free(text_str.data); text_str.data = NULL; }
-    if (write_str.data) { free(write_str.data); write_str.data = NULL; }
+    if (data_in_str.data) free(data_in_str.data);
+    if (data_out_str.data) free(data_out_str.data);
+    if (header_in_str.data) free(header_in_str.data);
+    if (header_out_str.data) free(header_out_str.data);
+    if (header_str.data) free(header_str.data);
+    if (read_str) fclose(read_str);
+    if (text_str.data) free(text_str.data);
+    if (write_str.data) free(write_str.data);
 }
 
 EXTENSION(pg_curl_easy_header_reset) {
@@ -1361,13 +1361,13 @@ EXTENSION(pg_curl_easy_perform) {
     if (PG_ARGISNULL(1)) E("sleep is null!");
     sleep = PG_GETARG_INT64(1);
     if (sleep < 0) E("sleep < 0!");
-    if (data_in_str.data) { free(data_in_str.data); data_in_str.data = NULL; }
-    if (data_out_str.data) { free(data_out_str.data); data_out_str.data = NULL; }
-    if (header_in_str.data) { free(header_in_str.data); header_in_str.data = NULL; }
-    if (header_out_str.data) { free(header_out_str.data); header_out_str.data = NULL; }
-    if (header_str.data) { free(header_str.data); header_str.data = NULL; }
-    if (text_str.data) { free(text_str.data); text_str.data = NULL; }
-    if (write_str.data) { free(write_str.data); write_str.data = NULL; }
+    if (data_in_str.data) free(data_in_str.data);
+    if (data_out_str.data) free(data_out_str.data);
+    if (header_in_str.data) free(header_in_str.data);
+    if (header_out_str.data) free(header_out_str.data);
+    if (header_str.data) free(header_str.data);
+    if (text_str.data) free(text_str.data);
+    if (write_str.data) free(write_str.data);
     if (!(data_in_str.file = open_memstream(&data_in_str.data, &data_in_str.len))) E("!open_memstream");
     if (!(data_out_str.file = open_memstream(&data_out_str.data, &data_out_str.len))) E("!open_memstream");
     if (!(header_in_str.file = open_memstream(&header_in_str.data, &header_in_str.len))) E("!open_memstream");
