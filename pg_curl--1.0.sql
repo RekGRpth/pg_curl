@@ -213,10 +213,22 @@ CREATE OR REPLACE FUNCTION curl_easy_setopt_use_ssl(parameter bigint) RETURNS bo
 CREATE OR REPLACE FUNCTION curl_easy_setopt_verbose(parameter bigint) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_verbose' LANGUAGE 'c';
 CREATE OR REPLACE FUNCTION curl_easy_setopt_wildcardmatch(parameter bigint) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_wildcardmatch' LANGUAGE 'c';
 
+CREATE OR REPLACE FUNCTION curl_easy_setopt_debug() RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_debug' LANGUAGE 'c';
+
 CREATE OR REPLACE FUNCTION curl_easy_perform(try int default 1, sleep bigint default 1000000) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_perform' LANGUAGE 'c';
 
 CREATE OR REPLACE FUNCTION curl_easy_getinfo_headers() RETURNS text AS 'MODULE_PATHNAME', 'pg_curl_easy_getinfo_headers' LANGUAGE 'c';
 CREATE OR REPLACE FUNCTION curl_easy_getinfo_response() RETURNS bytea AS 'MODULE_PATHNAME', 'pg_curl_easy_getinfo_response' LANGUAGE 'c';
+
+CREATE OR REPLACE FUNCTION curl_easy_getinfo_text() RETURNS text AS 'MODULE_PATHNAME', 'pg_curl_easy_getinfo_text' LANGUAGE 'c';
+CREATE OR REPLACE FUNCTION curl_easy_getinfo_end() RETURNS text AS 'MODULE_PATHNAME', 'pg_curl_easy_getinfo_end' LANGUAGE 'c';
+CREATE OR REPLACE FUNCTION curl_easy_getinfo_header_in() RETURNS text AS 'MODULE_PATHNAME', 'pg_curl_easy_getinfo_header_in' LANGUAGE 'c';
+CREATE OR REPLACE FUNCTION curl_easy_getinfo_header_out() RETURNS text AS 'MODULE_PATHNAME', 'pg_curl_easy_getinfo_header_out' LANGUAGE 'c';
+
+CREATE OR REPLACE FUNCTION curl_easy_getinfo_data_in() RETURNS bytea AS 'MODULE_PATHNAME', 'pg_curl_easy_getinfo_data_in' LANGUAGE 'c';
+CREATE OR REPLACE FUNCTION curl_easy_getinfo_data_out() RETURNS bytea AS 'MODULE_PATHNAME', 'pg_curl_easy_getinfo_data_out' LANGUAGE 'c';
+CREATE OR REPLACE FUNCTION curl_easy_getinfo_ssl_data_in() RETURNS bytea AS 'MODULE_PATHNAME', 'pg_curl_easy_getinfo_ssl_data_in' LANGUAGE 'c';
+CREATE OR REPLACE FUNCTION curl_easy_getinfo_ssl_data_out() RETURNS bytea AS 'MODULE_PATHNAME', 'pg_curl_easy_getinfo_ssl_data_out' LANGUAGE 'c';
 
 CREATE OR REPLACE FUNCTION curl_easy_getinfo_content_type() RETURNS text AS 'MODULE_PATHNAME', 'pg_curl_easy_getinfo_content_type' LANGUAGE 'c';
 CREATE OR REPLACE FUNCTION curl_easy_getinfo_effective_url() RETURNS text AS 'MODULE_PATHNAME', 'pg_curl_easy_getinfo_effective_url' LANGUAGE 'c';

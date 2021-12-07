@@ -37,9 +37,17 @@ static CURL *curl = NULL;
 #if CURL_AT_LEAST_VERSION(7, 56, 0)
 static curl_mime *mime;
 #endif
-static FileString header_str = {NULL, NULL, 0};
 static FILE *read_str_file = NULL;
-static FileString write_str = {NULL, NULL, 0};
+static FileString data_in_str = {0};
+static FileString data_out_str = {0};
+static FileString end_str = {0};
+static FileString header_in_str = {0};
+static FileString header_out_str = {0};
+static FileString header_str = {0};
+static FileString ssl_data_in_str = {0};
+static FileString ssl_data_out_str = {0};
+static FileString text_str = {0};
+static FileString write_str = {0};
 static int pg_curl_interrupt_requested = 0;
 static pqsigfunc pgsql_interrupt_handler = NULL;
 static struct curl_slist *header = NULL;
@@ -67,8 +75,16 @@ void _PG_fini(void); void _PG_fini(void) {
     curl_slist_free_all(recipient);
     curl_easy_cleanup(curl);
     curl_global_cleanup();
+    if (data_in_str.data) { free(data_in_str.data); data_in_str.data = NULL; }
+    if (data_out_str.data) { free(data_out_str.data); data_out_str.data = NULL; }
+    if (end_str.data) { free(end_str.data); end_str.data = NULL; }
+    if (header_in_str.data) { free(header_in_str.data); header_in_str.data = NULL; }
+    if (header_out_str.data) { free(header_out_str.data); header_out_str.data = NULL; }
     if (header_str.data) { free(header_str.data); header_str.data = NULL; }
     if (read_str_file) { fclose(read_str_file); read_str_file = NULL; }
+    if (ssl_data_in_str.data) { free(ssl_data_in_str.data); ssl_data_in_str.data = NULL; }
+    if (ssl_data_out_str.data) { free(ssl_data_out_str.data); ssl_data_out_str.data = NULL; }
+    if (text_str.data) { free(text_str.data); text_str.data = NULL; }
     if (write_str.data) { free(write_str.data); write_str.data = NULL; }
 }
 
@@ -1319,6 +1335,27 @@ EXTENSION(pg_curl_easy_setopt_wildcardmatch) {
 #endif
 }
 
+static int debug_callback(CURL *handle, curl_infotype type, char *data, size_t size, void *userptr) {
+    if (size) switch (type) {
+        case CURLINFO_DATA_IN: if (fwrite(data, size, 1, data_in_str.file) != size / size) E("!fwrite"); break;
+        case CURLINFO_DATA_OUT: if (fwrite(data, size, 1, data_out_str.file) != size / size) E("!fwrite"); break;
+        case CURLINFO_END: if (fwrite(data, size, 1, end_str.file) != size / size) E("!fwrite"); break;
+        case CURLINFO_HEADER_IN: if (fwrite(data, size, 1, header_in_str.file) != size / size) E("!fwrite"); break;
+        case CURLINFO_HEADER_OUT: if (fwrite(data, size, 1, header_out_str.file) != size / size) E("!fwrite"); break;
+        case CURLINFO_SSL_DATA_IN: if (fwrite(data, size, 1, ssl_data_in_str.file) != size / size) E("!fwrite"); break;
+        case CURLINFO_SSL_DATA_OUT: if (fwrite(data, size, 1, ssl_data_out_str.file) != size / size) E("!fwrite"); break;
+        case CURLINFO_TEXT: if (fwrite(data, size, 1, text_str.file) != size / size) E("!fwrite"); break;
+    }
+    return 0;
+}
+
+EXTENSION(pg_curl_easy_setopt_debug) {
+    CURLcode res = CURL_LAST;
+    if ((res = curl_easy_setopt(curl, CURLOPT_DEBUGFUNCTION, debug_callback)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_DEBUGFUNCTION): %s", curl_easy_strerror(res));
+    if ((res = curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_VERBOSE): %s", curl_easy_strerror(res));
+    PG_RETURN_BOOL(res == CURLE_OK);
+}
+
 static int progress_callback(void *clientp, curl_off_t dltotal, curl_off_t dlnow, curl_off_t ultotal, curl_off_t ulnow) { return pg_curl_interrupt_requested; }
 
 EXTENSION(pg_curl_easy_perform) {
@@ -1332,9 +1369,25 @@ EXTENSION(pg_curl_easy_perform) {
     if (PG_ARGISNULL(1)) E("sleep is null!");
     sleep = PG_GETARG_INT64(1);
     if (sleep < 0) E("sleep < 0!");
+    if (data_in_str.data) { free(data_in_str.data); data_in_str.data = NULL; }
+    if (data_out_str.data) { free(data_out_str.data); data_out_str.data = NULL; }
+    if (end_str.data) { free(end_str.data); end_str.data = NULL; }
+    if (header_in_str.data) { free(header_in_str.data); header_in_str.data = NULL; }
+    if (header_out_str.data) { free(header_out_str.data); header_out_str.data = NULL; }
     if (header_str.data) { free(header_str.data); header_str.data = NULL; }
+    if (ssl_data_in_str.data) { free(ssl_data_in_str.data); ssl_data_in_str.data = NULL; }
+    if (ssl_data_out_str.data) { free(ssl_data_out_str.data); ssl_data_out_str.data = NULL; }
+    if (text_str.data) { free(text_str.data); text_str.data = NULL; }
     if (write_str.data) { free(write_str.data); write_str.data = NULL; }
+    if (!(data_in_str.file = open_memstream(&data_in_str.data, &data_in_str.len))) E("!open_memstream");
+    if (!(data_out_str.file = open_memstream(&data_out_str.data, &data_out_str.len))) E("!open_memstream");
+    if (!(end_str.file = open_memstream(&end_str.data, &end_str.len))) E("!open_memstream");
+    if (!(header_in_str.file = open_memstream(&header_in_str.data, &header_in_str.len))) E("!open_memstream");
+    if (!(header_out_str.file = open_memstream(&header_out_str.data, &header_out_str.len))) E("!open_memstream");
     if (!(header_str.file = open_memstream(&header_str.data, &header_str.len))) E("!open_memstream");
+    if (!(ssl_data_in_str.file = open_memstream(&ssl_data_in_str.data, &ssl_data_in_str.len))) E("!open_memstream");
+    if (!(ssl_data_out_str.file = open_memstream(&ssl_data_out_str.data, &ssl_data_out_str.len))) E("!open_memstream");
+    if (!(text_str.file = open_memstream(&text_str.data, &text_str.len))) E("!open_memstream");
     if (!(write_str.file = open_memstream(&write_str.data, &write_str.len))) E("!open_memstream");
     if ((res = curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, errbuf)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_ERRORBUFFER): %s", curl_easy_strerror(res));
     if ((res = curl_easy_setopt(curl, CURLOPT_HEADERDATA, header_str.file)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_HEADERDATA): %s", curl_easy_strerror(res));
@@ -1367,18 +1420,66 @@ EXTENSION(pg_curl_easy_perform) {
             else E("curl_easy_perform: %s", curl_easy_strerror(res));
         }
     }
+    fclose(data_in_str.file);
+    fclose(data_out_str.file);
+    fclose(end_str.file);
+    fclose(header_in_str.file);
+    fclose(header_out_str.file);
     fclose(header_str.file);
+    fclose(ssl_data_in_str.file);
+    fclose(ssl_data_out_str.file);
+    fclose(text_str.file);
     fclose(write_str.file);
     PG_RETURN_BOOL(res == CURLE_OK);
 }
 
+EXTENSION(pg_curl_easy_getinfo_text) {
+    if (!text_str.len) PG_RETURN_NULL();
+    PG_RETURN_TEXT_P(cstring_to_text_with_len(text_str.data, text_str.len));
+}
+
+EXTENSION(pg_curl_easy_getinfo_end) {
+    if (!end_str.len) PG_RETURN_NULL();
+    PG_RETURN_TEXT_P(cstring_to_text_with_len(end_str.data, end_str.len));
+}
+
+EXTENSION(pg_curl_easy_getinfo_header_in) {
+    if (!header_in_str.len) PG_RETURN_NULL();
+    PG_RETURN_TEXT_P(cstring_to_text_with_len(header_in_str.data, header_in_str.len));
+}
+
+EXTENSION(pg_curl_easy_getinfo_header_out) {
+    if (!header_out_str.len) PG_RETURN_NULL();
+    PG_RETURN_TEXT_P(cstring_to_text_with_len(header_out_str.data, header_out_str.len));
+}
+
+EXTENSION(pg_curl_easy_getinfo_data_in) {
+    if (!data_in_str.len) PG_RETURN_NULL();
+    PG_RETURN_BYTEA_P(cstring_to_text_with_len(data_in_str.data, data_in_str.len));
+}
+
+EXTENSION(pg_curl_easy_getinfo_data_out) {
+    if (!data_out_str.len) PG_RETURN_NULL();
+    PG_RETURN_BYTEA_P(cstring_to_text_with_len(data_out_str.data, data_out_str.len));
+}
+
+EXTENSION(pg_curl_easy_getinfo_ssl_data_in) {
+    if (!ssl_data_in_str.len) PG_RETURN_NULL();
+    PG_RETURN_BYTEA_P(cstring_to_text_with_len(ssl_data_in_str.data, ssl_data_in_str.len));
+}
+
+EXTENSION(pg_curl_easy_getinfo_ssl_data_out) {
+    if (!ssl_data_out_str.len) PG_RETURN_NULL();
+    PG_RETURN_BYTEA_P(cstring_to_text_with_len(ssl_data_out_str.data, ssl_data_out_str.len));
+}
+
 EXTENSION(pg_curl_easy_getinfo_headers) {
-    if (!header_str.data) PG_RETURN_NULL();
+    if (!header_str.len) PG_RETURN_NULL();
     PG_RETURN_TEXT_P(cstring_to_text_with_len(header_str.data, header_str.len));
 }
 
 EXTENSION(pg_curl_easy_getinfo_response) {
-    if (!write_str.data) PG_RETURN_NULL();
+    if (!write_str.len) PG_RETURN_NULL();
     PG_RETURN_BYTEA_P(cstring_to_text_with_len(write_str.data, write_str.len));
 }
 
