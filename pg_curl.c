@@ -668,12 +668,42 @@ EXTENSION(pg_curl_easy_setopt_socks5_gssapi_service) {
     E("curl_easy_setopt_socks5_gssapi_service requires curl 7.19.4 or later");
 #endif
 }
-EXTENSION(pg_curl_easy_setopt_ssh_host_public_key_md5) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_SSH_HOST_PUBLIC_KEY_MD5); }
-EXTENSION(pg_curl_easy_setopt_ssh_knownhosts) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_SSH_KNOWNHOSTS); }
-EXTENSION(pg_curl_easy_setopt_ssh_private_keyfile) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_SSH_PRIVATE_KEYFILE); }
-EXTENSION(pg_curl_easy_setopt_ssh_public_keyfile) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_SSH_PUBLIC_KEYFILE); }
+EXTENSION(pg_curl_easy_setopt_ssh_host_public_key_md5) {
+#if CURL_AT_LEAST_VERSION(7, 17, 1)
+    return pg_curl_easy_setopt_char(fcinfo, CURLOPT_SSH_HOST_PUBLIC_KEY_MD5);
+#else
+    E("curl_easy_setopt_ssh_host_public_key_md5 requires curl 7.17.1 or later");
+#endif
+}
+EXTENSION(pg_curl_easy_setopt_ssh_knownhosts) {
+#if CURL_AT_LEAST_VERSION(7, 19, 6)
+    return pg_curl_easy_setopt_char(fcinfo, CURLOPT_SSH_KNOWNHOSTS);
+#else
+    E("curl_easy_setopt_ssh_knownhosts requires curl 7.19.6 or later");
+#endif
+}
+EXTENSION(pg_curl_easy_setopt_ssh_private_keyfile) {
+#if CURL_AT_LEAST_VERSION(7, 16, 1)
+    return pg_curl_easy_setopt_char(fcinfo, CURLOPT_SSH_PRIVATE_KEYFILE);
+#else
+    E("curl_easy_setopt_ssh_private_keyfile requires curl 7.16.1 or later");
+#endif
+}
+EXTENSION(pg_curl_easy_setopt_ssh_public_keyfile) {
+#if CURL_AT_LEAST_VERSION(7, 26, 0)
+    return pg_curl_easy_setopt_char(fcinfo, CURLOPT_SSH_PUBLIC_KEYFILE);
+#else
+    E("curl_easy_setopt_ssh_public_keyfile requires curl 7.26.0 or later");
+#endif
+}
 EXTENSION(pg_curl_easy_setopt_sslcert) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_SSLCERT); }
-EXTENSION(pg_curl_easy_setopt_sslcerttype) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_SSLCERTTYPE); }
+EXTENSION(pg_curl_easy_setopt_sslcerttype) {
+#if CURL_AT_LEAST_VERSION(7, 9, 3)
+    return pg_curl_easy_setopt_char(fcinfo, CURLOPT_SSLCERTTYPE);
+#else
+    E("curl_easy_setopt_sslcerttype requires curl 7.9.3 or later");
+#endif
+}
 EXTENSION(pg_curl_easy_setopt_ssl_cipher_list) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_SSL_CIPHER_LIST); }
 EXTENSION(pg_curl_easy_setopt_sslengine) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_SSLENGINE); }
 EXTENSION(pg_curl_easy_setopt_sslkey) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_SSLKEY); }
@@ -685,15 +715,57 @@ EXTENSION(pg_curl_easy_setopt_tls13_ciphers) {
     E("curl_easy_setopt_tls13_ciphers requires curl 7.61.0 or later");
 #endif
 }
-EXTENSION(pg_curl_easy_setopt_tlsauth_password) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_TLSAUTH_PASSWORD); }
-EXTENSION(pg_curl_easy_setopt_tlsauth_type) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_TLSAUTH_TYPE); }
-EXTENSION(pg_curl_easy_setopt_tlsauth_username) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_TLSAUTH_USERNAME); }
-EXTENSION(pg_curl_easy_setopt_unix_socket_path) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_UNIX_SOCKET_PATH); }
-EXTENSION(pg_curl_easy_setopt_url) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_URL); }
+EXTENSION(pg_curl_easy_setopt_tlsauth_password) {
+#if CURL_AT_LEAST_VERSION(7, 21, 4)
+    return pg_curl_easy_setopt_char(fcinfo, CURLOPT_TLSAUTH_PASSWORD);
+#else
+    E("curl_easy_setopt_tlsauth_password requires curl 7.21.4 or later");
+#endif
+}
+EXTENSION(pg_curl_easy_setopt_tlsauth_type) {
+#if CURL_AT_LEAST_VERSION(7, 21, 4)
+    return pg_curl_easy_setopt_char(fcinfo, CURLOPT_TLSAUTH_TYPE);
+#else
+    E("curl_easy_setopt_tlsauth_type requires curl 7.21.4 or later");
+#endif
+}
+EXTENSION(pg_curl_easy_setopt_tlsauth_username) {
+#if CURL_AT_LEAST_VERSION(7, 21, 4)
+    return pg_curl_easy_setopt_char(fcinfo, CURLOPT_TLSAUTH_USERNAME);
+#else
+    E("curl_easy_setopt_tlsauth_username requires curl 7.21.4 or later");
+#endif
+}
+EXTENSION(pg_curl_easy_setopt_unix_socket_path) {
+#if CURL_AT_LEAST_VERSION(7, 40, 0)
+    return pg_curl_easy_setopt_char(fcinfo, CURLOPT_UNIX_SOCKET_PATH);
+#else
+    E("curl_easy_setopt_unix_socket_path requires curl 7.40.0 or later");
+#endif
+}
+EXTENSION(pg_curl_easy_setopt_url) {
+#if CURL_AT_LEAST_VERSION(7, 31, 0)
+    return pg_curl_easy_setopt_char(fcinfo, CURLOPT_URL);
+#else
+    E("curl_easy_setopt_url requires curl 7.31.0 or later");
+#endif
+}
 EXTENSION(pg_curl_easy_setopt_useragent) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_USERAGENT); }
-EXTENSION(pg_curl_easy_setopt_username) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_USERNAME); }
+EXTENSION(pg_curl_easy_setopt_username) {
+#if CURL_AT_LEAST_VERSION(7, 19, 1)
+    return pg_curl_easy_setopt_char(fcinfo, CURLOPT_USERNAME);
+#else
+    E("curl_easy_setopt_username requires curl 7.19.1 or later");
+#endif
+}
 EXTENSION(pg_curl_easy_setopt_userpwd) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_USERPWD); }
-EXTENSION(pg_curl_easy_setopt_xoauth2_bearer) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_XOAUTH2_BEARER); }
+EXTENSION(pg_curl_easy_setopt_xoauth2_bearer) {
+#if CURL_AT_LEAST_VERSION(7, 33, 0)
+    return pg_curl_easy_setopt_char(fcinfo, CURLOPT_XOAUTH2_BEARER);
+#else
+    E("curl_easy_setopt_xoauth2_bearer requires curl 7.33.0 or later");
+#endif
+}
 
 static Datum pg_curl_easy_setopt_long(PG_FUNCTION_ARGS, CURLoption option) {
     CURLcode res = CURL_LAST;
