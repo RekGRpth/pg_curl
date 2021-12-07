@@ -44,8 +44,6 @@ static FileString end_str = {0};
 static FileString header_in_str = {0};
 static FileString header_out_str = {0};
 static FileString header_str = {0};
-static FileString ssl_data_in_str = {0};
-static FileString ssl_data_out_str = {0};
 static FileString text_str = {0};
 static FileString write_str = {0};
 static int pg_curl_interrupt_requested = 0;
@@ -82,8 +80,6 @@ void _PG_fini(void); void _PG_fini(void) {
     if (header_out_str.data) { free(header_out_str.data); header_out_str.data = NULL; }
     if (header_str.data) { free(header_str.data); header_str.data = NULL; }
     if (read_str_file) { fclose(read_str_file); read_str_file = NULL; }
-    if (ssl_data_in_str.data) { free(ssl_data_in_str.data); ssl_data_in_str.data = NULL; }
-    if (ssl_data_out_str.data) { free(ssl_data_out_str.data); ssl_data_out_str.data = NULL; }
     if (text_str.data) { free(text_str.data); text_str.data = NULL; }
     if (write_str.data) { free(write_str.data); write_str.data = NULL; }
 }
@@ -1342,9 +1338,8 @@ static int debug_callback(CURL *handle, curl_infotype type, char *data, size_t s
         case CURLINFO_END: if (fwrite(data, size, 1, end_str.file) != size / size) E("!fwrite"); break;
         case CURLINFO_HEADER_IN: if (fwrite(data, size, 1, header_in_str.file) != size / size) E("!fwrite"); break;
         case CURLINFO_HEADER_OUT: if (fwrite(data, size, 1, header_out_str.file) != size / size) E("!fwrite"); break;
-        case CURLINFO_SSL_DATA_IN: if (fwrite(data, size, 1, ssl_data_in_str.file) != size / size) E("!fwrite"); break;
-        case CURLINFO_SSL_DATA_OUT: if (fwrite(data, size, 1, ssl_data_out_str.file) != size / size) E("!fwrite"); break;
         case CURLINFO_TEXT: if (fwrite(data, size, 1, text_str.file) != size / size) E("!fwrite"); break;
+        default: break;
     }
     return 0;
 }
@@ -1375,8 +1370,6 @@ EXTENSION(pg_curl_easy_perform) {
     if (header_in_str.data) { free(header_in_str.data); header_in_str.data = NULL; }
     if (header_out_str.data) { free(header_out_str.data); header_out_str.data = NULL; }
     if (header_str.data) { free(header_str.data); header_str.data = NULL; }
-    if (ssl_data_in_str.data) { free(ssl_data_in_str.data); ssl_data_in_str.data = NULL; }
-    if (ssl_data_out_str.data) { free(ssl_data_out_str.data); ssl_data_out_str.data = NULL; }
     if (text_str.data) { free(text_str.data); text_str.data = NULL; }
     if (write_str.data) { free(write_str.data); write_str.data = NULL; }
     if (!(data_in_str.file = open_memstream(&data_in_str.data, &data_in_str.len))) E("!open_memstream");
@@ -1385,8 +1378,6 @@ EXTENSION(pg_curl_easy_perform) {
     if (!(header_in_str.file = open_memstream(&header_in_str.data, &header_in_str.len))) E("!open_memstream");
     if (!(header_out_str.file = open_memstream(&header_out_str.data, &header_out_str.len))) E("!open_memstream");
     if (!(header_str.file = open_memstream(&header_str.data, &header_str.len))) E("!open_memstream");
-    if (!(ssl_data_in_str.file = open_memstream(&ssl_data_in_str.data, &ssl_data_in_str.len))) E("!open_memstream");
-    if (!(ssl_data_out_str.file = open_memstream(&ssl_data_out_str.data, &ssl_data_out_str.len))) E("!open_memstream");
     if (!(text_str.file = open_memstream(&text_str.data, &text_str.len))) E("!open_memstream");
     if (!(write_str.file = open_memstream(&write_str.data, &write_str.len))) E("!open_memstream");
     if ((res = curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, errbuf)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_ERRORBUFFER): %s", curl_easy_strerror(res));
@@ -1426,8 +1417,6 @@ EXTENSION(pg_curl_easy_perform) {
     fclose(header_in_str.file);
     fclose(header_out_str.file);
     fclose(header_str.file);
-    fclose(ssl_data_in_str.file);
-    fclose(ssl_data_out_str.file);
     fclose(text_str.file);
     fclose(write_str.file);
     PG_RETURN_BOOL(res == CURLE_OK);
@@ -1461,16 +1450,6 @@ EXTENSION(pg_curl_easy_getinfo_data_in) {
 EXTENSION(pg_curl_easy_getinfo_data_out) {
     if (!data_out_str.len) PG_RETURN_NULL();
     PG_RETURN_BYTEA_P(cstring_to_text_with_len(data_out_str.data, data_out_str.len));
-}
-
-EXTENSION(pg_curl_easy_getinfo_ssl_data_in) {
-    if (!ssl_data_in_str.len) PG_RETURN_NULL();
-    PG_RETURN_BYTEA_P(cstring_to_text_with_len(ssl_data_in_str.data, ssl_data_in_str.len));
-}
-
-EXTENSION(pg_curl_easy_getinfo_ssl_data_out) {
-    if (!ssl_data_out_str.len) PG_RETURN_NULL();
-    PG_RETURN_BYTEA_P(cstring_to_text_with_len(ssl_data_out_str.data, ssl_data_out_str.len));
 }
 
 EXTENSION(pg_curl_easy_getinfo_headers) {

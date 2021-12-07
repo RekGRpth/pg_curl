@@ -227,8 +227,6 @@ CREATE OR REPLACE FUNCTION curl_easy_getinfo_header_out() RETURNS text AS 'MODUL
 
 CREATE OR REPLACE FUNCTION curl_easy_getinfo_data_in() RETURNS bytea AS 'MODULE_PATHNAME', 'pg_curl_easy_getinfo_data_in' LANGUAGE 'c';
 CREATE OR REPLACE FUNCTION curl_easy_getinfo_data_out() RETURNS bytea AS 'MODULE_PATHNAME', 'pg_curl_easy_getinfo_data_out' LANGUAGE 'c';
-CREATE OR REPLACE FUNCTION curl_easy_getinfo_ssl_data_in() RETURNS bytea AS 'MODULE_PATHNAME', 'pg_curl_easy_getinfo_ssl_data_in' LANGUAGE 'c';
-CREATE OR REPLACE FUNCTION curl_easy_getinfo_ssl_data_out() RETURNS bytea AS 'MODULE_PATHNAME', 'pg_curl_easy_getinfo_ssl_data_out' LANGUAGE 'c';
 
 CREATE OR REPLACE FUNCTION curl_easy_getinfo_content_type() RETURNS text AS 'MODULE_PATHNAME', 'pg_curl_easy_getinfo_content_type' LANGUAGE 'c';
 CREATE OR REPLACE FUNCTION curl_easy_getinfo_effective_url() RETURNS text AS 'MODULE_PATHNAME', 'pg_curl_easy_getinfo_effective_url' LANGUAGE 'c';
