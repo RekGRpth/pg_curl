@@ -1382,41 +1382,6 @@ EXTENSION(pg_curl_easy_getinfo_response) {
     PG_RETURN_BYTEA_P(cstring_to_text_with_len(write_str.data, write_str.len));
 }
 
-EXTENSION(pg_curl_easy_getinfo) {
-    CURLcode res = CURL_LAST;
-    CURLINFO info;
-    if (PG_ARGISNULL(0)) E("info is null!");
-    info = PG_GETARG_INT32(0);
-    switch (info) {
-        case CURLINFO_CONTENT_TYPE:
-        case CURLINFO_EFFECTIVE_URL:
-        case CURLINFO_FTP_ENTRY_PATH:
-        case CURLINFO_LOCAL_IP:
-        case CURLINFO_PRIMARY_IP:
-        case CURLINFO_PRIVATE:
-        case CURLINFO_REDIRECT_URL:
-        case CURLINFO_RTSP_SESSION_ID:
-#if CURL_AT_LEAST_VERSION(7, 52, 0)
-        case CURLINFO_SCHEME:
-#endif
-        {
-            char *value = NULL;
-            if ((res = curl_easy_getinfo(curl, info, &value)) != CURLE_OK) E("curl_easy_getinfo(%i): %s", info, curl_easy_strerror(res));
-            if (!value) PG_RETURN_NULL();
-            PG_RETURN_TEXT_P(cstring_to_text(value));
-        } break;
-        default: {
-            long value;
-            StringInfoData buf;
-            initStringInfo(&buf);
-            if ((res = curl_easy_getinfo(curl, info, &value)) != CURLE_OK) E("curl_easy_getinfo(%i): %s", info, curl_easy_strerror(res));
-            appendStringInfo(&buf, "%li", value);
-            PG_RETURN_TEXT_P(cstring_to_text_with_len(buf.data, buf.len));
-        } break;
-    }
-    PG_RETURN_NULL();
-}
-
 static Datum pg_curl_easy_getinfo_char(PG_FUNCTION_ARGS, CURLINFO info) {
     CURLcode res = CURL_LAST;
     char *value = NULL;
