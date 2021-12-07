@@ -1390,14 +1390,62 @@ static Datum pg_curl_easy_getinfo_char(PG_FUNCTION_ARGS, CURLINFO info) {
     PG_RETURN_TEXT_P(cstring_to_text(value));
 }
 
-EXTENSION(pg_curl_easy_getinfo_content_type) { return pg_curl_easy_getinfo_char(fcinfo, CURLINFO_CONTENT_TYPE); }
-EXTENSION(pg_curl_easy_getinfo_effective_url) { return pg_curl_easy_getinfo_char(fcinfo, CURLINFO_EFFECTIVE_URL); }
-EXTENSION(pg_curl_easy_getinfo_ftp_entry_path) { return pg_curl_easy_getinfo_char(fcinfo, CURLINFO_FTP_ENTRY_PATH); }
-EXTENSION(pg_curl_easy_getinfo_local_ip) { return pg_curl_easy_getinfo_char(fcinfo, CURLINFO_LOCAL_IP); }
-EXTENSION(pg_curl_easy_getinfo_primary_ip) { return pg_curl_easy_getinfo_char(fcinfo, CURLINFO_PRIMARY_IP); }
-EXTENSION(pg_curl_easy_getinfo_private) { return pg_curl_easy_getinfo_char(fcinfo, CURLINFO_PRIVATE); }
-EXTENSION(pg_curl_easy_getinfo_redirect_url) { return pg_curl_easy_getinfo_char(fcinfo, CURLINFO_REDIRECT_URL); }
-EXTENSION(pg_curl_easy_getinfo_rtsp_session_id) { return pg_curl_easy_getinfo_char(fcinfo, CURLINFO_RTSP_SESSION_ID); }
+EXTENSION(pg_curl_easy_getinfo_content_type) {
+#if CURL_AT_LEAST_VERSION(7, 9, 4)
+    return pg_curl_easy_getinfo_char(fcinfo, CURLINFO_CONTENT_TYPE);
+#else
+    E("curl_easy_getinfo_content_type requires curl 7.9.4 or later");
+#endif
+}
+EXTENSION(pg_curl_easy_getinfo_effective_url) {
+#if CURL_AT_LEAST_VERSION(7, 4, 0)
+    return pg_curl_easy_getinfo_char(fcinfo, CURLINFO_EFFECTIVE_URL);
+#else
+    E("curl_easy_getinfo_effective_url requires curl 7.4.0 or later");
+#endif
+}
+EXTENSION(pg_curl_easy_getinfo_ftp_entry_path) {
+#if CURL_AT_LEAST_VERSION(7, 15, 4)
+    return pg_curl_easy_getinfo_char(fcinfo, CURLINFO_FTP_ENTRY_PATH);
+#else
+    E("curl_easy_getinfo_ftp_entry_path requires curl 7.15.4 or later");
+#endif
+}
+EXTENSION(pg_curl_easy_getinfo_local_ip) {
+#if CURL_AT_LEAST_VERSION(7, 21, 0)
+    return pg_curl_easy_getinfo_char(fcinfo, CURLINFO_LOCAL_IP);
+#else
+    E("curl_easy_getinfo_local_ip requires curl 7.21.0 or later");
+#endif
+}
+EXTENSION(pg_curl_easy_getinfo_primary_ip) {
+#if CURL_AT_LEAST_VERSION(7, 19, 0)
+    return pg_curl_easy_getinfo_char(fcinfo, CURLINFO_PRIMARY_IP);
+#else
+    E("curl_easy_getinfo_primary_ip requires curl 7.19.0 or later");
+#endif
+}
+EXTENSION(pg_curl_easy_getinfo_private) {
+#if CURL_AT_LEAST_VERSION(7, 10, 3)
+    return pg_curl_easy_getinfo_char(fcinfo, CURLINFO_PRIVATE);
+#else
+    E("curl_easy_getinfo_private requires curl 7.10.3 or later");
+#endif
+}
+EXTENSION(pg_curl_easy_getinfo_redirect_url) {
+#if CURL_AT_LEAST_VERSION(7, 18, 2)
+    return pg_curl_easy_getinfo_char(fcinfo, CURLINFO_REDIRECT_URL);
+#else
+    E("curl_easy_getinfo_redirect_url requires curl 7.18.2 or later");
+#endif
+}
+EXTENSION(pg_curl_easy_getinfo_rtsp_session_id) {
+#if CURL_AT_LEAST_VERSION(7, 20, 0)
+    return pg_curl_easy_getinfo_char(fcinfo, CURLINFO_RTSP_SESSION_ID);
+#else
+    E("curl_easy_getinfo_rtsp_session_id requires curl 7.20.0 or later");
+#endif
+}
 EXTENSION(pg_curl_easy_getinfo_scheme) {
 #if CURL_AT_LEAST_VERSION(7, 52, 0)
     return pg_curl_easy_getinfo_char(fcinfo, CURLINFO_SCHEME);
@@ -1413,11 +1461,41 @@ static Datum pg_curl_easy_getinfo_long(PG_FUNCTION_ARGS, CURLINFO info) {
     PG_RETURN_INT64(value);
 }
 
-EXTENSION(pg_curl_easy_getinfo_condition_unmet) { return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_CONDITION_UNMET); }
-EXTENSION(pg_curl_easy_getinfo_filetime) { return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_FILETIME); }
-EXTENSION(pg_curl_easy_getinfo_header_size) { return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_HEADER_SIZE); }
-EXTENSION(pg_curl_easy_getinfo_httpauth_avail) { return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_HTTPAUTH_AVAIL); }
-EXTENSION(pg_curl_easy_getinfo_http_connectcode) { return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_HTTP_CONNECTCODE); }
+EXTENSION(pg_curl_easy_getinfo_condition_unmet) {
+#if CURL_AT_LEAST_VERSION(7, 19, 4)
+    return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_CONDITION_UNMET);
+#else
+    E("curl_easy_getinfo_condition_unmet requires curl 7.19.4 or later");
+#endif
+}
+EXTENSION(pg_curl_easy_getinfo_filetime) {
+#if CURL_AT_LEAST_VERSION(7, 5, 0)
+    return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_FILETIME);
+#else
+    E("curl_easy_getinfo_filetime requires curl 7.5.0 or later");
+#endif
+}
+EXTENSION(pg_curl_easy_getinfo_header_size) {
+#if CURL_AT_LEAST_VERSION(7, 4, 1)
+    return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_HEADER_SIZE);
+#else
+    E("curl_easy_getinfo_header_size requires curl 7.4.1 or later");
+#endif
+}
+EXTENSION(pg_curl_easy_getinfo_httpauth_avail) {
+#if CURL_AT_LEAST_VERSION(7, 10, 8)
+    return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_HTTPAUTH_AVAIL);
+#else
+    E("curl_easy_getinfo_httpauth_avail requires curl 7.10.8 or later");
+#endif
+}
+EXTENSION(pg_curl_easy_getinfo_http_connectcode) {
+#if CURL_AT_LEAST_VERSION(7, 10, 7)
+    return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_HTTP_CONNECTCODE);
+#else
+    E("curl_easy_getinfo_http_connectcode requires curl 7.10.7 or later");
+#endif
+}
 EXTENSION(pg_curl_easy_getinfo_http_version) {
 #if CURL_AT_LEAST_VERSION(7, 50, 0)
     return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_HTTP_VERSION);
@@ -1425,11 +1503,41 @@ EXTENSION(pg_curl_easy_getinfo_http_version) {
     E("curl_easy_getinfo_http_version requires curl 7.50.0 or later");
 #endif
 }
-EXTENSION(pg_curl_easy_getinfo_lastsocket) { return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_LASTSOCKET); }
-EXTENSION(pg_curl_easy_getinfo_local_port) { return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_LOCAL_PORT); }
-EXTENSION(pg_curl_easy_getinfo_num_connects) { return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_NUM_CONNECTS); }
-EXTENSION(pg_curl_easy_getinfo_os_errno) { return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_OS_ERRNO); }
-EXTENSION(pg_curl_easy_getinfo_primary_port) { return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_PRIMARY_PORT); }
+EXTENSION(pg_curl_easy_getinfo_lastsocket) {
+#if CURL_AT_LEAST_VERSION(7, 15, 2)
+    return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_LASTSOCKET);
+#else
+    E("curl_easy_getinfo_lastsocket requires curl 7.15.2 or later");
+#endif
+}
+EXTENSION(pg_curl_easy_getinfo_local_port) {
+#if CURL_AT_LEAST_VERSION(7, 21, 0)
+    return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_LOCAL_PORT);
+#else
+    E("curl_easy_getinfo_local_port requires curl 7.21.0 or later");
+#endif
+}
+EXTENSION(pg_curl_easy_getinfo_num_connects) {
+#if CURL_AT_LEAST_VERSION(7, 12, 3)
+    return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_NUM_CONNECTS);
+#else
+    E("curl_easy_getinfo_num_connects requires curl 7.12.3 or later");
+#endif
+}
+EXTENSION(pg_curl_easy_getinfo_os_errno) {
+#if CURL_AT_LEAST_VERSION(7, 12, 2)
+    return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_OS_ERRNO);
+#else
+    E("curl_easy_getinfo_os_errno requires curl 7.12.2 or later");
+#endif
+}
+EXTENSION(pg_curl_easy_getinfo_primary_port) {
+#if CURL_AT_LEAST_VERSION(7, 21, 0)
+    return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_PRIMARY_PORT);
+#else
+    E("curl_easy_getinfo_primary_port requires curl 7.21.0 or later");
+#endif
+}
 EXTENSION(pg_curl_easy_getinfo_protocol) {
 #if CURL_AT_LEAST_VERSION(7, 52, 0)
     return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_PROTOCOL);
@@ -1437,7 +1545,13 @@ EXTENSION(pg_curl_easy_getinfo_protocol) {
     E("curl_easy_getinfo_protocol requires curl 7.52.0 or later");
 #endif
 }
-EXTENSION(pg_curl_easy_getinfo_proxyauth_avail) { return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_PROXYAUTH_AVAIL); }
+EXTENSION(pg_curl_easy_getinfo_proxyauth_avail) {
+#if CURL_AT_LEAST_VERSION(7, 10, 8)
+    return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_PROXYAUTH_AVAIL);
+#else
+    E("curl_easy_getinfo_proxyauth_avail requires curl 7.10.8 or later");
+#endif
+}
 EXTENSION(pg_curl_easy_getinfo_proxy_ssl_verifyresult) {
 #if CURL_AT_LEAST_VERSION(7, 52, 0)
     return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_PROXY_SSL_VERIFYRESULT);
@@ -1445,13 +1559,55 @@ EXTENSION(pg_curl_easy_getinfo_proxy_ssl_verifyresult) {
     E("curl_easy_getinfo_proxy_ssl_verifyresult requires curl 7.52.0 or later");
 #endif
 }
-EXTENSION(pg_curl_easy_getinfo_redirect_count) { return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_REDIRECT_COUNT); }
-EXTENSION(pg_curl_easy_getinfo_request_size) { return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_REQUEST_SIZE); }
-EXTENSION(pg_curl_easy_getinfo_response_code) { return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_RESPONSE_CODE); }
-EXTENSION(pg_curl_easy_getinfo_rtsp_client_cseq) { return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_RTSP_CLIENT_CSEQ); }
-EXTENSION(pg_curl_easy_getinfo_rtsp_cseq_recv) { return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_RTSP_CSEQ_RECV); }
-EXTENSION(pg_curl_easy_getinfo_rtsp_server_cseq) { return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_RTSP_SERVER_CSEQ); }
-EXTENSION(pg_curl_easy_getinfo_ssl_verifyresult) { return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_SSL_VERIFYRESULT); }
+EXTENSION(pg_curl_easy_getinfo_redirect_count) {
+#if CURL_AT_LEAST_VERSION(7, 9, 7)
+    return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_REDIRECT_COUNT);
+#else
+    E("curl_easy_getinfo_redirect_count requires curl 7.9.7 or later");
+#endif
+}
+EXTENSION(pg_curl_easy_getinfo_request_size) {
+#if CURL_AT_LEAST_VERSION(7, 4, 1)
+    return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_REQUEST_SIZE);
+#else
+    E("curl_easy_getinfo_request_size requires curl 7.4.1 or later");
+#endif
+}
+EXTENSION(pg_curl_easy_getinfo_response_code) {
+#if CURL_AT_LEAST_VERSION(7, 10, 8)
+    return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_RESPONSE_CODE);
+#else
+    E("curl_easy_getinfo_response_code requires curl 7.10.8 or later");
+#endif
+}
+EXTENSION(pg_curl_easy_getinfo_rtsp_client_cseq) {
+#if CURL_AT_LEAST_VERSION(7, 20, 0)
+    return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_RTSP_CLIENT_CSEQ);
+#else
+    E("curl_easy_getinfo_rtsp_client_cseq requires curl 7.20.0 or later");
+#endif
+}
+EXTENSION(pg_curl_easy_getinfo_rtsp_cseq_recv) {
+#if CURL_AT_LEAST_VERSION(7, 20, 0)
+    return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_RTSP_CSEQ_RECV);
+#else
+    E("curl_easy_getinfo_rtsp_cseq_recv requires curl 7.20.0 or later");
+#endif
+}
+EXTENSION(pg_curl_easy_getinfo_rtsp_server_cseq) {
+#if CURL_AT_LEAST_VERSION(7, 20, 0)
+    return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_RTSP_SERVER_CSEQ);
+#else
+    E("curl_easy_getinfo_rtsp_server_cseq requires curl 7.20.0 or later");
+#endif
+}
+EXTENSION(pg_curl_easy_getinfo_ssl_verifyresult) {
+#if CURL_AT_LEAST_VERSION(7, 5, 0)
+    return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_SSL_VERIFYRESULT);
+#else
+    E("curl_easy_getinfo_ssl_verifyresult requires curl 7.5.0 or later");
+#endif
+}
 
 EXTENSION(pg_curl_http_version_1_0) { PG_RETURN_INT64(CURL_HTTP_VERSION_1_0); }
 EXTENSION(pg_curl_http_version_1_1) { PG_RETURN_INT64(CURL_HTTP_VERSION_1_1); }
