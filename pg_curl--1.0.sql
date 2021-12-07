@@ -221,7 +221,6 @@ CREATE OR REPLACE FUNCTION curl_easy_getinfo_headers() RETURNS text AS 'MODULE_P
 CREATE OR REPLACE FUNCTION curl_easy_getinfo_response() RETURNS bytea AS 'MODULE_PATHNAME', 'pg_curl_easy_getinfo_response' LANGUAGE 'c';
 
 CREATE OR REPLACE FUNCTION curl_easy_getinfo_text() RETURNS text AS 'MODULE_PATHNAME', 'pg_curl_easy_getinfo_text' LANGUAGE 'c';
-CREATE OR REPLACE FUNCTION curl_easy_getinfo_end() RETURNS text AS 'MODULE_PATHNAME', 'pg_curl_easy_getinfo_end' LANGUAGE 'c';
 CREATE OR REPLACE FUNCTION curl_easy_getinfo_header_in() RETURNS text AS 'MODULE_PATHNAME', 'pg_curl_easy_getinfo_header_in' LANGUAGE 'c';
 CREATE OR REPLACE FUNCTION curl_easy_getinfo_header_out() RETURNS text AS 'MODULE_PATHNAME', 'pg_curl_easy_getinfo_header_out' LANGUAGE 'c';
 

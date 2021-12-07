@@ -40,7 +40,6 @@ static curl_mime *mime;
 static FILE *read_str_file = NULL;
 static FileString data_in_str = {0};
 static FileString data_out_str = {0};
-static FileString end_str = {0};
 static FileString header_in_str = {0};
 static FileString header_out_str = {0};
 static FileString header_str = {0};
@@ -75,7 +74,6 @@ void _PG_fini(void); void _PG_fini(void) {
     curl_global_cleanup();
     if (data_in_str.data) { free(data_in_str.data); data_in_str.data = NULL; }
     if (data_out_str.data) { free(data_out_str.data); data_out_str.data = NULL; }
-    if (end_str.data) { free(end_str.data); end_str.data = NULL; }
     if (header_in_str.data) { free(header_in_str.data); header_in_str.data = NULL; }
     if (header_out_str.data) { free(header_out_str.data); header_out_str.data = NULL; }
     if (header_str.data) { free(header_str.data); header_str.data = NULL; }
@@ -1335,7 +1333,6 @@ static int debug_callback(CURL *handle, curl_infotype type, char *data, size_t s
     if (size) switch (type) {
         case CURLINFO_DATA_IN: if (fwrite(data, size, 1, data_in_str.file) != size / size) E("!fwrite"); break;
         case CURLINFO_DATA_OUT: if (fwrite(data, size, 1, data_out_str.file) != size / size) E("!fwrite"); break;
-        case CURLINFO_END: if (fwrite(data, size, 1, end_str.file) != size / size) E("!fwrite"); break;
         case CURLINFO_HEADER_IN: if (fwrite(data, size, 1, header_in_str.file) != size / size) E("!fwrite"); break;
         case CURLINFO_HEADER_OUT: if (fwrite(data, size, 1, header_out_str.file) != size / size) E("!fwrite"); break;
         case CURLINFO_TEXT: if (fwrite(data, size, 1, text_str.file) != size / size) E("!fwrite"); break;
@@ -1366,7 +1363,6 @@ EXTENSION(pg_curl_easy_perform) {
     if (sleep < 0) E("sleep < 0!");
     if (data_in_str.data) { free(data_in_str.data); data_in_str.data = NULL; }
     if (data_out_str.data) { free(data_out_str.data); data_out_str.data = NULL; }
-    if (end_str.data) { free(end_str.data); end_str.data = NULL; }
     if (header_in_str.data) { free(header_in_str.data); header_in_str.data = NULL; }
     if (header_out_str.data) { free(header_out_str.data); header_out_str.data = NULL; }
     if (header_str.data) { free(header_str.data); header_str.data = NULL; }
@@ -1374,7 +1370,6 @@ EXTENSION(pg_curl_easy_perform) {
     if (write_str.data) { free(write_str.data); write_str.data = NULL; }
     if (!(data_in_str.file = open_memstream(&data_in_str.data, &data_in_str.len))) E("!open_memstream");
     if (!(data_out_str.file = open_memstream(&data_out_str.data, &data_out_str.len))) E("!open_memstream");
-    if (!(end_str.file = open_memstream(&end_str.data, &end_str.len))) E("!open_memstream");
     if (!(header_in_str.file = open_memstream(&header_in_str.data, &header_in_str.len))) E("!open_memstream");
     if (!(header_out_str.file = open_memstream(&header_out_str.data, &header_out_str.len))) E("!open_memstream");
     if (!(header_str.file = open_memstream(&header_str.data, &header_str.len))) E("!open_memstream");
@@ -1413,7 +1408,6 @@ EXTENSION(pg_curl_easy_perform) {
     }
     fclose(data_in_str.file);
     fclose(data_out_str.file);
-    fclose(end_str.file);
     fclose(header_in_str.file);
     fclose(header_out_str.file);
     fclose(header_str.file);
@@ -1425,11 +1419,6 @@ EXTENSION(pg_curl_easy_perform) {
 EXTENSION(pg_curl_easy_getinfo_text) {
     if (!text_str.len) PG_RETURN_NULL();
     PG_RETURN_TEXT_P(cstring_to_text_with_len(text_str.data, text_str.len));
-}
-
-EXTENSION(pg_curl_easy_getinfo_end) {
-    if (!end_str.len) PG_RETURN_NULL();
-    PG_RETURN_TEXT_P(cstring_to_text_with_len(end_str.data, end_str.len));
 }
 
 EXTENSION(pg_curl_easy_getinfo_header_in) {
