@@ -1769,10 +1769,34 @@ EXTENSION(pg_curl_http_version_3) {
 }
 EXTENSION(pg_curl_http_version_none) { PG_RETURN_INT64(CURL_HTTP_VERSION_NONE); }
 
-EXTENSION(pg_curlusessl_none) { PG_RETURN_INT64(CURLUSESSL_NONE); }
-EXTENSION(pg_curlusessl_try) { PG_RETURN_INT64(CURLUSESSL_TRY); }
-EXTENSION(pg_curlusessl_control) { PG_RETURN_INT64(CURLUSESSL_CONTROL); }
-EXTENSION(pg_curlusessl_all) { PG_RETURN_INT64(CURLUSESSL_ALL); }
+EXTENSION(pg_curlusessl_none) {
+#if CURL_AT_LEAST_VERSION(7, 11, 0)
+    PG_RETURN_INT64(CURLUSESSL_NONE);
+#else
+    E("curlusessl_none requires curl 7.11.0 or later");
+#endif
+}
+EXTENSION(pg_curlusessl_try) {
+#if CURL_AT_LEAST_VERSION(7, 11, 0)
+    PG_RETURN_INT64(CURLUSESSL_TRY);
+#else
+    E("curlusessl_try requires curl 7.11.0 or later");
+#endif
+}
+EXTENSION(pg_curlusessl_control) {
+#if CURL_AT_LEAST_VERSION(7, 11, 0)
+    PG_RETURN_INT64(CURLUSESSL_CONTROL);
+#else
+    E("curlusessl_control requires curl 7.11.0 or later");
+#endif
+}
+EXTENSION(pg_curlusessl_all) {
+#if CURL_AT_LEAST_VERSION(7, 11, 0)
+    PG_RETURN_INT64(CURLUSESSL_ALL);
+#else
+    E("curlusessl_all requires curl 7.11.0 or later");
+#endif
+}
 
 EXTENSION(pg_curl_upkeep_interval_default) {
 #ifdef CURL_UPKEEP_INTERVAL_DEFAULT
