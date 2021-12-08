@@ -45,7 +45,6 @@ static MemoryStreamString data_out_str = {0};
 static MemoryStreamString debug_str = {0};
 static MemoryStreamString header_in_str = {0};
 static MemoryStreamString header_out_str = {0};
-static MemoryStreamString response_str = {0};
 static pqsigfunc pgsql_interrupt_handler = NULL;
 static struct curl_slist *header = NULL;
 static struct curl_slist *recipient = NULL;
@@ -88,7 +87,6 @@ void _PG_fini(void); void _PG_fini(void) {
     freeMemoryStreamString(&debug_str);
     freeMemoryStreamString(&header_in_str);
     freeMemoryStreamString(&header_out_str);
-    freeMemoryStreamString(&response_str);
     if (read_str) fclose(read_str);
 }
 
@@ -1363,24 +1361,19 @@ EXTENSION(pg_curl_easy_perform) {
     long sleep = PG_ARGISNULL(1) ? 1000000 : PG_GETARG_INT64(1);
     if (try <= 0) E("try <= 0!");
     if (sleep < 0) E("sleep < 0!");
-    data_in_str.use = PG_ARGISNULL(6) ? false :PG_GETARG_BOOL(6);
-    data_out_str.use = PG_ARGISNULL(7) ? false : PG_GETARG_BOOL(7);
-    debug_str.use = PG_ARGISNULL(3) ? false : PG_GETARG_BOOL(3);
-    header_in_str.use = PG_ARGISNULL(4) ? false : PG_GETARG_BOOL(4);
-    header_out_str.use = PG_ARGISNULL(5) ? false : PG_GETARG_BOOL(5);
-    response_str.use = PG_ARGISNULL(2) ? true : PG_GETARG_BOOL(2);
+    data_in_str.use = PG_ARGISNULL(5) ? true :PG_GETARG_BOOL(5);
+    data_out_str.use = PG_ARGISNULL(6) ? false : PG_GETARG_BOOL(6);
+    debug_str.use = PG_ARGISNULL(2) ? false : PG_GETARG_BOOL(2);
+    header_in_str.use = PG_ARGISNULL(3) ? true : PG_GETARG_BOOL(3);
+    header_out_str.use = PG_ARGISNULL(4) ? false : PG_GETARG_BOOL(4);
     data_in_str.use ? initMemoryStreamString(&data_in_str) : freeMemoryStreamString(&data_in_str);
     data_out_str.use ? initMemoryStreamString(&data_out_str) : freeMemoryStreamString(&data_out_str);
     debug_str.use ? initMemoryStreamString(&debug_str) : freeMemoryStreamString(&debug_str);
     header_in_str.use ? initMemoryStreamString(&header_in_str) : freeMemoryStreamString(&header_in_str);
     header_out_str.use ? initMemoryStreamString(&header_out_str) : freeMemoryStreamString(&header_out_str);
-    response_str.use ? initMemoryStreamString(&response_str) : freeMemoryStreamString(&response_str);
     if (debug_str.use || header_in_str.use || header_out_str.use || data_in_str.use || data_out_str.use) {
         if ((res = curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_VERBOSE): %s", curl_easy_strerror(res));
         if ((res = curl_easy_setopt(curl, CURLOPT_DEBUGFUNCTION, debug_callback)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_DEBUGFUNCTION): %s", curl_easy_strerror(res));
-    }
-    if (response_str.use) {
-        if ((res = curl_easy_setopt(curl, CURLOPT_WRITEDATA, response_str.file)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_WRITEDATA): %s", curl_easy_strerror(res));
     }
     if ((res = curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, errbuf)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_ERRORBUFFER): %s", curl_easy_strerror(res));
     if ((res = curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_NOPROGRESS): %s", curl_easy_strerror(res));
@@ -1416,7 +1409,6 @@ EXTENSION(pg_curl_easy_perform) {
     if (header_in_str.use) fclose(header_in_str.file);
     if (header_out_str.use) fclose(header_out_str.file);
     if (debug_str.use) fclose(debug_str.file);
-    if (response_str.use) fclose(response_str.file);
     PG_RETURN_BOOL(res == CURLE_OK);
 }
 
@@ -1451,8 +1443,8 @@ EXTENSION(pg_curl_easy_getinfo_headers) {
 }
 
 EXTENSION(pg_curl_easy_getinfo_response) {
-    if (!response_str.len) PG_RETURN_NULL();
-    PG_RETURN_BYTEA_P(cstring_to_text_with_len(response_str.data, response_str.len));
+    W("curl_easy_getinfo_response deprecated, use curl_easy_perform(data_in:=true) and curl_easy_getinfo_data_in() instead");
+    PG_RETURN_NULL();
 }
 
 static Datum pg_curl_easy_getinfo_char(PG_FUNCTION_ARGS, CURLINFO info) {
