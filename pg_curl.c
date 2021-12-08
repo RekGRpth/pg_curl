@@ -1751,7 +1751,13 @@ EXTENSION(pg_curl_easy_getinfo_ssl_verifyresult) {
 
 EXTENSION(pg_curl_http_version_1_0) { PG_RETURN_INT64(CURL_HTTP_VERSION_1_0); }
 EXTENSION(pg_curl_http_version_1_1) { PG_RETURN_INT64(CURL_HTTP_VERSION_1_1); }
-EXTENSION(pg_curl_http_version_2_0) { PG_RETURN_INT64(CURL_HTTP_VERSION_2_0); }
+EXTENSION(pg_curl_http_version_2_0) {
+#if CURL_AT_LEAST_VERSION(7, 33, 0)
+    PG_RETURN_INT64(CURL_HTTP_VERSION_2_0);
+#else
+    E("_curl_http_version_2_0 requires curl 7.33.0 or later");
+#endif
+}
 EXTENSION(pg_curl_http_version_2_prior_knowledge) {
 #if CURL_AT_LEAST_VERSION(7, 49, 0)
     PG_RETURN_INT64(CURL_HTTP_VERSION_2_PRIOR_KNOWLEDGE);
@@ -1759,7 +1765,13 @@ EXTENSION(pg_curl_http_version_2_prior_knowledge) {
     E("curl_http_version_2_prior_knowledge requires curl 7.49.0 or later");
 #endif
 }
-EXTENSION(pg_curl_http_version_2tls) { PG_RETURN_INT64(CURL_HTTP_VERSION_2TLS); }
+EXTENSION(pg_curl_http_version_2tls) {
+#if CURL_AT_LEAST_VERSION(7, 47, 0)
+    PG_RETURN_INT64(CURL_HTTP_VERSION_2TLS);
+#else
+    E("curl_http_version_2tls requires curl 7.47.0 or later");
+#endif
+}
 EXTENSION(pg_curl_http_version_3) {
 #if CURL_AT_LEAST_VERSION(7, 66, 0)
     PG_RETURN_INT64(CURL_HTTP_VERSION_3);
