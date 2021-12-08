@@ -1999,8 +1999,32 @@ EXTENSION(pg_curlftpmethod_multicwd) { PG_RETURN_INT64(CURLFTPMETHOD_MULTICWD); 
 EXTENSION(pg_curlftpmethod_nocwd) { PG_RETURN_INT64(CURLFTPMETHOD_NOCWD); }
 EXTENSION(pg_curlftpmethod_singlecwd) { PG_RETURN_INT64(CURLFTPMETHOD_SINGLECWD); }
 
-EXTENSION(pg_curlftp_create_dir) { PG_RETURN_INT64(CURLFTP_CREATE_DIR); }
-EXTENSION(pg_curlftp_create_dir_retry) { PG_RETURN_INT64(CURLFTP_CREATE_DIR_RETRY); }
-EXTENSION(pg_curlftp_create_dir_none) { PG_RETURN_INT64(CURLFTP_CREATE_DIR_NONE); }
+EXTENSION(pg_curlftp_create_dir) {
+#if CURL_AT_LEAST_VERSION(7, 10, 7)
+    PG_RETURN_INT64(CURLFTP_CREATE_DIR);
+#else
+    E("curlftp_create_dir requires curl 7.10.7 or later");
+#endif
+}
+EXTENSION(pg_curlftp_create_dir_retry) {
+#if CURL_AT_LEAST_VERSION(7, 19, 4)
+    PG_RETURN_INT64(CURLFTP_CREATE_DIR_RETRY);
+#else
+    E("curlftp_create_dir_retry requires curl 7.19.4 or later");
+#endif
+}
+EXTENSION(pg_curlftp_create_dir_none) {
+#if CURL_AT_LEAST_VERSION(7, 10, 7)
+    PG_RETURN_INT64(CURLFTP_CREATE_DIR_NONE);
+#else
+    E("curlftp_create_dir_none requires curl 7.10.7 or later");
+#endif
+}
 
-EXTENSION(pg_curl_max_write_size) { PG_RETURN_INT64(CURL_MAX_WRITE_SIZE); }
+EXTENSION(pg_curl_max_write_size) {
+#ifdef CURL_MAX_WRITE_SIZE
+    PG_RETURN_INT64(CURL_MAX_WRITE_SIZE);
+#else
+    E("!CURL_MAX_WRITE_SIZE");
+#endif
+}
