@@ -38,6 +38,7 @@ static CURL *curl = NULL;
 #if CURL_AT_LEAST_VERSION(7, 56, 0)
 static curl_mime *mime;
 #endif
+static FILE *read_str = NULL;
 static int pg_curl_interrupt_requested = 0;
 static MemoryStreamString data_in_str = {0};
 static MemoryStreamString data_out_str = {0};
@@ -94,6 +95,7 @@ void _PG_fini(void); void _PG_fini(void) {
     freeMemoryStreamString(&debug_str);
     freeMemoryStreamString(&header_in_str);
     freeMemoryStreamString(&header_out_str);
+    if (read_str) fclose(read_str);
 }
 
 EXTENSION(pg_curl_easy_header_reset) {
@@ -113,6 +115,11 @@ EXTENSION(pg_curl_easy_mime_reset) {
 #endif
 }
 
+EXTENSION(pg_curl_easy_readdata_reset) {
+    if (read_str) { fclose(read_str); read_str = NULL; }
+    PG_RETURN_VOID();
+}
+
 EXTENSION(pg_curl_easy_recipient_reset) {
 #if CURL_AT_LEAST_VERSION(7, 20, 0)
     curl_slist_free_all(recipient);
@@ -128,6 +135,7 @@ EXTENSION(pg_curl_easy_reset) {
 #if CURL_AT_LEAST_VERSION(7, 56, 0)
     pg_curl_easy_mime_reset(fcinfo);
 #endif
+    pg_curl_easy_readdata_reset(fcinfo);
 #if CURL_AT_LEAST_VERSION(7, 20, 0)
     pg_curl_easy_recipient_reset(fcinfo);
 #endif
@@ -334,6 +342,19 @@ EXTENSION(pg_curl_easy_setopt_copypostfields) {
 #else
     E("curl_easy_setopt_copypostfields requires curl 7.17.1 or later");
 #endif
+}
+
+EXTENSION(pg_curl_easy_setopt_readdata) {
+    CURLcode res = CURL_LAST;
+    bytea *parameter;
+    if (PG_ARGISNULL(0)) E("parameter is null!");
+    parameter = DatumGetTextP(PG_GETARG_DATUM(0));
+    if (read_str) { fclose(read_str); read_str = NULL; }
+    if ((res = curl_easy_setopt(curl, CURLOPT_UPLOAD, 1L)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_UPLOAD): %s", curl_easy_strerror(res));
+    if ((res = curl_easy_setopt(curl, CURLOPT_INFILESIZE, VARSIZE_ANY_EXHDR(parameter))) != CURLE_OK) E("curl_easy_setopt(CURLOPT_INFILESIZE): %s", curl_easy_strerror(res));
+    if (!(read_str = fmemopen(VARDATA_ANY(parameter), VARSIZE_ANY_EXHDR(parameter), "rb"))) E("!fmemopen");
+    if ((res = curl_easy_setopt(curl, CURLOPT_READDATA, read_str)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_READDATA): %s", curl_easy_strerror(res));
+    PG_RETURN_BOOL(res == CURLE_OK);
 }
 
 static Datum pg_curl_easy_setopt_char(PG_FUNCTION_ARGS, CURLoption option) {
