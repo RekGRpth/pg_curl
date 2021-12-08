@@ -345,16 +345,22 @@ EXTENSION(pg_curl_easy_setopt_copypostfields) {
 }
 
 EXTENSION(pg_curl_easy_setopt_readdata) {
+#if CURL_AT_LEAST_VERSION(7, 9, 7)
     CURLcode res = CURL_LAST;
     bytea *parameter;
     if (PG_ARGISNULL(0)) E("parameter is null!");
     parameter = DatumGetTextP(PG_GETARG_DATUM(0));
     if (read_str) { fclose(read_str); read_str = NULL; }
     if ((res = curl_easy_setopt(curl, CURLOPT_UPLOAD, 1L)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_UPLOAD): %s", curl_easy_strerror(res));
+#if CURL_AT_LEAST_VERSION(7, 23, 0)
     if ((res = curl_easy_setopt(curl, CURLOPT_INFILESIZE, VARSIZE_ANY_EXHDR(parameter))) != CURLE_OK) E("curl_easy_setopt(CURLOPT_INFILESIZE): %s", curl_easy_strerror(res));
+#endif
     if (!(read_str = fmemopen(VARDATA_ANY(parameter), VARSIZE_ANY_EXHDR(parameter), "rb"))) E("!fmemopen");
     if ((res = curl_easy_setopt(curl, CURLOPT_READDATA, read_str)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_READDATA): %s", curl_easy_strerror(res));
     PG_RETURN_BOOL(res == CURLE_OK);
+#else
+    E("curl_easy_setopt_readdata requires curl 7.9.7 or later");
+#endif
 }
 
 static Datum pg_curl_easy_setopt_char(PG_FUNCTION_ARGS, CURLoption option) {
