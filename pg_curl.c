@@ -1439,12 +1439,12 @@ EXTENSION(pg_curl_easy_getinfo_data_out) {
 
 EXTENSION(pg_curl_easy_getinfo_headers) {
     W("curl_easy_getinfo_headers deprecated, use curl_easy_perform(header_in:=true) and curl_easy_getinfo_header_in() instead");
-    PG_RETURN_NULL();
+    return pg_curl_easy_getinfo_header_in(fcinfo);
 }
 
 EXTENSION(pg_curl_easy_getinfo_response) {
     W("curl_easy_getinfo_response deprecated, use curl_easy_perform(data_in:=true) and curl_easy_getinfo_data_in() instead");
-    PG_RETURN_NULL();
+    return pg_curl_easy_getinfo_data_in(fcinfo);
 }
 
 static Datum pg_curl_easy_getinfo_char(PG_FUNCTION_ARGS, CURLINFO info) {
