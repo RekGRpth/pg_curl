@@ -1475,11 +1475,15 @@ EXTENSION(pg_curl_easy_getinfo_response) {
 }
 
 static Datum pg_curl_easy_getinfo_char(PG_FUNCTION_ARGS, CURLINFO info) {
+#if CURL_AT_LEAST_VERSION(7, 4, 1)
     CURLcode res = CURL_LAST;
     char *value = NULL;
     if ((res = curl_easy_getinfo(curl, info, &value)) != CURLE_OK) E("curl_easy_getinfo(%i): %s", info, curl_easy_strerror(res));
     if (!value) PG_RETURN_NULL();
     PG_RETURN_TEXT_P(cstring_to_text(value));
+#else
+    E("curl_easy_getinfo_* requires curl 7.4.1 or later");
+#endif
 }
 
 EXTENSION(pg_curl_easy_getinfo_content_type) {
@@ -1547,10 +1551,14 @@ EXTENSION(pg_curl_easy_getinfo_scheme) {
 }
 
 static Datum pg_curl_easy_getinfo_long(PG_FUNCTION_ARGS, CURLINFO info) {
+#if CURL_AT_LEAST_VERSION(7, 4, 1)
     CURLcode res = CURL_LAST;
     long value;
     if ((res = curl_easy_getinfo(curl, info, &value)) != CURLE_OK) E("curl_easy_getinfo(%i): %s", info, curl_easy_strerror(res));
     PG_RETURN_INT64(value);
+#else
+    E("curl_easy_getinfo_* requires curl 7.4.1 or later");
+#endif
 }
 
 EXTENSION(pg_curl_easy_getinfo_condition_unmet) {
