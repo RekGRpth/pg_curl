@@ -1918,35 +1918,209 @@ EXTENSION(pg_curl_rtspreq_set_parameter) { PG_RETURN_INT64(CURL_RTSPREQ_SET_PARA
 EXTENSION(pg_curl_rtspreq_record) { PG_RETURN_INT64(CURL_RTSPREQ_RECORD); }
 EXTENSION(pg_curl_rtspreq_receive) { PG_RETURN_INT64(CURL_RTSPREQ_RECEIVE); }
 
-EXTENSION(pg_curlproto_dict) { PG_RETURN_INT64(CURLPROTO_DICT); }
-EXTENSION(pg_curlproto_file) { PG_RETURN_INT64(CURLPROTO_FILE); }
-EXTENSION(pg_curlproto_ftp) { PG_RETURN_INT64(CURLPROTO_FTP); }
-EXTENSION(pg_curlproto_ftps) { PG_RETURN_INT64(CURLPROTO_FTPS); }
-EXTENSION(pg_curlproto_gopher) { PG_RETURN_INT64(CURLPROTO_GOPHER); }
-EXTENSION(pg_curlproto_http) { PG_RETURN_INT64(CURLPROTO_HTTP); }
-EXTENSION(pg_curlproto_https) { PG_RETURN_INT64(CURLPROTO_HTTPS); }
-EXTENSION(pg_curlproto_imap) { PG_RETURN_INT64(CURLPROTO_IMAP); }
-EXTENSION(pg_curlproto_imaps) { PG_RETURN_INT64(CURLPROTO_IMAPS); }
-EXTENSION(pg_curlproto_ldap) { PG_RETURN_INT64(CURLPROTO_LDAP); }
-EXTENSION(pg_curlproto_ldaps) { PG_RETURN_INT64(CURLPROTO_LDAPS); }
-EXTENSION(pg_curlproto_pop3) { PG_RETURN_INT64(CURLPROTO_POP3); }
-EXTENSION(pg_curlproto_pop3s) { PG_RETURN_INT64(CURLPROTO_POP3S); }
-EXTENSION(pg_curlproto_rtmp) { PG_RETURN_INT64(CURLPROTO_RTMP); }
-EXTENSION(pg_curlproto_rtmpe) { PG_RETURN_INT64(CURLPROTO_RTMPE); }
-EXTENSION(pg_curlproto_rtmps) { PG_RETURN_INT64(CURLPROTO_RTMPS); }
-EXTENSION(pg_curlproto_rtmpt) { PG_RETURN_INT64(CURLPROTO_RTMPT); }
-EXTENSION(pg_curlproto_rtmpte) { PG_RETURN_INT64(CURLPROTO_RTMPTE); }
-EXTENSION(pg_curlproto_rtmpts) { PG_RETURN_INT64(CURLPROTO_RTMPTS); }
-EXTENSION(pg_curlproto_rtsp) { PG_RETURN_INT64(CURLPROTO_RTSP); }
-EXTENSION(pg_curlproto_scp) { PG_RETURN_INT64(CURLPROTO_SCP); }
-EXTENSION(pg_curlproto_sftp) { PG_RETURN_INT64(CURLPROTO_SFTP); }
-EXTENSION(pg_curlproto_smb) { PG_RETURN_INT64(CURLPROTO_SMB); }
-EXTENSION(pg_curlproto_smbs) { PG_RETURN_INT64(CURLPROTO_SMBS); }
-EXTENSION(pg_curlproto_smtp) { PG_RETURN_INT64(CURLPROTO_SMTP); }
-EXTENSION(pg_curlproto_smtps) { PG_RETURN_INT64(CURLPROTO_SMTPS); }
-EXTENSION(pg_curlproto_telnet) { PG_RETURN_INT64(CURLPROTO_TELNET); }
-EXTENSION(pg_curlproto_tftp) { PG_RETURN_INT64(CURLPROTO_TFTP); }
-EXTENSION(pg_curlproto_all) { PG_RETURN_INT64(CURLPROTO_ALL); }
+EXTENSION(pg_curlproto_dict) {
+#if CURL_AT_LEAST_VERSION(7, 19, 4)
+    PG_RETURN_INT64(CURLPROTO_DICT);
+#else
+    E("curlproto_dict requires curl 7.19.4 or later");
+#endif
+}
+EXTENSION(pg_curlproto_file) {
+#if CURL_AT_LEAST_VERSION(7, 19, 4)
+    PG_RETURN_INT64(CURLPROTO_FILE);
+#else
+    E("curlproto_file requires curl 7.19.4 or later");
+#endif
+}
+EXTENSION(pg_curlproto_ftp) {
+#if CURL_AT_LEAST_VERSION(7, 19, 4)
+    PG_RETURN_INT64(CURLPROTO_FTP);
+#else
+    E("curlproto_ftp requires curl 7.19.4 or later");
+#endif
+}
+EXTENSION(pg_curlproto_ftps) {
+#if CURL_AT_LEAST_VERSION(7, 19, 4)
+    PG_RETURN_INT64(CURLPROTO_FTPS);
+#else
+    E("curlproto_ftps requires curl 7.19.4 or later");
+#endif
+}
+EXTENSION(pg_curlproto_gopher) {
+#if CURL_AT_LEAST_VERSION(7, 19, 4)
+    PG_RETURN_INT64(CURLPROTO_GOPHER);
+#else
+    E("curlproto_gopher requires curl 7.19.4 or later");
+#endif
+}
+EXTENSION(pg_curlproto_http) {
+#if CURL_AT_LEAST_VERSION(7, 19, 4)
+    PG_RETURN_INT64(CURLPROTO_HTTP);
+#else
+    E("curlproto_http requires curl 7.19.4 or later");
+#endif
+}
+EXTENSION(pg_curlproto_https) {
+#if CURL_AT_LEAST_VERSION(7, 19, 4)
+    PG_RETURN_INT64(CURLPROTO_HTTPS);
+#else
+    E("curlproto_https requires curl 7.19.4 or later");
+#endif
+}
+EXTENSION(pg_curlproto_imap) {
+#if CURL_AT_LEAST_VERSION(7, 19, 4)
+    PG_RETURN_INT64(CURLPROTO_IMAP);
+#else
+    E("curlproto_imap requires curl 7.19.4 or later");
+#endif
+}
+EXTENSION(pg_curlproto_imaps) {
+#if CURL_AT_LEAST_VERSION(7, 19, 4)
+    PG_RETURN_INT64(CURLPROTO_IMAPS);
+#else
+    E("curlproto_imaps requires curl 7.19.4 or later");
+#endif
+}
+EXTENSION(pg_curlproto_ldap) {
+#if CURL_AT_LEAST_VERSION(7, 19, 4)
+    PG_RETURN_INT64(CURLPROTO_LDAP);
+#else
+    E("curlproto_ldap requires curl 7.19.4 or later");
+#endif
+}
+EXTENSION(pg_curlproto_ldaps) {
+#if CURL_AT_LEAST_VERSION(7, 19, 4)
+    PG_RETURN_INT64(CURLPROTO_LDAPS);
+#else
+    E("curlproto_ldaps requires curl 7.19.4 or later");
+#endif
+}
+EXTENSION(pg_curlproto_pop3) {
+#if CURL_AT_LEAST_VERSION(7, 19, 4)
+    PG_RETURN_INT64(CURLPROTO_POP3);
+#else
+    E("curlproto_pop3 requires curl 7.19.4 or later");
+#endif
+}
+EXTENSION(pg_curlproto_pop3s) {
+#if CURL_AT_LEAST_VERSION(7, 19, 4)
+    PG_RETURN_INT64(CURLPROTO_POP3S);
+#else
+    E("curlproto_pop3s requires curl 7.19.4 or later");
+#endif
+}
+EXTENSION(pg_curlproto_rtmp) {
+#if CURL_AT_LEAST_VERSION(7, 19, 4)
+    PG_RETURN_INT64(CURLPROTO_RTMP);
+#else
+    E("curlproto_rtmp requires curl 7.19.4 or later");
+#endif
+}
+EXTENSION(pg_curlproto_rtmpe) {
+#if CURL_AT_LEAST_VERSION(7, 19, 4)
+    PG_RETURN_INT64(CURLPROTO_RTMPE);
+#else
+    E("curlproto_rtmpe requires curl 7.19.4 or later");
+#endif
+}
+EXTENSION(pg_curlproto_rtmps) {
+#if CURL_AT_LEAST_VERSION(7, 19, 4)
+    PG_RETURN_INT64(CURLPROTO_RTMPS);
+#else
+    E("curlproto_rtmps requires curl 7.19.4 or later");
+#endif
+}
+EXTENSION(pg_curlproto_rtmpt) {
+#if CURL_AT_LEAST_VERSION(7, 19, 4)
+    PG_RETURN_INT64(CURLPROTO_RTMPT);
+#else
+    E("curlproto_rtmpt requires curl 7.19.4 or later");
+#endif
+}
+EXTENSION(pg_curlproto_rtmpte) {
+#if CURL_AT_LEAST_VERSION(7, 19, 4)
+    PG_RETURN_INT64(CURLPROTO_RTMPTE);
+#else
+    E("curlproto_rtmpte requires curl 7.19.4 or later");
+#endif
+}
+EXTENSION(pg_curlproto_rtmpts) {
+#if CURL_AT_LEAST_VERSION(7, 19, 4)
+    PG_RETURN_INT64(CURLPROTO_RTMPTS);
+#else
+    E("curlproto_rtmpts requires curl 7.19.4 or later");
+#endif
+}
+EXTENSION(pg_curlproto_rtsp) {
+#if CURL_AT_LEAST_VERSION(7, 19, 4)
+    PG_RETURN_INT64(CURLPROTO_RTSP);
+#else
+    E("curlproto_rtsp requires curl 7.19.4 or later");
+#endif
+}
+EXTENSION(pg_curlproto_scp) {
+#if CURL_AT_LEAST_VERSION(7, 19, 4)
+    PG_RETURN_INT64(CURLPROTO_SCP);
+#else
+    E("curlproto_scp requires curl 7.19.4 or later");
+#endif
+}
+EXTENSION(pg_curlproto_sftp) {
+#if CURL_AT_LEAST_VERSION(7, 19, 4)
+    PG_RETURN_INT64(CURLPROTO_SFTP);
+#else
+    E("curlproto_sftp requires curl 7.19.4 or later");
+#endif
+}
+EXTENSION(pg_curlproto_smb) {
+#if CURL_AT_LEAST_VERSION(7, 19, 4)
+    PG_RETURN_INT64(CURLPROTO_SMB);
+#else
+    E("curlproto_smb requires curl 7.19.4 or later");
+#endif
+}
+EXTENSION(pg_curlproto_smbs) {
+#if CURL_AT_LEAST_VERSION(7, 19, 4)
+    PG_RETURN_INT64(CURLPROTO_SMBS);
+#else
+    E("curlproto_smbs requires curl 7.19.4 or later");
+#endif
+}
+EXTENSION(pg_curlproto_smtp) {
+#if CURL_AT_LEAST_VERSION(7, 19, 4)
+    PG_RETURN_INT64(CURLPROTO_SMTP);
+#else
+    E("curlproto_smtp requires curl 7.19.4 or later");
+#endif
+}
+EXTENSION(pg_curlproto_smtps) {
+#if CURL_AT_LEAST_VERSION(7, 19, 4)
+    PG_RETURN_INT64(CURLPROTO_SMTPS);
+#else
+    E("curlproto_smtps requires curl 7.19.4 or later");
+#endif
+}
+EXTENSION(pg_curlproto_telnet) {
+#if CURL_AT_LEAST_VERSION(7, 19, 4)
+    PG_RETURN_INT64(CURLPROTO_TELNET);
+#else
+    E("curlproto_telnet requires curl 7.19.4 or later");
+#endif
+}
+EXTENSION(pg_curlproto_tftp) {
+#if CURL_AT_LEAST_VERSION(7, 19, 4)
+    PG_RETURN_INT64(CURLPROTO_TFTP);
+#else
+    E("curlproto_tftp requires curl 7.19.4 or later");
+#endif
+}
+EXTENSION(pg_curlproto_all) {
+#if CURL_AT_LEAST_VERSION(7, 19, 4)
+    PG_RETURN_INT64(CURLPROTO_ALL);
+#else
+    E("curlproto_all requires curl 7.19.4 or later");
+#endif
+}
 
 EXTENSION(pg_curlproxy_http) { PG_RETURN_INT64(CURLPROXY_HTTP); }
 EXTENSION(pg_curlproxy_https) {
