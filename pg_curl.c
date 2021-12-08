@@ -294,6 +294,7 @@ EXTENSION(pg_curl_mime_file) {
 }
 
 EXTENSION(pg_curl_easy_setopt_copypostfields) {
+#if CURL_AT_LEAST_VERSION(7, 17, 1)
     CURLcode res = CURL_LAST;
     bytea *parameter;
     if (PG_ARGISNULL(0)) E("parameter is null!");
@@ -301,6 +302,9 @@ EXTENSION(pg_curl_easy_setopt_copypostfields) {
     if ((res = curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, VARSIZE_ANY_EXHDR(parameter))) != CURLE_OK) E("curl_easy_setopt(CURLOPT_POSTFIELDSIZE): %s", curl_easy_strerror(res));
     if ((res = curl_easy_setopt(curl, CURLOPT_COPYPOSTFIELDS, VARDATA_ANY(parameter))) != CURLE_OK) E("curl_easy_setopt(CURLOPT_COPYPOSTFIELDS): %s", curl_easy_strerror(res));
     PG_RETURN_BOOL(res == CURLE_OK);
+#else
+    E("curl_easy_setopt_copypostfields requires curl 7.17.1 or later");
+#endif
 }
 
 static Datum pg_curl_easy_setopt_char(PG_FUNCTION_ARGS, CURLoption option) {
