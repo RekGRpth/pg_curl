@@ -1409,6 +1409,10 @@ static int debug_callback(CURL *handle, curl_infotype type, char *data, size_t s
 static int progress_callback(void *clientp, curl_off_t dltotal, curl_off_t dlnow, curl_off_t ultotal, curl_off_t ulnow) { return pg_curl_interrupt_requested; }
 #endif
 
+#if CURL_AT_LEAST_VERSION(7, 9, 7)
+static size_t write_callback(char *ptr, size_t size, size_t nmemb, void *userdata) { return size * nmemb; }
+#endif
+
 EXTENSION(pg_curl_easy_perform) {
     char errbuf[CURL_ERROR_SIZE] = {0};
     CURLcode res = CURL_LAST;
@@ -1432,6 +1436,9 @@ EXTENSION(pg_curl_easy_perform) {
     }
     if ((res = curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, errbuf)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_ERRORBUFFER): %s", curl_easy_strerror(res));
     if ((res = curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_NOPROGRESS): %s", curl_easy_strerror(res));
+#if CURL_AT_LEAST_VERSION(7, 9, 7)
+    if ((res = curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_WRITEFUNCTION): %s", curl_easy_strerror(res));
+#endif
 #if CURL_AT_LEAST_VERSION(7, 32, 0)
     if ((res = curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION, progress_callback)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_XFERINFOFUNCTION): %s", curl_easy_strerror(res));
 #endif
