@@ -1867,12 +1867,48 @@ EXTENSION(pg_curlsslopt_auto_client_cert) {
 #endif
 }
 
-EXTENSION(pg_curlssh_auth_publickey) { PG_RETURN_INT64(CURLSSH_AUTH_PUBLICKEY); }
-EXTENSION(pg_curlssh_auth_password) { PG_RETURN_INT64(CURLSSH_AUTH_PASSWORD); }
-EXTENSION(pg_curlssh_auth_host) { PG_RETURN_INT64(CURLSSH_AUTH_HOST); }
-EXTENSION(pg_curlssh_auth_keyboard) { PG_RETURN_INT64(CURLSSH_AUTH_KEYBOARD); }
-EXTENSION(pg_curlssh_auth_agent) { PG_RETURN_INT64(CURLSSH_AUTH_AGENT); }
-EXTENSION(pg_curlssh_auth_any) { PG_RETURN_INT64(CURLSSH_AUTH_ANY); }
+EXTENSION(pg_curlssh_auth_publickey) {
+#if CURL_AT_LEAST_VERSION(7, 16, 1)
+    PG_RETURN_INT64(CURLSSH_AUTH_PUBLICKEY);
+#else
+    E("curlssh_auth_publickey requires curl 7.16.1 or later");
+#endif
+}
+EXTENSION(pg_curlssh_auth_password) {
+#if CURL_AT_LEAST_VERSION(7, 16, 1)
+    PG_RETURN_INT64(CURLSSH_AUTH_PASSWORD);
+#else
+    E("curlssh_auth_password requires curl 7.16.1 or later");
+#endif
+}
+EXTENSION(pg_curlssh_auth_host) {
+#if CURL_AT_LEAST_VERSION(7, 16, 1)
+    PG_RETURN_INT64(CURLSSH_AUTH_HOST);
+#else
+    E("curlssh_auth_host requires curl 7.16.1 or later");
+#endif
+}
+EXTENSION(pg_curlssh_auth_keyboard) {
+#if CURL_AT_LEAST_VERSION(7, 16, 1)
+    PG_RETURN_INT64(CURLSSH_AUTH_KEYBOARD);
+#else
+    E("curlssh_auth_keyboard requires curl 7.16.1 or later");
+#endif
+}
+EXTENSION(pg_curlssh_auth_agent) {
+#if CURL_AT_LEAST_VERSION(7, 28, 0)
+    PG_RETURN_INT64(CURLSSH_AUTH_AGENT);
+#else
+    E("curlssh_auth_agent requires curl 7.28.0 or later");
+#endif
+}
+EXTENSION(pg_curlssh_auth_any) {
+#if CURL_AT_LEAST_VERSION(7, 16, 1)
+    PG_RETURN_INT64(CURLSSH_AUTH_ANY);
+#else
+    E("curlssh_auth_any requires curl 7.16.1 or later");
+#endif
+}
 
 EXTENSION(pg_curlauth_basic) {
 #if CURL_AT_LEAST_VERSION(7, 10, 6)
