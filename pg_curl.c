@@ -1991,13 +1991,49 @@ EXTENSION(pg_curlftpssl_ccc_none) { PG_RETURN_INT64(CURLFTPSSL_CCC_NONE); }
 EXTENSION(pg_curlftpssl_ccc_passive) { PG_RETURN_INT64(CURLFTPSSL_CCC_PASSIVE); }
 EXTENSION(pg_curlftpssl_ccc_active) { PG_RETURN_INT64(CURLFTPSSL_CCC_ACTIVE); }
 
-EXTENSION(pg_curlftpauth_default) { PG_RETURN_INT64(CURLFTPAUTH_DEFAULT); }
-EXTENSION(pg_curlftpauth_ssl) { PG_RETURN_INT64(CURLFTPAUTH_SSL); }
-EXTENSION(pg_curlftpauth_tls) { PG_RETURN_INT64(CURLFTPAUTH_TLS); }
+EXTENSION(pg_curlftpauth_default) {
+#if CURL_AT_LEAST_VERSION(7, 12, 2)
+    PG_RETURN_INT64(CURLFTPAUTH_DEFAULT);
+#else
+    E("curlftpauth_default requires curl 7.12.2 or later");
+#endif
+}
+EXTENSION(pg_curlftpauth_ssl) {
+#if CURL_AT_LEAST_VERSION(7, 12, 2)
+    PG_RETURN_INT64(CURLFTPAUTH_SSL);
+#else
+    E("curlftpauth_ssl requires curl 7.12.2 or later");
+#endif
+}
+EXTENSION(pg_curlftpauth_tls) {
+#if CURL_AT_LEAST_VERSION(7, 12, 2)
+    PG_RETURN_INT64(CURLFTPAUTH_TLS);
+#else
+    E("curlftpauth_tls requires curl 7.12.2 or later");
+#endif
+}
 
-EXTENSION(pg_curlftpmethod_multicwd) { PG_RETURN_INT64(CURLFTPMETHOD_MULTICWD); }
-EXTENSION(pg_curlftpmethod_nocwd) { PG_RETURN_INT64(CURLFTPMETHOD_NOCWD); }
-EXTENSION(pg_curlftpmethod_singlecwd) { PG_RETURN_INT64(CURLFTPMETHOD_SINGLECWD); }
+EXTENSION(pg_curlftpmethod_multicwd) {
+#if CURL_AT_LEAST_VERSION(7, 15, 1)
+    PG_RETURN_INT64(CURLFTPMETHOD_MULTICWD);
+#else
+    E("curlftpmethod_multicwd requires curl 7.15.1 or later");
+#endif
+}
+EXTENSION(pg_curlftpmethod_nocwd) {
+#if CURL_AT_LEAST_VERSION(7, 15, 1)
+    PG_RETURN_INT64(CURLFTPMETHOD_NOCWD);
+#else
+    E("curlftpmethod_nocwd requires curl 7.15.1 or later");
+#endif
+}
+EXTENSION(pg_curlftpmethod_singlecwd) {
+#if CURL_AT_LEAST_VERSION(7, 15, 1)
+    PG_RETURN_INT64(CURLFTPMETHOD_SINGLECWD);
+#else
+    E("curlftpmethod_singlecwd requires curl 7.15.1 or later");
+#endif
+}
 
 EXTENSION(pg_curlftp_create_dir) {
 #if CURL_AT_LEAST_VERSION(7, 10, 7)
