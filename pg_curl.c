@@ -1874,9 +1874,27 @@ EXTENSION(pg_curlssh_auth_keyboard) { PG_RETURN_INT64(CURLSSH_AUTH_KEYBOARD); }
 EXTENSION(pg_curlssh_auth_agent) { PG_RETURN_INT64(CURLSSH_AUTH_AGENT); }
 EXTENSION(pg_curlssh_auth_any) { PG_RETURN_INT64(CURLSSH_AUTH_ANY); }
 
-EXTENSION(pg_curlauth_basic) { PG_RETURN_INT64(CURLAUTH_BASIC); }
-EXTENSION(pg_curlauth_digest) { PG_RETURN_INT64(CURLAUTH_DIGEST); }
-EXTENSION(pg_curlauth_digest_ie) { PG_RETURN_INT64(CURLAUTH_DIGEST_IE); }
+EXTENSION(pg_curlauth_basic) {
+#if CURL_AT_LEAST_VERSION(7, 10, 6)
+    PG_RETURN_INT64(CURLAUTH_BASIC);
+#else
+    E("curlauth_basic requires curl 7.10.6 or later");
+#endif
+}
+EXTENSION(pg_curlauth_digest) {
+#if CURL_AT_LEAST_VERSION(7, 10, 6)
+    PG_RETURN_INT64(CURLAUTH_DIGEST);
+#else
+    E("curlauth_digest requires curl 7.10.6 or later");
+#endif
+}
+EXTENSION(pg_curlauth_digest_ie) {
+#if CURL_AT_LEAST_VERSION(7, 19, 3)
+    PG_RETURN_INT64(CURLAUTH_DIGEST_IE);
+#else
+    E("curlauth_digest_ie requires curl 7.19.3 or later");
+#endif
+}
 EXTENSION(pg_curlauth_bearer) {
 #if CURL_AT_LEAST_VERSION(7, 61, 0)
     PG_RETURN_INT64(CURLAUTH_BEARER);
@@ -1884,17 +1902,53 @@ EXTENSION(pg_curlauth_bearer) {
     E("curlauth_bearer requires curl 7.61.0 or later");
 #endif
 }
-EXTENSION(pg_curlauth_negotiate) { PG_RETURN_INT64(CURLAUTH_NEGOTIATE); }
-EXTENSION(pg_curlauth_ntlm) { PG_RETURN_INT64(CURLAUTH_NTLM); }
-EXTENSION(pg_curlauth_ntlm_wb) { PG_RETURN_INT64(CURLAUTH_NTLM_WB); }
-EXTENSION(pg_curlauth_any) { PG_RETURN_INT64(CURLAUTH_ANY); }
-EXTENSION(pg_curlauth_anysafe) { PG_RETURN_INT64(CURLAUTH_ANYSAFE); }
-EXTENSION(pg_curlauth_only) { PG_RETURN_INT64(CURLAUTH_ONLY); }
+EXTENSION(pg_curlauth_negotiate) {
+#if CURL_AT_LEAST_VERSION(7, 10, 6)
+    PG_RETURN_INT64(CURLAUTH_NEGOTIATE);
+#else
+    E("curlauth_negotiate requires curl 7.10.6 or later");
+#endif
+}
+EXTENSION(pg_curlauth_ntlm) {
+#if CURL_AT_LEAST_VERSION(7, 10, 6)
+    PG_RETURN_INT64(CURLAUTH_NTLM);
+#else
+    E("curlauth_ntlm requires curl 7.10.6 or later");
+#endif
+}
+EXTENSION(pg_curlauth_ntlm_wb) {
+#if CURL_AT_LEAST_VERSION(7, 22, 0)
+    PG_RETURN_INT64(CURLAUTH_NTLM_WB);
+#else
+    E("curlauth_ntlm_wb requires curl 7.22.0 or later");
+#endif
+}
+EXTENSION(pg_curlauth_any) {
+#if CURL_AT_LEAST_VERSION(7, 10, 6)
+    PG_RETURN_INT64(CURLAUTH_ANY);
+#else
+    E("curlauth_any requires curl 7.10.6 or later");
+#endif
+}
+EXTENSION(pg_curlauth_anysafe) {
+#if CURL_AT_LEAST_VERSION(7, 10, 6)
+    PG_RETURN_INT64(CURLAUTH_ANYSAFE);
+#else
+    E("curlauth_anysafe requires curl 7.10.6 or later");
+#endif
+}
+EXTENSION(pg_curlauth_only) {
+#if CURL_AT_LEAST_VERSION(7, 21, 3)
+    PG_RETURN_INT64(CURLAUTH_ONLY);
+#else
+    E("curlauth_only requires curl 7.21.3 or later");
+#endif
+}
 EXTENSION(pg_curlauth_aws_sigv4) {
-#ifdef CURLAUTH_AWS_SIGV4
+#if CURL_AT_LEAST_VERSION(7, 74, 0)
     PG_RETURN_INT64(CURLAUTH_AWS_SIGV4);
 #else
-    E("!CURLAUTH_AWS_SIGV4");
+    E("curlauth_aws_sigv4 requires curl 7.74.0 or later");
 #endif
 }
 EXTENSION(pg_curlauth_gssapi) {
@@ -1904,7 +1958,13 @@ EXTENSION(pg_curlauth_gssapi) {
     E("!CURLAUTH_GSSAPI");
 #endif
 }
-EXTENSION(pg_curlauth_none) { PG_RETURN_INT64(CURLAUTH_NONE); }
+EXTENSION(pg_curlauth_none) {
+#if CURL_AT_LEAST_VERSION(7, 10, 6)
+    PG_RETURN_INT64(CURLAUTH_NONE);
+#else
+    E("curlauth_none requires curl 7.10.6 or later");
+#endif
+}
 
 EXTENSION(pg_curl_rtspreq_options) {
 #if CURL_AT_LEAST_VERSION(7, 20, 0)
