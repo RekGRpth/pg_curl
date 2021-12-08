@@ -15,7 +15,7 @@ $BODY$;
 CREATE OR REPLACE FUNCTION post(url TEXT, request JSON) RETURNS TEXT LANGUAGE SQL AS $BODY$
     WITH s AS (SELECT
         curl_easy_reset(),
-        curl_easy_setopt_postfields((
+        curl_easy_setopt_copypostfields((
             WITH s AS (
                 SELECT (json_each_text(request)).*
             ) SELECT convert_to(array_to_string(array_agg(concat_ws('=',
@@ -35,7 +35,7 @@ $BODY$;
 CREATE OR REPLACE FUNCTION post(url TEXT, request JSON) RETURNS TEXT LANGUAGE SQL AS $BODY$
     WITH s AS (SELECT
         curl_easy_reset(),
-        curl_easy_setopt_postfields(convert_to(request::TEXT, 'utf-8')),
+        curl_easy_setopt_copypostfields(convert_to(request::TEXT, 'utf-8')),
         curl_easy_setopt_url(url),
         curl_header_append('Content-Type', 'application/json; charset=utf-8'),
         curl_easy_perform(header_in:=false),
