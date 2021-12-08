@@ -134,6 +134,11 @@ EXTENSION(pg_curl_easy_reset) {
 #if CURL_AT_LEAST_VERSION(7, 12, 1)
     curl_easy_reset(curl);
 #endif
+    freeMemoryStreamString(&data_in_str);
+    freeMemoryStreamString(&data_out_str);
+    freeMemoryStreamString(&debug_str);
+    freeMemoryStreamString(&header_in_str);
+    freeMemoryStreamString(&header_out_str);
     PG_RETURN_VOID();
 }
 
