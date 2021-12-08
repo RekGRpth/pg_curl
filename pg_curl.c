@@ -1962,10 +1962,34 @@ EXTENSION(pg_curlproxy_socks4a) { PG_RETURN_INT64(CURLPROXY_SOCKS4A); }
 EXTENSION(pg_curlproxy_socks5) { PG_RETURN_INT64(CURLPROXY_SOCKS5); }
 EXTENSION(pg_curlproxy_socks5_hostname) { PG_RETURN_INT64(CURLPROXY_SOCKS5_HOSTNAME); }
 
-EXTENSION(pg_curl_redir_post_301) { PG_RETURN_INT64(CURL_REDIR_POST_301); }
-EXTENSION(pg_curl_redir_post_302) { PG_RETURN_INT64(CURL_REDIR_POST_302); }
-EXTENSION(pg_curl_redir_post_303) { PG_RETURN_INT64(CURL_REDIR_POST_303); }
-EXTENSION(pg_curl_redir_post_all) { PG_RETURN_INT64(CURL_REDIR_POST_ALL); }
+EXTENSION(pg_curl_redir_post_301) {
+#if CURL_AT_LEAST_VERSION(7, 19, 1)
+    PG_RETURN_INT64(CURL_REDIR_POST_301);
+#else
+    E("curl_redir_post_301 requires curl 7.19.1 or later");
+#endif
+}
+EXTENSION(pg_curl_redir_post_302) {
+#if CURL_AT_LEAST_VERSION(7, 19, 1)
+    PG_RETURN_INT64(CURL_REDIR_POST_302);
+#else
+    E("curl_redir_post_302 requires curl 7.19.1 or later");
+#endif
+}
+EXTENSION(pg_curl_redir_post_303) {
+#if CURL_AT_LEAST_VERSION(7, 26, 0)
+    PG_RETURN_INT64(CURL_REDIR_POST_303);
+#else
+    E("curl_redir_post_303 requires curl 7.26.0 or later");
+#endif
+}
+EXTENSION(pg_curl_redir_post_all) {
+#if CURL_AT_LEAST_VERSION(7, 19, 1)
+    PG_RETURN_INT64(CURL_REDIR_POST_ALL);
+#else
+    E("curl_redir_post_all requires curl 7.19.1 or later");
+#endif
+}
 
 EXTENSION(pg_curl_netrc_optional) { PG_RETURN_INT64(CURL_NETRC_OPTIONAL); }
 EXTENSION(pg_curl_netrc_ignored) { PG_RETURN_INT64(CURL_NETRC_IGNORED); }
@@ -1983,13 +2007,49 @@ EXTENSION(pg_curl_het_default) {
 #endif
 }
 
-EXTENSION(pg_curlgssapi_delegation_flag) { PG_RETURN_INT64(CURLGSSAPI_DELEGATION_FLAG); }
-EXTENSION(pg_curlgssapi_delegation_policy_flag) { PG_RETURN_INT64(CURLGSSAPI_DELEGATION_POLICY_FLAG); }
-EXTENSION(pg_curlgssapi_delegation_none) { PG_RETURN_INT64(CURLGSSAPI_DELEGATION_NONE); }
+EXTENSION(pg_curlgssapi_delegation_flag) {
+#if CURL_AT_LEAST_VERSION(7, 22, 0)
+    PG_RETURN_INT64(CURLGSSAPI_DELEGATION_FLAG);
+#else
+    E("curlgssapi_delegation_flag requires curl 7.22.0 or later");
+#endif
+}
+EXTENSION(pg_curlgssapi_delegation_policy_flag) {
+#if CURL_AT_LEAST_VERSION(7, 22, 0)
+    PG_RETURN_INT64(CURLGSSAPI_DELEGATION_POLICY_FLAG);
+#else
+    E("curlgssapi_delegation_policy_flag requires curl 7.22.0 or later");
+#endif
+}
+EXTENSION(pg_curlgssapi_delegation_none) {
+#if CURL_AT_LEAST_VERSION(7, 22, 0)
+    PG_RETURN_INT64(CURLGSSAPI_DELEGATION_NONE);
+#else
+    E("curlgssapi_delegation_none requires curl 7.22.0 or later");
+#endif
+}
 
-EXTENSION(pg_curlftpssl_ccc_none) { PG_RETURN_INT64(CURLFTPSSL_CCC_NONE); }
-EXTENSION(pg_curlftpssl_ccc_passive) { PG_RETURN_INT64(CURLFTPSSL_CCC_PASSIVE); }
-EXTENSION(pg_curlftpssl_ccc_active) { PG_RETURN_INT64(CURLFTPSSL_CCC_ACTIVE); }
+EXTENSION(pg_curlftpssl_ccc_none) {
+#if CURL_AT_LEAST_VERSION(7, 16, 1)
+    PG_RETURN_INT64(CURLFTPSSL_CCC_NONE);
+#else
+    E("curlftpssl_ccc_none requires curl 7.16.1 or later");
+#endif
+}
+EXTENSION(pg_curlftpssl_ccc_passive) {
+#if CURL_AT_LEAST_VERSION(7, 16, 1)
+    PG_RETURN_INT64(CURLFTPSSL_CCC_PASSIVE);
+#else
+    E("curlftpssl_ccc_passive requires curl 7.16.1 or later");
+#endif
+}
+EXTENSION(pg_curlftpssl_ccc_active) {
+#if CURL_AT_LEAST_VERSION(7, 16, 1)
+    PG_RETURN_INT64(CURLFTPSSL_CCC_ACTIVE);
+#else
+    E("curlftpssl_ccc_active requires curl 7.16.1 or later");
+#endif
+}
 
 EXTENSION(pg_curlftpauth_default) {
 #if CURL_AT_LEAST_VERSION(7, 12, 2)
