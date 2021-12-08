@@ -62,7 +62,9 @@ static void initMemoryStreamString(MemoryStreamString *buf) {
 }
 
 void _PG_init(void); void _PG_init(void) {
+#if CURL_AT_LEAST_VERSION(7, 8, 0)
     if (curl_global_init(CURL_GLOBAL_ALL)) E("curl_global_init");
+#endif
     if (!(curl = curl_easy_init())) E("!curl_easy_init");
 #if CURL_AT_LEAST_VERSION(7, 56, 0)
     if (!(curl_mime_init(curl))) E("!curl_mime_init");
@@ -80,7 +82,9 @@ void _PG_fini(void); void _PG_fini(void) {
     curl_slist_free_all(header);
     curl_slist_free_all(recipient);
     curl_easy_cleanup(curl);
+#if CURL_AT_LEAST_VERSION(7, 8, 0)
     curl_global_cleanup();
+#endif
     freeMemoryStreamString(&data_in_str);
     freeMemoryStreamString(&data_out_str);
     freeMemoryStreamString(&debug_str);
@@ -122,6 +126,7 @@ EXTENSION(pg_curl_easy_reset) {
 }
 
 EXTENSION(pg_curl_easy_escape) {
+#if CURL_AT_LEAST_VERSION(7, 15, 4)
     text *string;
     char *escape;
     if (PG_ARGISNULL(0)) E("string is null!");
@@ -130,9 +135,13 @@ EXTENSION(pg_curl_easy_escape) {
     string = cstring_to_text(escape);
     curl_free(escape);
     PG_RETURN_TEXT_P(string);
+#else
+    E("curl_easy_escape requires curl 7.15.4 or later");
+#endif
 }
 
 EXTENSION(pg_curl_easy_unescape) {
+#if CURL_AT_LEAST_VERSION(7, 15, 4)
     text *url;
     char *unescape;
     int outlength;
@@ -142,6 +151,9 @@ EXTENSION(pg_curl_easy_unescape) {
     url = cstring_to_text_with_len(unescape, outlength);
     curl_free(unescape);
     PG_RETURN_TEXT_P(url);
+#else
+    E("curl_easy_unescape requires curl 7.15.4 or later");
+#endif
 }
 
 EXTENSION(pg_curl_header_append) {
