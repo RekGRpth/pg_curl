@@ -1906,17 +1906,83 @@ EXTENSION(pg_curlauth_gssapi) {
 }
 EXTENSION(pg_curlauth_none) { PG_RETURN_INT64(CURLAUTH_NONE); }
 
-EXTENSION(pg_curl_rtspreq_options) { PG_RETURN_INT64(CURL_RTSPREQ_OPTIONS); }
-EXTENSION(pg_curl_rtspreq_describe) { PG_RETURN_INT64(CURL_RTSPREQ_DESCRIBE); }
-EXTENSION(pg_curl_rtspreq_announce) { PG_RETURN_INT64(CURL_RTSPREQ_ANNOUNCE); }
-EXTENSION(pg_curl_rtspreq_setup) { PG_RETURN_INT64(CURL_RTSPREQ_SETUP); }
-EXTENSION(pg_curl_rtspreq_play) { PG_RETURN_INT64(CURL_RTSPREQ_PLAY); }
-EXTENSION(pg_curl_rtspreq_pause) { PG_RETURN_INT64(CURL_RTSPREQ_PAUSE); }
-EXTENSION(pg_curl_rtspreq_teardown) { PG_RETURN_INT64(CURL_RTSPREQ_TEARDOWN); }
-EXTENSION(pg_curl_rtspreq_get_parameter) { PG_RETURN_INT64(CURL_RTSPREQ_GET_PARAMETER); }
-EXTENSION(pg_curl_rtspreq_set_parameter) { PG_RETURN_INT64(CURL_RTSPREQ_SET_PARAMETER); }
-EXTENSION(pg_curl_rtspreq_record) { PG_RETURN_INT64(CURL_RTSPREQ_RECORD); }
-EXTENSION(pg_curl_rtspreq_receive) { PG_RETURN_INT64(CURL_RTSPREQ_RECEIVE); }
+EXTENSION(pg_curl_rtspreq_options) {
+#if CURL_AT_LEAST_VERSION(7, 20, 0)
+    PG_RETURN_INT64(CURL_RTSPREQ_OPTIONS);
+#else
+    E("curl_rtspreq_options requires curl 7.20.0 or later");
+#endif
+}
+EXTENSION(pg_curl_rtspreq_describe) {
+#if CURL_AT_LEAST_VERSION(7, 20, 0)
+    PG_RETURN_INT64(CURL_RTSPREQ_DESCRIBE);
+#else
+    E("curl_rtspreq_describe requires curl 7.20.0 or later");
+#endif
+}
+EXTENSION(pg_curl_rtspreq_announce) {
+#if CURL_AT_LEAST_VERSION(7, 20, 0)
+    PG_RETURN_INT64(CURL_RTSPREQ_ANNOUNCE);
+#else
+    E("curl_rtspreq_announce requires curl 7.20.0 or later");
+#endif
+}
+EXTENSION(pg_curl_rtspreq_setup) {
+#if CURL_AT_LEAST_VERSION(7, 20, 0)
+    PG_RETURN_INT64(CURL_RTSPREQ_SETUP);
+#else
+    E("curl_rtspreq_setup requires curl 7.20.0 or later");
+#endif
+}
+EXTENSION(pg_curl_rtspreq_play) {
+#if CURL_AT_LEAST_VERSION(7, 20, 0)
+    PG_RETURN_INT64(CURL_RTSPREQ_PLAY);
+#else
+    E("curl_rtspreq_play requires curl 7.20.0 or later");
+#endif
+}
+EXTENSION(pg_curl_rtspreq_pause) {
+#if CURL_AT_LEAST_VERSION(7, 20, 0)
+    PG_RETURN_INT64(CURL_RTSPREQ_PAUSE);
+#else
+    E("url_rtspreq_pause requires curl 7.20.0 or later");
+#endif
+}
+EXTENSION(pg_curl_rtspreq_teardown) {
+#if CURL_AT_LEAST_VERSION(7, 20, 0)
+    PG_RETURN_INT64(CURL_RTSPREQ_TEARDOWN);
+#else
+    E("curl_rtspreq_teardown requires curl 7.20.0 or later");
+#endif
+}
+EXTENSION(pg_curl_rtspreq_get_parameter) {
+#if CURL_AT_LEAST_VERSION(7, 20, 0)
+    PG_RETURN_INT64(CURL_RTSPREQ_GET_PARAMETER);
+#else
+    E("curl_rtspreq_get_parameter requires curl 7.20.0 or later");
+#endif
+}
+EXTENSION(pg_curl_rtspreq_set_parameter) {
+#if CURL_AT_LEAST_VERSION(7, 20, 0)
+    PG_RETURN_INT64(CURL_RTSPREQ_SET_PARAMETER);
+#else
+    E("curl_rtspreq_set_parameter requires curl 7.20.0 or later");
+#endif
+}
+EXTENSION(pg_curl_rtspreq_record) {
+#if CURL_AT_LEAST_VERSION(7, 20, 0)
+    PG_RETURN_INT64(CURL_RTSPREQ_RECORD);
+#else
+    E("curl_rtspreq_record requires curl 7.20.0 or later");
+#endif
+}
+EXTENSION(pg_curl_rtspreq_receive) {
+#if CURL_AT_LEAST_VERSION(7, 20, 0)
+    PG_RETURN_INT64(CURL_RTSPREQ_RECEIVE);
+#else
+    E("curl_rtspreq_receive requires curl 7.20.0 or later");
+#endif
+}
 
 EXTENSION(pg_curlproto_dict) {
 #if CURL_AT_LEAST_VERSION(7, 19, 4)
