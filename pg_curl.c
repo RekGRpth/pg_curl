@@ -1836,34 +1836,46 @@ EXTENSION(pg_curl_sslversion_max_tlsv1_3) {
 #endif
 }
 
-EXTENSION(pg_curlsslopt_allow_beast) { PG_RETURN_INT64(CURLSSLOPT_ALLOW_BEAST); }
-EXTENSION(pg_curlsslopt_no_revoke) { PG_RETURN_INT64(CURLSSLOPT_NO_REVOKE); }
+EXTENSION(pg_curlsslopt_allow_beast) {
+#if CURL_AT_LEAST_VERSION(7, 25, 0)
+    PG_RETURN_INT64(CURLSSLOPT_ALLOW_BEAST);
+#else
+    E("curlsslopt_allow_beast requires curl 7.25.0 or later");
+#endif
+}
+EXTENSION(pg_curlsslopt_no_revoke) {
+#if CURL_AT_LEAST_VERSION(7, 44, 0)
+    PG_RETURN_INT64(CURLSSLOPT_NO_REVOKE);
+#else
+    E("curlsslopt_no_revoke requires curl 7.44.0 or later");
+#endif
+}
 EXTENSION(pg_curlsslopt_no_partialchain) {
-#ifdef CURLSSLOPT_NO_PARTIALCHAIN
+#if CURL_AT_LEAST_VERSION(7, 68, 0)
     PG_RETURN_INT64(CURLSSLOPT_NO_PARTIALCHAIN);
 #else
-    E("!CURLSSLOPT_NO_PARTIALCHAIN");
+    E("curlsslopt_no_partialchain requires curl 7.68.0 or later");
 #endif
 }
 EXTENSION(pg_curlsslopt_revoke_best_effort) {
-#ifdef CURLSSLOPT_REVOKE_BEST_EFFORT
+#if CURL_AT_LEAST_VERSION(7, 70, 0)
     PG_RETURN_INT64(CURLSSLOPT_REVOKE_BEST_EFFORT);
 #else
-    E("!CURLSSLOPT_REVOKE_BEST_EFFORT");
+    E("curlsslopt_revoke_best_effort requires curl 7.70.0 or later");
 #endif
 }
 EXTENSION(pg_curlsslopt_native_ca) {
-#ifdef CURLSSLOPT_NATIVE_CA
+#if CURL_AT_LEAST_VERSION(7, 71, 0)
     PG_RETURN_INT64(CURLSSLOPT_NATIVE_CA);
 #else
-    E("!CURLSSLOPT_NATIVE_CA");
+    E("curlsslopt_native_ca requires curl 7.71.0 or later");
 #endif
 }
 EXTENSION(pg_curlsslopt_auto_client_cert) {
-#ifdef CURLSSLOPT_AUTO_CLIENT_CERT
+#if CURL_AT_LEAST_VERSION(7, 77, 0)
     PG_RETURN_INT64(CURLSSLOPT_AUTO_CLIENT_CERT);
 #else
-    E("!CURLSSLOPT_AUTO_CLIENT_CERT");
+    E("curlsslopt_auto_client_cert requires curl 7.77.0 or later");
 #endif
 }
 
