@@ -121,7 +121,9 @@ EXTENSION(pg_curl_easy_reset) {
     pg_curl_easy_mime_reset(fcinfo);
 #endif
     pg_curl_easy_recipient_reset(fcinfo);
+#if CURL_AT_LEAST_VERSION(7, 12, 1)
     curl_easy_reset(curl);
+#endif
     PG_RETURN_VOID();
 }
 
