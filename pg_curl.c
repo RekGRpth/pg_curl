@@ -2047,10 +2047,10 @@ EXTENSION(pg_curlauth_only) {
 #endif
 }
 EXTENSION(pg_curlauth_aws_sigv4) {
-#if CURL_AT_LEAST_VERSION(7, 74, 0)
+#if CURL_AT_LEAST_VERSION(7, 75, 0)
     PG_RETURN_INT64(CURLAUTH_AWS_SIGV4);
 #else
-    E("curlauth_aws_sigv4 requires curl 7.74.0 or later");
+    E("curlauth_aws_sigv4 requires curl 7.75.0 or later");
 #endif
 }
 EXTENSION(pg_curlauth_gssapi) {
