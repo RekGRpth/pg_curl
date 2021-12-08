@@ -46,7 +46,9 @@ static MemoryStreamString header_in_str = {0};
 static MemoryStreamString header_out_str = {0};
 static pqsigfunc pgsql_interrupt_handler = NULL;
 static struct curl_slist *header = NULL;
+#if CURL_AT_LEAST_VERSION(7, 20, 0)
 static struct curl_slist *recipient = NULL;
+#endif
 
 static void pg_curl_interrupt_handler(int sig) { pg_curl_interrupt_requested = sig; }
 
@@ -80,7 +82,9 @@ void _PG_fini(void); void _PG_fini(void) {
     curl_mime_free(mime);
 #endif
     curl_slist_free_all(header);
+#if CURL_AT_LEAST_VERSION(7, 20, 0)
     curl_slist_free_all(recipient);
+#endif
     curl_easy_cleanup(curl);
 #if CURL_AT_LEAST_VERSION(7, 8, 0)
     curl_global_cleanup();
@@ -110,9 +114,13 @@ EXTENSION(pg_curl_easy_mime_reset) {
 }
 
 EXTENSION(pg_curl_easy_recipient_reset) {
+#if CURL_AT_LEAST_VERSION(7, 20, 0)
     curl_slist_free_all(recipient);
     recipient = NULL;
     PG_RETURN_VOID();
+#else
+    E("curl_easy_recipient_reset requires curl 7.20.0 or later");
+#endif
 }
 
 EXTENSION(pg_curl_easy_reset) {
@@ -120,7 +128,9 @@ EXTENSION(pg_curl_easy_reset) {
 #if CURL_AT_LEAST_VERSION(7, 56, 0)
     pg_curl_easy_mime_reset(fcinfo);
 #endif
+#if CURL_AT_LEAST_VERSION(7, 20, 0)
     pg_curl_easy_recipient_reset(fcinfo);
+#endif
 #if CURL_AT_LEAST_VERSION(7, 12, 1)
     curl_easy_reset(curl);
 #endif
@@ -176,6 +186,7 @@ EXTENSION(pg_curl_header_append) {
 }
 
 EXTENSION(pg_curl_recipient_append) {
+#if CURL_AT_LEAST_VERSION(7, 20, 0)
     char *email;
     struct curl_slist *temp = recipient;
     if (PG_ARGISNULL(0)) E("email is null!");
@@ -183,6 +194,9 @@ EXTENSION(pg_curl_recipient_append) {
     if ((temp = curl_slist_append(temp, email))) recipient = temp; else E("!curl_slist_append");
     pfree(email);
     PG_RETURN_BOOL(temp != NULL);
+#else
+    E("curl_recipient_append requires curl 7.20.0 or later");
+#endif
 }
 
 EXTENSION(pg_curl_mime_data) {
@@ -1359,7 +1373,9 @@ static int debug_callback(CURL *handle, curl_infotype type, char *data, size_t s
     return 0;
 }
 
+#if CURL_AT_LEAST_VERSION(7, 32, 0)
 static int progress_callback(void *clientp, curl_off_t dltotal, curl_off_t dlnow, curl_off_t ultotal, curl_off_t ulnow) { return pg_curl_interrupt_requested; }
+#endif
 
 EXTENSION(pg_curl_easy_perform) {
     char errbuf[CURL_ERROR_SIZE] = {0};
@@ -1384,9 +1400,13 @@ EXTENSION(pg_curl_easy_perform) {
     }
     if ((res = curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, errbuf)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_ERRORBUFFER): %s", curl_easy_strerror(res));
     if ((res = curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_NOPROGRESS): %s", curl_easy_strerror(res));
+#if CURL_AT_LEAST_VERSION(7, 32, 0)
     if ((res = curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION, progress_callback)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_XFERINFOFUNCTION): %s", curl_easy_strerror(res));
+#endif
     if (header && ((res = curl_easy_setopt(curl, CURLOPT_HTTPHEADER, header)) != CURLE_OK)) E("curl_easy_setopt(CURLOPT_HTTPHEADER): %s", curl_easy_strerror(res));
+#if CURL_AT_LEAST_VERSION(7, 32, 0)
     if (recipient && ((res = curl_easy_setopt(curl, CURLOPT_MAIL_RCPT, recipient)) != CURLE_OK)) E("curl_easy_setopt(CURLOPT_MAIL_RCPT): %s", curl_easy_strerror(res));
+#endif
 #if CURL_AT_LEAST_VERSION(7, 56, 0)
     if (has_mime && ((res = curl_easy_setopt(curl, CURLOPT_MIMEPOST, mime)) != CURLE_OK)) E("curl_easy_setopt(CURLOPT_MIMEPOST): %s", curl_easy_strerror(res));
 #endif
