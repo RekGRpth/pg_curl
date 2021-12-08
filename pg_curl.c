@@ -64,6 +64,18 @@ static void initMemoryStreamString(MemoryStreamString *buf) {
     if (!(buf->file = open_memstream(&buf->data, &buf->len))) E("!open_memstream");
 }
 
+static void free_file(FILE **file) {
+    if (*file) {
+        fclose(*file);
+        *file = NULL;
+    }
+}
+
+static void init_file(FILE **file, void *buf, size_t size) {
+    free_file(file);
+    if (!(*file = fmemopen(buf, size, "rb"))) E("!fmemopen");
+}
+
 void _PG_init(void); void _PG_init(void) {
 #if CURL_AT_LEAST_VERSION(7, 8, 0)
     if (curl_global_init(CURL_GLOBAL_ALL)) E("curl_global_init");
@@ -95,7 +107,7 @@ void _PG_fini(void); void _PG_fini(void) {
     freeMemoryStreamString(&debug_str);
     freeMemoryStreamString(&header_in_str);
     freeMemoryStreamString(&header_out_str);
-    if (read_str) fclose(read_str);
+    free_file(&read_str);
 }
 
 EXTENSION(pg_curl_easy_header_reset) {
@@ -116,7 +128,7 @@ EXTENSION(pg_curl_easy_mime_reset) {
 }
 
 EXTENSION(pg_curl_easy_readdata_reset) {
-    if (read_str) { fclose(read_str); read_str = NULL; }
+    free_file(&read_str);
     PG_RETURN_VOID();
 }
 
@@ -350,12 +362,11 @@ EXTENSION(pg_curl_easy_setopt_readdata) {
     bytea *parameter;
     if (PG_ARGISNULL(0)) E("parameter is null!");
     parameter = DatumGetTextP(PG_GETARG_DATUM(0));
-    if (read_str) { fclose(read_str); read_str = NULL; }
     if ((res = curl_easy_setopt(curl, CURLOPT_UPLOAD, 1L)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_UPLOAD): %s", curl_easy_strerror(res));
 #if CURL_AT_LEAST_VERSION(7, 23, 0)
     if ((res = curl_easy_setopt(curl, CURLOPT_INFILESIZE, VARSIZE_ANY_EXHDR(parameter))) != CURLE_OK) E("curl_easy_setopt(CURLOPT_INFILESIZE): %s", curl_easy_strerror(res));
 #endif
-    if (!(read_str = fmemopen(VARDATA_ANY(parameter), VARSIZE_ANY_EXHDR(parameter), "rb"))) E("!fmemopen");
+    init_file(&read_str, VARDATA_ANY(parameter), VARSIZE_ANY_EXHDR(parameter));
     if ((res = curl_easy_setopt(curl, CURLOPT_READDATA, read_str)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_READDATA): %s", curl_easy_strerror(res));
     PG_RETURN_BOOL(res == CURLE_OK);
 #else
