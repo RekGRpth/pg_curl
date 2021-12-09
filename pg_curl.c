@@ -1450,6 +1450,7 @@ EXTENSION(pg_curl_easy_perform) {
 #if CURL_AT_LEAST_VERSION(7, 56, 0)
     if (has_mime && ((res = curl_easy_setopt(curl, CURLOPT_MIMEPOST, mime)) != CURLE_OK)) E("curl_easy_setopt(CURLOPT_MIMEPOST): %s", curl_easy_strerror(res));
 #endif
+    if (read_str && fseek(read_str, SEEK_SET, 0)) E("fseek");
     pg_curl_interrupt_requested = 0;
     while (try--) switch (res = curl_easy_perform(curl)) {
         case CURLE_OK: try = 0; break;
