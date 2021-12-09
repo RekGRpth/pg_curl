@@ -50,16 +50,15 @@ static void pg_curl_interrupt_handler(int sig) { pg_curl_interrupt_requested = s
 
 #if CURL_AT_LEAST_VERSION(7, 12, 0)
 static void *pg_curl_malloc_callback(size_t size) {
-    return MemoryContextAlloc(TopMemoryContext, size);
+    return size ? MemoryContextAlloc(TopMemoryContext, size) : NULL;
 }
 
 static void pg_curl_free_callback(void *ptr) {
-    if (!ptr) return;
-    pfree(ptr);
+    if (ptr) pfree(ptr);
 }
 
 static void *pg_curl_realloc_callback(void *ptr, size_t size) {
-    return ptr ? repalloc(ptr, size) : MemoryContextAlloc(TopMemoryContext, size);
+    return (ptr && size) ? repalloc(ptr, size) : (size ? MemoryContextAlloc(TopMemoryContext, size) : ptr);
 }
 
 static char *pg_curl_strdup_callback(const char *str) {
