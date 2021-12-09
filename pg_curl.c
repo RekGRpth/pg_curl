@@ -32,11 +32,11 @@ typedef struct MemoryStreamString {
 } MemoryStreamString;
 
 #if CURL_AT_LEAST_VERSION(7, 56, 0)
-static bool has_mime;
+static bool has_mime = false;
 #endif
 static CURL *curl = NULL;
 #if CURL_AT_LEAST_VERSION(7, 56, 0)
-static curl_mime *mime;
+static curl_mime *mime = NULL;
 #endif
 static int pg_curl_interrupt_requested = 0;
 static MemoryStreamString data_in_str = {0};
