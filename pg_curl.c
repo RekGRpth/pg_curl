@@ -40,6 +40,7 @@ static StringInfoData data_out_str = {0};
 static StringInfoData debug_str = {0};
 static StringInfoData header_in_str = {0};
 static StringInfoData header_out_str = {0};
+static StringInfoData postfield_str = {0};
 static struct curl_slist *header = NULL;
 #if CURL_AT_LEAST_VERSION(7, 20, 0)
 static struct curl_slist *recipient = NULL;
@@ -87,6 +88,7 @@ void _PG_init(void); void _PG_init(void) {
     initStringInfo(&debug_str);
     initStringInfo(&header_in_str);
     initStringInfo(&header_out_str);
+    initStringInfo(&postfield_str);
     pg_curl_interrupt_requested = 0;
     pgsql_interrupt_handler = pqsignal(SIGINT, pg_curl_interrupt_handler);
     MemoryContextSwitchTo(oldMemoryContext);
@@ -150,6 +152,7 @@ EXTENSION(pg_curl_easy_reset) {
     resetStringInfo(&debug_str);
     resetStringInfo(&header_in_str);
     resetStringInfo(&header_out_str);
+    resetStringInfo(&postfield_str);
     has_performed = false;
     PG_RETURN_VOID();
 }
@@ -336,6 +339,18 @@ EXTENSION(pg_curl_easy_setopt_copypostfields) {
 #else
     E("curl_easy_setopt_copypostfields requires curl 7.17.1 or later");
 #endif
+}
+
+EXTENSION(pg_curl_easy_setopt_postfields) {
+    CURLcode res = CURL_LAST;
+    bytea *parameter;
+    if (PG_ARGISNULL(0)) E("parameter is null!");
+    parameter = DatumGetTextP(PG_GETARG_DATUM(0));
+    resetStringInfo(&postfield_str);
+    appendBinaryStringInfo(&postfield_str, VARDATA_ANY(parameter), VARSIZE_ANY_EXHDR(parameter));
+    if ((res = curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, postfield_str.len)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_POSTFIELDSIZE): %s", curl_easy_strerror(res));
+    if ((res = curl_easy_setopt(curl, CURLOPT_POSTFIELDS, postfield_str.data)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_POSTFIELDS): %s", curl_easy_strerror(res));
+    PG_RETURN_BOOL(res == CURLE_OK);
 }
 
 static Datum pg_curl_easy_setopt_char(PG_FUNCTION_ARGS, CURLoption option) {
