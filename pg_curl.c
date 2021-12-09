@@ -28,7 +28,7 @@ PG_MODULE_MAGIC;
 #if CURL_AT_LEAST_VERSION(7, 56, 0)
 static bool has_mime = false;
 #endif
-static bool pg_performed = false;
+static bool has_performed = false;
 static CURL *curl = NULL;
 #if CURL_AT_LEAST_VERSION(7, 56, 0)
 static curl_mime *mime = NULL;
@@ -150,7 +150,7 @@ EXTENSION(pg_curl_easy_reset) {
     resetStringInfo(&debug_str);
     resetStringInfo(&header_in_str);
     resetStringInfo(&header_out_str);
-    pg_performed = false;
+    has_performed = false;
     PG_RETURN_VOID();
 }
 
@@ -1414,7 +1414,7 @@ EXTENSION(pg_curl_easy_perform) {
     if ((res = curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION, pg_progress_callback)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_XFERINFOFUNCTION): %s", curl_easy_strerror(res));
 #endif
     pg_curl_interrupt_requested = 0;
-    pg_performed = true;
+    has_performed = true;
     while (try--) switch (res = curl_easy_perform(curl)) {
         case CURLE_OK: try = 0; break;
         case CURLE_UNSUPPORTED_PROTOCOL:
@@ -1439,31 +1439,31 @@ EXTENSION(pg_curl_easy_perform) {
 }
 
 EXTENSION(pg_curl_easy_getinfo_debug) {
-    if (!pg_performed) E("call curl_easy_perform first");
+    if (!has_performed) E("call curl_easy_perform first");
     if (!debug_str.len) PG_RETURN_NULL();
     PG_RETURN_TEXT_P(cstring_to_text_with_len(debug_str.data, debug_str.len));
 }
 
 EXTENSION(pg_curl_easy_getinfo_header_in) {
-    if (!pg_performed) E("call curl_easy_perform first");
+    if (!has_performed) E("call curl_easy_perform first");
     if (!header_in_str.len) PG_RETURN_NULL();
     PG_RETURN_TEXT_P(cstring_to_text_with_len(header_in_str.data, header_in_str.len));
 }
 
 EXTENSION(pg_curl_easy_getinfo_header_out) {
-    if (!pg_performed) E("call curl_easy_perform first");
+    if (!has_performed) E("call curl_easy_perform first");
     if (!header_out_str.len) PG_RETURN_NULL();
     PG_RETURN_TEXT_P(cstring_to_text_with_len(header_out_str.data, header_out_str.len));
 }
 
 EXTENSION(pg_curl_easy_getinfo_data_in) {
-    if (!pg_performed) E("call curl_easy_perform first");
+    if (!has_performed) E("call curl_easy_perform first");
     if (!data_in_str.len) PG_RETURN_NULL();
     PG_RETURN_BYTEA_P(cstring_to_text_with_len(data_in_str.data, data_in_str.len));
 }
 
 EXTENSION(pg_curl_easy_getinfo_data_out) {
-    if (!pg_performed) E("call curl_easy_perform first");
+    if (!has_performed) E("call curl_easy_perform first");
     if (!data_out_str.len) PG_RETURN_NULL();
     PG_RETURN_BYTEA_P(cstring_to_text_with_len(data_out_str.data, data_out_str.len));
 }
