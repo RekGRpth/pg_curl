@@ -47,9 +47,34 @@ static struct curl_slist *recipient = NULL;
 
 static void pg_curl_interrupt_handler(int sig) { pg_curl_interrupt_requested = sig; }
 
+#if CURL_AT_LEAST_VERSION(7, 12, 0)
+static void *pg_curl_malloc_callback(size_t size) {
+    return MemoryContextAlloc(TopMemoryContext, size);
+}
+
+static void pg_curl_free_callback(void *ptr) {
+    if (!ptr) return;
+    pfree(ptr);
+}
+
+static void *pg_curl_realloc_callback(void *ptr, size_t size) {
+    return ptr ? repalloc(ptr, size) : MemoryContextAlloc(TopMemoryContext, size);
+}
+
+static char *pg_curl_strdup_callback(const char *str) {
+    return MemoryContextStrdup(TopMemoryContext, str);
+}
+
+static void *pg_curl_calloc_callback(size_t nmemb, size_t size) {
+    return MemoryContextAllocZero(TopMemoryContext, nmemb * size);
+}
+#endif
+
 void _PG_init(void); void _PG_init(void) {
     MemoryContext oldMemoryContext = MemoryContextSwitchTo(TopMemoryContext);
-#if CURL_AT_LEAST_VERSION(7, 8, 0)
+#if CURL_AT_LEAST_VERSION(7, 12, 0)
+    if (curl_global_init_mem(CURL_GLOBAL_ALL, pg_curl_malloc_callback, pg_curl_free_callback, pg_curl_realloc_callback, pg_curl_strdup_callback, pg_curl_calloc_callback)) E("curl_global_init_mem");
+#elif CURL_AT_LEAST_VERSION(7, 8, 0)
     if (curl_global_init(CURL_GLOBAL_ALL)) E("curl_global_init");
 #endif
     if (!(curl = curl_easy_init())) E("!curl_easy_init");
