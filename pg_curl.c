@@ -5,6 +5,7 @@
 #include <lib/stringinfo.h>
 #include <signal.h>
 #include <utils/builtins.h>
+#include <utils/memutils.h>
 
 #include <curl/curl.h>
 
@@ -24,13 +25,6 @@
 
 PG_MODULE_MAGIC;
 
-typedef struct MemoryStreamString {
-    bool use;
-    char *data;
-    FILE *file;
-    size_t len;
-} MemoryStreamString;
-
 #if CURL_AT_LEAST_VERSION(7, 56, 0)
 static bool has_mime = false;
 #endif
@@ -39,12 +33,12 @@ static CURL *curl = NULL;
 static curl_mime *mime = NULL;
 #endif
 static int pg_curl_interrupt_requested = 0;
-static MemoryStreamString data_in_str = {0};
-static MemoryStreamString data_out_str = {0};
-static MemoryStreamString debug_str = {0};
-static MemoryStreamString header_in_str = {0};
-static MemoryStreamString header_out_str = {0};
 static pqsigfunc pgsql_interrupt_handler = NULL;
+static StringInfoData data_in_str = {0};
+static StringInfoData data_out_str = {0};
+static StringInfoData debug_str = {0};
+static StringInfoData header_in_str = {0};
+static StringInfoData header_out_str = {0};
 static struct curl_slist *header = NULL;
 #if CURL_AT_LEAST_VERSION(7, 20, 0)
 static struct curl_slist *recipient = NULL;
@@ -52,18 +46,8 @@ static struct curl_slist *recipient = NULL;
 
 static void pg_curl_interrupt_handler(int sig) { pg_curl_interrupt_requested = sig; }
 
-static void freeMemoryStreamString(MemoryStreamString *buf) {
-    if (buf->data) free(buf->data);
-    buf->data = NULL;
-    buf->len = 0;
-}
-
-static void initMemoryStreamString(MemoryStreamString *buf) {
-    freeMemoryStreamString(buf);
-    if (!(buf->file = open_memstream(&buf->data, &buf->len))) E("!open_memstream");
-}
-
 void _PG_init(void); void _PG_init(void) {
+    MemoryContext oldMemoryContext = MemoryContextSwitchTo(TopMemoryContext);
 #if CURL_AT_LEAST_VERSION(7, 8, 0)
     if (curl_global_init(CURL_GLOBAL_ALL)) E("curl_global_init");
 #endif
@@ -72,8 +56,14 @@ void _PG_init(void); void _PG_init(void) {
     if (!(curl_mime_init(curl))) E("!curl_mime_init");
     has_mime = false;
 #endif
+    initStringInfo(&data_in_str);
+    initStringInfo(&data_out_str);
+    initStringInfo(&debug_str);
+    initStringInfo(&header_in_str);
+    initStringInfo(&header_out_str);
     pg_curl_interrupt_requested = 0;
     pgsql_interrupt_handler = pqsignal(SIGINT, pg_curl_interrupt_handler);
+    MemoryContextSwitchTo(oldMemoryContext);
 }
 
 void _PG_fini(void); void _PG_fini(void) {
@@ -89,11 +79,6 @@ void _PG_fini(void); void _PG_fini(void) {
 #if CURL_AT_LEAST_VERSION(7, 8, 0)
     curl_global_cleanup();
 #endif
-    freeMemoryStreamString(&data_in_str);
-    freeMemoryStreamString(&data_out_str);
-    freeMemoryStreamString(&debug_str);
-    freeMemoryStreamString(&header_in_str);
-    freeMemoryStreamString(&header_out_str);
 }
 
 EXTENSION(pg_curl_easy_header_reset) {
@@ -134,11 +119,11 @@ EXTENSION(pg_curl_easy_reset) {
 #if CURL_AT_LEAST_VERSION(7, 12, 1)
     curl_easy_reset(curl);
 #endif
-    freeMemoryStreamString(&data_in_str);
-    freeMemoryStreamString(&data_out_str);
-    freeMemoryStreamString(&debug_str);
-    freeMemoryStreamString(&header_in_str);
-    freeMemoryStreamString(&header_out_str);
+    resetStringInfo(&data_in_str);
+    resetStringInfo(&data_out_str);
+    resetStringInfo(&debug_str);
+    resetStringInfo(&header_in_str);
+    resetStringInfo(&header_out_str);
     PG_RETURN_VOID();
 }
 
@@ -1050,13 +1035,6 @@ EXTENSION(pg_curl_easy_setopt_new_file_perms) {
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_nobody) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_NOBODY); }
-EXTENSION(pg_curl_easy_setopt_nosignal) {
-#if CURL_AT_LEAST_VERSION(7, 10, 0)
-    return pg_curl_easy_setopt_long(fcinfo, CURLOPT_NOSIGNAL);
-#else
-    E("curl_easy_setopt_nosignal requires curl 7.10.0 or later");
-#endif
-}
 EXTENSION(pg_curl_easy_setopt_path_as_is) {
 #if CURL_AT_LEAST_VERSION(7, 42, 0)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_PATH_AS_IS);
@@ -1345,7 +1323,7 @@ EXTENSION(pg_curl_easy_setopt_use_ssl) {
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_verbose) {
-    W("curl_easy_setopt_verbose deprecated, use curl_easy_perform(debug:=true) and curl_easy_getinfo_debug() instead");
+    W("curl_easy_setopt_verbose deprecated, use curl_easy_getinfo_debug() instead");
     PG_RETURN_BOOL(false);
 }
 EXTENSION(pg_curl_easy_setopt_wildcardmatch) {
@@ -1356,24 +1334,26 @@ EXTENSION(pg_curl_easy_setopt_wildcardmatch) {
 #endif
 }
 
-static int debug_callback(CURL *handle, curl_infotype type, char *data, size_t size, void *userptr) {
+static int pg_debug_callback(CURL *handle, curl_infotype type, char *data, size_t size, void *userptr) {
     if (size) switch (type) {
-        case CURLINFO_DATA_IN: if (data_in_str.use && fwrite(data, size, 1, data_in_str.file) != size / size) E("!fwrite"); break;
-        case CURLINFO_DATA_OUT: if (data_out_str.use && fwrite(data, size, 1, data_out_str.file) != size / size) E("!fwrite"); break;
-        case CURLINFO_HEADER_IN: if (header_in_str.use && fwrite(data, size, 1, header_in_str.file) != size / size) E("!fwrite"); break;
-        case CURLINFO_HEADER_OUT: if (header_out_str.use && fwrite(data, size, 1, header_out_str.file) != size / size) E("!fwrite"); break;
-        case CURLINFO_TEXT: if (debug_str.use && fwrite(data, size, 1, debug_str.file) != size / size) E("!fwrite"); break;
-        default: break;
+        case CURLINFO_DATA_IN: appendBinaryStringInfo(&data_in_str, data, size); break;
+        case CURLINFO_DATA_OUT: appendBinaryStringInfo(&data_out_str, data, size); break;
+        case CURLINFO_END: break;
+        case CURLINFO_HEADER_IN: appendBinaryStringInfo(&header_in_str, data, size); break;
+        case CURLINFO_HEADER_OUT: appendBinaryStringInfo(&header_out_str, data, size); break;
+        case CURLINFO_SSL_DATA_IN: break;
+        case CURLINFO_SSL_DATA_OUT: break;
+        case CURLINFO_TEXT: appendBinaryStringInfo(&debug_str, data, size); break;
     }
     return 0;
 }
 
 #if CURL_AT_LEAST_VERSION(7, 32, 0)
-static int progress_callback(void *clientp, curl_off_t dltotal, curl_off_t dlnow, curl_off_t ultotal, curl_off_t ulnow) { return pg_curl_interrupt_requested; }
+static int pg_progress_callback(void *clientp, curl_off_t dltotal, curl_off_t dlnow, curl_off_t ultotal, curl_off_t ulnow) { return pg_curl_interrupt_requested; }
 #endif
 
 #if CURL_AT_LEAST_VERSION(7, 9, 7)
-static size_t write_callback(char *ptr, size_t size, size_t nmemb, void *userdata) { return size * nmemb; }
+static size_t pg_write_callback(char *ptr, size_t size, size_t nmemb, void *userdata) { return size * nmemb; }
 #endif
 
 EXTENSION(pg_curl_easy_perform) {
@@ -1383,34 +1363,28 @@ EXTENSION(pg_curl_easy_perform) {
     long sleep = PG_ARGISNULL(1) ? 1000000 : PG_GETARG_INT64(1);
     if (try <= 0) E("try <= 0!");
     if (sleep < 0) E("sleep < 0!");
-    data_in_str.use = PG_ARGISNULL(5) ? true :PG_GETARG_BOOL(5);
-    data_out_str.use = PG_ARGISNULL(6) ? false : PG_GETARG_BOOL(6);
-    debug_str.use = PG_ARGISNULL(2) ? false : PG_GETARG_BOOL(2);
-    header_in_str.use = PG_ARGISNULL(3) ? true : PG_GETARG_BOOL(3);
-    header_out_str.use = PG_ARGISNULL(4) ? false : PG_GETARG_BOOL(4);
-    data_in_str.use ? initMemoryStreamString(&data_in_str) : freeMemoryStreamString(&data_in_str);
-    data_out_str.use ? initMemoryStreamString(&data_out_str) : freeMemoryStreamString(&data_out_str);
-    debug_str.use ? initMemoryStreamString(&debug_str) : freeMemoryStreamString(&debug_str);
-    header_in_str.use ? initMemoryStreamString(&header_in_str) : freeMemoryStreamString(&header_in_str);
-    header_out_str.use ? initMemoryStreamString(&header_out_str) : freeMemoryStreamString(&header_out_str);
-    if (debug_str.use || header_in_str.use || header_out_str.use || data_in_str.use || data_out_str.use) {
-        if ((res = curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_VERBOSE): %s", curl_easy_strerror(res));
-        if ((res = curl_easy_setopt(curl, CURLOPT_DEBUGFUNCTION, debug_callback)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_DEBUGFUNCTION): %s", curl_easy_strerror(res));
-    }
+    resetStringInfo(&data_in_str);
+    resetStringInfo(&data_out_str);
+    resetStringInfo(&debug_str);
+    resetStringInfo(&header_in_str);
+    resetStringInfo(&header_out_str);
+    if ((res = curl_easy_setopt(curl, CURLOPT_DEBUGFUNCTION, pg_debug_callback)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_DEBUGFUNCTION): %s", curl_easy_strerror(res));
     if ((res = curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, errbuf)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_ERRORBUFFER): %s", curl_easy_strerror(res));
-    if ((res = curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_NOPROGRESS): %s", curl_easy_strerror(res));
-#if CURL_AT_LEAST_VERSION(7, 9, 7)
-    if ((res = curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_WRITEFUNCTION): %s", curl_easy_strerror(res));
-#endif
-#if CURL_AT_LEAST_VERSION(7, 32, 0)
-    if ((res = curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION, progress_callback)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_XFERINFOFUNCTION): %s", curl_easy_strerror(res));
-#endif
     if (header && ((res = curl_easy_setopt(curl, CURLOPT_HTTPHEADER, header)) != CURLE_OK)) E("curl_easy_setopt(CURLOPT_HTTPHEADER): %s", curl_easy_strerror(res));
 #if CURL_AT_LEAST_VERSION(7, 32, 0)
     if (recipient && ((res = curl_easy_setopt(curl, CURLOPT_MAIL_RCPT, recipient)) != CURLE_OK)) E("curl_easy_setopt(CURLOPT_MAIL_RCPT): %s", curl_easy_strerror(res));
 #endif
 #if CURL_AT_LEAST_VERSION(7, 56, 0)
     if (has_mime && ((res = curl_easy_setopt(curl, CURLOPT_MIMEPOST, mime)) != CURLE_OK)) E("curl_easy_setopt(CURLOPT_MIMEPOST): %s", curl_easy_strerror(res));
+#endif
+    if ((res = curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_NOPROGRESS): %s", curl_easy_strerror(res));
+    if ((res = curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1L)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_NOSIGNAL): %s", curl_easy_strerror(res));
+    if ((res = curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_VERBOSE): %s", curl_easy_strerror(res));
+#if CURL_AT_LEAST_VERSION(7, 9, 7)
+    if ((res = curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, pg_write_callback)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_WRITEFUNCTION): %s", curl_easy_strerror(res));
+#endif
+#if CURL_AT_LEAST_VERSION(7, 32, 0)
+    if ((res = curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION, pg_progress_callback)) != CURLE_OK) E("curl_easy_setopt(CURLOPT_XFERINFOFUNCTION): %s", curl_easy_strerror(res));
 #endif
     pg_curl_interrupt_requested = 0;
     while (try--) switch (res = curl_easy_perform(curl)) {
@@ -1433,11 +1407,6 @@ EXTENSION(pg_curl_easy_perform) {
             else E("curl_easy_perform: %s", curl_easy_strerror(res));
         }
     }
-    if (data_in_str.use) fclose(data_in_str.file);
-    if (data_out_str.use) fclose(data_out_str.file);
-    if (header_in_str.use) fclose(header_in_str.file);
-    if (header_out_str.use) fclose(header_out_str.file);
-    if (debug_str.use) fclose(debug_str.file);
     PG_RETURN_BOOL(res == CURLE_OK);
 }
 
@@ -1467,12 +1436,12 @@ EXTENSION(pg_curl_easy_getinfo_data_out) {
 }
 
 EXTENSION(pg_curl_easy_getinfo_headers) {
-    W("curl_easy_getinfo_headers deprecated, use curl_easy_perform(header_in:=true) and curl_easy_getinfo_header_in() instead");
+    W("curl_easy_getinfo_headers deprecated, use curl_easy_getinfo_header_in() instead");
     return pg_curl_easy_getinfo_header_in(fcinfo);
 }
 
 EXTENSION(pg_curl_easy_getinfo_response) {
-    W("curl_easy_getinfo_response deprecated, use curl_easy_perform(data_in:=true) and curl_easy_getinfo_data_in() instead");
+    W("curl_easy_getinfo_response deprecated, use curl_easy_getinfo_data_in() instead");
     return pg_curl_easy_getinfo_data_in(fcinfo);
 }
 

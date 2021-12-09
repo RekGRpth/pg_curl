@@ -153,7 +153,6 @@ CREATE OR REPLACE FUNCTION curl_easy_setopt_netrc(parameter bigint) RETURNS bool
 CREATE OR REPLACE FUNCTION curl_easy_setopt_new_directory_perms(parameter bigint) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_new_directory_perms' LANGUAGE 'c';
 CREATE OR REPLACE FUNCTION curl_easy_setopt_new_file_perms(parameter bigint) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_new_file_perms' LANGUAGE 'c';
 CREATE OR REPLACE FUNCTION curl_easy_setopt_nobody(parameter bigint) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_nobody' LANGUAGE 'c';
-CREATE OR REPLACE FUNCTION curl_easy_setopt_nosignal(parameter bigint) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_nosignal' LANGUAGE 'c';
 CREATE OR REPLACE FUNCTION curl_easy_setopt_path_as_is(parameter bigint) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_path_as_is' LANGUAGE 'c';
 CREATE OR REPLACE FUNCTION curl_easy_setopt_pipewait(parameter bigint) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_pipewait' LANGUAGE 'c';
 CREATE OR REPLACE FUNCTION curl_easy_setopt_port(parameter bigint) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_port' LANGUAGE 'c';
@@ -211,7 +210,7 @@ CREATE OR REPLACE FUNCTION curl_easy_setopt_use_ssl(parameter bigint) RETURNS bo
 CREATE OR REPLACE FUNCTION curl_easy_setopt_verbose(parameter bigint) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_verbose' LANGUAGE 'c';
 CREATE OR REPLACE FUNCTION curl_easy_setopt_wildcardmatch(parameter bigint) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_wildcardmatch' LANGUAGE 'c';
 
-CREATE OR REPLACE FUNCTION curl_easy_perform(try int default 1, sleep bigint default 1000000, debug boolean default false, header_in boolean default true, header_out boolean default false, data_in boolean default true, data_out boolean default false) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_perform' LANGUAGE 'c';
+CREATE OR REPLACE FUNCTION curl_easy_perform(try int default 1, sleep bigint default 1000000) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_perform' LANGUAGE 'c';
 
 CREATE OR REPLACE FUNCTION curl_easy_getinfo_headers() RETURNS text AS 'MODULE_PATHNAME', 'pg_curl_easy_getinfo_headers' LANGUAGE 'c';
 CREATE OR REPLACE FUNCTION curl_easy_getinfo_response() RETURNS bytea AS 'MODULE_PATHNAME', 'pg_curl_easy_getinfo_response' LANGUAGE 'c';
