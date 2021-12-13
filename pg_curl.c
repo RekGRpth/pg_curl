@@ -160,7 +160,7 @@ EXTENSION(pg_curl_easy_escape) {
 #if CURL_AT_LEAST_VERSION(7, 15, 4)
     text *string;
     char *escape;
-    if (PG_ARGISNULL(0)) E("string is null!");
+    if (PG_ARGISNULL(0)) ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("curl_easy_escape requires argument string")));
     string = DatumGetTextP(PG_GETARG_DATUM(0));
     if (!(escape = curl_easy_escape(curl, VARDATA_ANY(string), VARSIZE_ANY_EXHDR(string)))) E("!curl_easy_escape");
     string = cstring_to_text(escape);
@@ -176,7 +176,7 @@ EXTENSION(pg_curl_easy_unescape) {
     text *url;
     char *unescape;
     int outlength;
-    if (PG_ARGISNULL(0)) E("url is null!");
+    if (PG_ARGISNULL(0)) ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("curl_easy_unescape requires argument url")));
     url = DatumGetTextP(PG_GETARG_DATUM(0));
     if (!(unescape = curl_easy_unescape(curl, VARDATA_ANY(url), VARSIZE_ANY_EXHDR(url), &outlength))) PG_RETURN_NULL();
     url = cstring_to_text_with_len(unescape, outlength);
@@ -191,9 +191,9 @@ EXTENSION(pg_curl_header_append) {
     char *name, *value;
     StringInfoData buf;
     struct curl_slist *temp = header;
-    if (PG_ARGISNULL(0)) E("name is null!");
+    if (PG_ARGISNULL(0)) ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("curl_header_append requires argument name")));
     name = TextDatumGetCString(PG_GETARG_DATUM(0));
-    if (PG_ARGISNULL(1)) E("value is null!");
+    if (PG_ARGISNULL(1)) ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("curl_header_append requires argument value")));
     value = TextDatumGetCString(PG_GETARG_DATUM(1));
     initStringInfo(&buf);
     appendStringInfo(&buf, "%s: %s", name, value);
@@ -208,7 +208,7 @@ EXTENSION(pg_curl_recipient_append) {
 #if CURL_AT_LEAST_VERSION(7, 20, 0)
     char *email;
     struct curl_slist *temp = recipient;
-    if (PG_ARGISNULL(0)) E("email is null!");
+    if (PG_ARGISNULL(0)) ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("curl_recipient_append requires argument email")));
     email = TextDatumGetCString(PG_GETARG_DATUM(0));
     if ((temp = curl_slist_append(temp, email))) recipient = temp; else E("!curl_slist_append");
     pfree(email);
@@ -224,7 +224,7 @@ EXTENSION(pg_curl_mime_data) {
     CURLcode res = CURL_LAST;
     curl_mimepart *part;
     text *data;
-    if (PG_ARGISNULL(0)) E("data is null!");
+    if (PG_ARGISNULL(0)) ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("curl_mime_data requires argument data")));
     data = DatumGetTextP(PG_GETARG_DATUM(0));
     if (!PG_ARGISNULL(1)) name = TextDatumGetCString(PG_GETARG_DATUM(1));
     if (!PG_ARGISNULL(2)) file = TextDatumGetCString(PG_GETARG_DATUM(2));
@@ -260,7 +260,7 @@ EXTENSION(pg_curl_mime_data_bytea) {
     bytea *data;
     char *name = NULL, *file = NULL, *type = NULL, *code = NULL, *head = NULL;
     curl_mimepart *part;
-    if (PG_ARGISNULL(0)) E("data is null!");
+    if (PG_ARGISNULL(0)) ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("curl_mime_data requires argument data")));
     data = DatumGetByteaP(PG_GETARG_DATUM(0));
     if (!PG_ARGISNULL(1)) name = TextDatumGetCString(PG_GETARG_DATUM(1));
     if (!PG_ARGISNULL(2)) file = TextDatumGetCString(PG_GETARG_DATUM(2));
@@ -295,7 +295,7 @@ EXTENSION(pg_curl_mime_file) {
     CURLcode res = CURL_LAST;
     char *data, *name = NULL, *file = NULL, *type = NULL, *code = NULL, *head = NULL;
     curl_mimepart *part;
-    if (PG_ARGISNULL(0)) E("data is null!");
+    if (PG_ARGISNULL(0)) ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("curl_mime_file requires argument data")));
     data = TextDatumGetCString(PG_GETARG_DATUM(0));
     if (!PG_ARGISNULL(1)) name = TextDatumGetCString(PG_GETARG_DATUM(1));
     if (!PG_ARGISNULL(2)) file = TextDatumGetCString(PG_GETARG_DATUM(2));
@@ -330,7 +330,7 @@ EXTENSION(pg_curl_easy_setopt_copypostfields) {
 #if CURL_AT_LEAST_VERSION(7, 17, 1)
     CURLcode res = CURL_LAST;
     bytea *parameter;
-    if (PG_ARGISNULL(0)) E("parameter is null!");
+    if (PG_ARGISNULL(0)) ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("curl_easy_setopt_copypostfields requires argument parameter")));
     parameter = DatumGetTextP(PG_GETARG_DATUM(0));
     if ((res = curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, VARSIZE_ANY_EXHDR(parameter))) != CURLE_OK) E("curl_easy_setopt(CURLOPT_POSTFIELDSIZE): %s", curl_easy_strerror(res));
     if ((res = curl_easy_setopt(curl, CURLOPT_COPYPOSTFIELDS, VARDATA_ANY(parameter))) != CURLE_OK) E("curl_easy_setopt(CURLOPT_COPYPOSTFIELDS): %s", curl_easy_strerror(res));
@@ -343,7 +343,7 @@ EXTENSION(pg_curl_easy_setopt_copypostfields) {
 EXTENSION(pg_curl_easy_setopt_postfields) {
     CURLcode res = CURL_LAST;
     bytea *parameter;
-    if (PG_ARGISNULL(0)) E("parameter is null!");
+    if (PG_ARGISNULL(0)) ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("curl_easy_setopt_postfields requires argument parameter")));
     parameter = DatumGetTextP(PG_GETARG_DATUM(0));
     resetStringInfo(&postfield_str);
     appendBinaryStringInfo(&postfield_str, VARDATA_ANY(parameter), VARSIZE_ANY_EXHDR(parameter));
@@ -355,7 +355,7 @@ EXTENSION(pg_curl_easy_setopt_postfields) {
 static Datum pg_curl_easy_setopt_char(PG_FUNCTION_ARGS, CURLoption option) {
     CURLcode res = CURL_LAST;
     char *parameter;
-    if (PG_ARGISNULL(0)) E("parameter is null!");
+    if (PG_ARGISNULL(0)) ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("curl_easy_setopt_* requires argument parameter")));
     parameter = TextDatumGetCString(PG_GETARG_DATUM(0));
     if ((res = curl_easy_setopt(curl, option, parameter)) != CURLE_OK) E("curl_easy_setopt(%i, %s): %s", option, parameter, curl_easy_strerror(res));
     pfree(parameter);
@@ -830,7 +830,7 @@ EXTENSION(pg_curl_easy_setopt_xoauth2_bearer) {
 static Datum pg_curl_easy_setopt_long(PG_FUNCTION_ARGS, CURLoption option) {
     CURLcode res = CURL_LAST;
     long parameter;
-    if (PG_ARGISNULL(0)) E("parameter is null!");
+    if (PG_ARGISNULL(0)) ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("curl_easy_setopt_* requires argument parameter")));
     parameter = PG_GETARG_INT64(0);
     if ((res = curl_easy_setopt(curl, option, parameter)) != CURLE_OK) E("curl_easy_setopt(%i, %li): %s", option, parameter, curl_easy_strerror(res));
     PG_RETURN_BOOL(res == CURLE_OK);
