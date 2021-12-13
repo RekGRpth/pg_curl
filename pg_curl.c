@@ -690,7 +690,7 @@ EXTENSION(pg_curl_easy_setopt_service_name) {
 }
 EXTENSION(pg_curl_easy_setopt_socks5_gssapi_service) {
 #if CURL_AT_LEAST_VERSION(7, 19, 4)
-    elog(WARNING, "curl_easy_setopt_socks5_gssapi_service deprecated, use curl_easy_setopt_proxy_service_name instead");
+    ereport(WARNING, (errcode(ERRCODE_WARNING_DEPRECATED_FEATURE), errmsg("curl_easy_setopt_socks5_gssapi_service deprecated, use curl_easy_setopt_proxy_service_name instead")));
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_SOCKS5_GSSAPI_SERVICE);
 #else
     ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_socks5_gssapi_service requires curl 7.19.4 or later")));
@@ -875,7 +875,7 @@ EXTENSION(pg_curl_easy_setopt_dns_shuffle_addresses) {
 }
 EXTENSION(pg_curl_easy_setopt_dns_use_global_cache) {
 #if CURL_AT_LEAST_VERSION(7, 62, 0)
-    elog(WARNING, "curl_easy_setopt_dns_use_global_cache deprecated");
+    ereport(WARNING, (errcode(ERRCODE_WARNING_DEPRECATED_FEATURE), errmsg("curl_easy_setopt_dns_use_global_cache deprecated")));
 #endif
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_DNS_USE_GLOBAL_CACHE);
 }
@@ -1120,7 +1120,7 @@ EXTENSION(pg_curl_easy_setopt_proxy_transfer_mode) {
 EXTENSION(pg_curl_easy_setopt_proxytype) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_PROXYTYPE); }
 EXTENSION(pg_curl_easy_setopt_put) {
 #if CURL_AT_LEAST_VERSION(7, 12, 1)
-    elog(WARNING, "curl_easy_setopt_put deprecated");
+    ereport(WARNING, (errcode(ERRCODE_WARNING_DEPRECATED_FEATURE), errmsg("curl_easy_setopt_put deprecated")));
 #endif
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_PUT);
 }
@@ -1332,7 +1332,7 @@ EXTENSION(pg_curl_easy_setopt_use_ssl) {
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_verbose) {
-    elog(WARNING, "curl_easy_setopt_verbose deprecated, use curl_easy_getinfo_debug instead");
+    ereport(WARNING, (errcode(ERRCODE_WARNING_DEPRECATED_FEATURE), errmsg("curl_easy_setopt_verbose deprecated, use curl_easy_getinfo_debug instead")));
     PG_RETURN_BOOL(false);
 }
 EXTENSION(pg_curl_easy_setopt_wildcardmatch) {
@@ -1451,12 +1451,12 @@ EXTENSION(pg_curl_easy_getinfo_data_out) {
 }
 
 EXTENSION(pg_curl_easy_getinfo_headers) {
-    elog(WARNING, "curl_easy_getinfo_headers deprecated, use curl_easy_getinfo_header_in instead");
+    ereport(WARNING, (errcode(ERRCODE_WARNING_DEPRECATED_FEATURE), errmsg("curl_easy_getinfo_headers deprecated, use curl_easy_getinfo_header_in instead")));
     return pg_curl_easy_getinfo_header_in(fcinfo);
 }
 
 EXTENSION(pg_curl_easy_getinfo_response) {
-    elog(WARNING, "curl_easy_getinfo_response deprecated, use curl_easy_getinfo_data_in instead");
+    ereport(WARNING, (errcode(ERRCODE_WARNING_DEPRECATED_FEATURE), errmsg("curl_easy_getinfo_response deprecated, use curl_easy_getinfo_data_in instead")));
     return pg_curl_easy_getinfo_data_in(fcinfo);
 }
 
