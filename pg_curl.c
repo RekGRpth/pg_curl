@@ -1370,8 +1370,8 @@ EXTENSION(pg_curl_easy_perform) {
     CURLcode res = CURL_LAST;
     int try = PG_ARGISNULL(0) ? 1 : PG_GETARG_INT32(0);
     long sleep = PG_ARGISNULL(1) ? 1000000 : PG_GETARG_INT64(1);
-    if (try <= 0) E("try <= 0!");
-    if (sleep < 0) E("sleep < 0!");
+    if (try <= 0) ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("curl_easy_perform invalid argument try %i", try), errhint("Argument try must be positive!")));
+    if (sleep < 0) ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("curl_easy_perform invalid argument sleep %li", sleep), errhint("Argument sleep must be non-negative!")));
     resetStringInfo(&data_in_str);
     resetStringInfo(&data_out_str);
     resetStringInfo(&debug_str);
