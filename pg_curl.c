@@ -218,7 +218,7 @@ EXTENSION(pg_curl_recipient_append) {
 #endif
 }
 
-static Datum pg_curl_mime_data_text_bytea(PG_FUNCTION_ARGS, const char *data, size_t datasize) {
+static Datum pg_curl_mime_data(PG_FUNCTION_ARGS, const char *data, size_t datasize) {
 #if CURL_AT_LEAST_VERSION(7, 56, 0)
     char *name = NULL, *file = NULL, *type = NULL, *code = NULL, *head = NULL;
     CURLcode res = CURL_LAST;
@@ -254,12 +254,12 @@ static Datum pg_curl_mime_data_text_bytea(PG_FUNCTION_ARGS, const char *data, si
 
 EXTENSION(pg_curl_mime_data_text) {
     text *data = DatumGetTextP(PG_GETARG_DATUM(0));
-    return pg_curl_mime_data_text_bytea(fcinfo, VARDATA_ANY(data), VARSIZE_ANY_EXHDR(data));
+    return pg_curl_mime_data(fcinfo, VARDATA_ANY(data), VARSIZE_ANY_EXHDR(data));
 }
 
 EXTENSION(pg_curl_mime_data_bytea) {
     bytea *data = DatumGetByteaP(PG_GETARG_DATUM(0));
-    return pg_curl_mime_data_text_bytea(fcinfo, VARDATA_ANY(data), VARSIZE_ANY_EXHDR(data));
+    return pg_curl_mime_data(fcinfo, VARDATA_ANY(data), VARSIZE_ANY_EXHDR(data));
 }
 
 EXTENSION(pg_curl_mime_file) {
