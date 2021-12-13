@@ -232,15 +232,15 @@ EXTENSION(pg_curl_mime_data) {
     if (!PG_ARGISNULL(4)) code = TextDatumGetCString(PG_GETARG_DATUM(4));
     if (!PG_ARGISNULL(5)) head = TextDatumGetCString(PG_GETARG_DATUM(5));
     part = curl_mime_addpart(mime);
-    if ((res = curl_mime_data(part, VARDATA_ANY(data), VARSIZE_ANY_EXHDR(data))) != CURLE_OK) E("curl_mime_data(%s): %s", VARDATA_ANY(data), curl_easy_strerror(res));
-    if (name && ((res = curl_mime_name(part, name)) != CURLE_OK)) E("curl_mime_name(%s): %s", name, curl_easy_strerror(res));
-    if (file && ((res = curl_mime_filename(part, file)) != CURLE_OK)) E("curl_mime_filename(%s): %s", file, curl_easy_strerror(res));
-    if (type && ((res = curl_mime_type(part, type)) != CURLE_OK)) E("curl_mime_type(%s): %s", type, curl_easy_strerror(res));
-    if (code && ((res = curl_mime_encoder(part, code)) != CURLE_OK)) E("curl_mime_encoder(%s): %s", code, curl_easy_strerror(res));
+    if ((res = curl_mime_data(part, VARDATA_ANY(data), VARSIZE_ANY_EXHDR(data))) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_mime_data failed: %s for %*.*s", curl_easy_strerror(res), (int)VARSIZE_ANY_EXHDR(data), (int)VARSIZE_ANY_EXHDR(data), VARDATA_ANY(data))));
+    if (name && ((res = curl_mime_name(part, name)) != CURLE_OK)) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_mime_name failed: %s for %s", curl_easy_strerror(res), name)));
+    if (file && ((res = curl_mime_filename(part, file)) != CURLE_OK)) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_mime_filename failed: %s for %s", curl_easy_strerror(res), file)));
+    if (type && ((res = curl_mime_type(part, type)) != CURLE_OK)) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_mime_type failed: %s for %s", curl_easy_strerror(res), type)));
+    if (code && ((res = curl_mime_encoder(part, code)) != CURLE_OK)) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_mime_encoder failed: %s for %s", curl_easy_strerror(res), code)));
     if (head) {
         struct curl_slist *headers = NULL;
-        if (!(headers = curl_slist_append(headers, head))) E("!curl_slist_append");
-        if ((res = curl_mime_headers(part, headers, true)) != CURLE_OK) E("curl_mime_headers(%s): %s", head, curl_easy_strerror(res));
+        if (!(headers = curl_slist_append(headers, head))) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_slist_append")));
+        if ((res = curl_mime_headers(part, headers, true)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_mime_headers failed: %s for %s", curl_easy_strerror(res), head)));
     }
     if (name) pfree(name);
     if (file) pfree(file);
