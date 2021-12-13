@@ -197,7 +197,7 @@ EXTENSION(pg_curl_header_append) {
     value = TextDatumGetCString(PG_GETARG_DATUM(1));
     initStringInfo(&buf);
     appendStringInfo(&buf, "%s: %s", name, value);
-    if ((temp = curl_slist_append(temp, buf.data))) header = temp; else E("!curl_slist_append");
+    if ((temp = curl_slist_append(temp, buf.data))) header = temp; else ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_slist_append")));
     pfree(name);
     pfree(value);
     pfree(buf.data);
