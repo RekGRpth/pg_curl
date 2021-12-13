@@ -2003,7 +2003,7 @@ EXTENSION(pg_curlauth_gssapi) {
 #ifdef CURLAUTH_GSSAPI
     PG_RETURN_INT64(CURLAUTH_GSSAPI);
 #else
-    E("!CURLAUTH_GSSAPI");
+    ereport(ERROR, (errcode(ERRCODE_UNDEFINED_FUNCTION), errmsg("CURLAUTH_GSSAPI undefined")));
 #endif
 }
 EXTENSION(pg_curlauth_none) {
@@ -2351,7 +2351,7 @@ EXTENSION(pg_curl_het_default) {
 #ifdef CURL_HET_DEFAULT
     PG_RETURN_INT64(CURL_HET_DEFAULT);
 #else
-    E("!CURL_HET_DEFAULT");
+    ereport(ERROR, (errcode(ERRCODE_UNDEFINED_FUNCTION), errmsg("CURL_HET_DEFAULT undefined")));
 #endif
 }
 
@@ -2469,6 +2469,6 @@ EXTENSION(pg_curl_max_write_size) {
 #ifdef CURL_MAX_WRITE_SIZE
     PG_RETURN_INT64(CURL_MAX_WRITE_SIZE);
 #else
-    E("!CURL_MAX_WRITE_SIZE");
+    ereport(ERROR, (errcode(ERRCODE_UNDEFINED_FUNCTION), errmsg("CURL_MAX_WRITE_SIZE undefined")));
 #endif
 }
