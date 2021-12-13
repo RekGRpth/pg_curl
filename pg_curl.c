@@ -121,7 +121,7 @@ EXTENSION(pg_curl_easy_mime_reset) {
     has_mime = false;
     PG_RETURN_VOID();
 #else
-    E("curl_easy_mime_reset requires curl 7.56.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_mime_reset requires curl 7.56.0 or later")));
 #endif
 }
 
@@ -131,7 +131,7 @@ EXTENSION(pg_curl_easy_recipient_reset) {
     recipient = NULL;
     PG_RETURN_VOID();
 #else
-    E("curl_easy_recipient_reset requires curl 7.20.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_recipient_reset requires curl 7.20.0 or later")));
 #endif
 }
 
@@ -167,7 +167,7 @@ EXTENSION(pg_curl_easy_escape) {
     curl_free(escape);
     PG_RETURN_TEXT_P(string);
 #else
-    E("curl_easy_escape requires curl 7.15.4 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_escape requires curl 7.15.4 or later")));
 #endif
 }
 
@@ -183,7 +183,7 @@ EXTENSION(pg_curl_easy_unescape) {
     curl_free(unescape);
     PG_RETURN_TEXT_P(url);
 #else
-    E("curl_easy_unescape requires curl 7.15.4 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_unescape requires curl 7.15.4 or later")));
 #endif
 }
 
@@ -214,7 +214,7 @@ EXTENSION(pg_curl_recipient_append) {
     pfree(email);
     PG_RETURN_BOOL(temp != NULL);
 #else
-    E("curl_recipient_append requires curl 7.20.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_recipient_append requires curl 7.20.0 or later")));
 #endif
 }
 
@@ -250,7 +250,7 @@ EXTENSION(pg_curl_mime_data) {
     has_mime = true;
     PG_RETURN_BOOL(res == CURLE_OK);
 #else
-    E("curl_mime_data requires curl 7.56.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_mime_data requires curl 7.56.0 or later")));
 #endif
 }
 
@@ -286,7 +286,7 @@ EXTENSION(pg_curl_mime_data_bytea) {
     has_mime = true;
     PG_RETURN_BOOL(res == CURLE_OK);
 #else
-    E("curl_mime_data requires curl 7.56.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_mime_data requires curl 7.56.0 or later")));
 #endif
 }
 
@@ -322,7 +322,7 @@ EXTENSION(pg_curl_mime_file) {
     has_mime = true;
     PG_RETURN_BOOL(res == CURLE_OK);
 #else
-    E("curl_mime_file requires curl 7.56.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_mime_file requires curl 7.56.0 or later")));
 #endif
 }
 
@@ -336,7 +336,7 @@ EXTENSION(pg_curl_easy_setopt_copypostfields) {
     if ((res = curl_easy_setopt(curl, CURLOPT_COPYPOSTFIELDS, VARDATA_ANY(parameter))) != CURLE_OK) E("curl_easy_setopt(CURLOPT_COPYPOSTFIELDS): %s", curl_easy_strerror(res));
     PG_RETURN_BOOL(res == CURLE_OK);
 #else
-    E("curl_easy_setopt_copypostfields requires curl 7.17.1 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_copypostfields requires curl 7.17.1 or later")));
 #endif
 }
 
@@ -366,28 +366,28 @@ EXTENSION(pg_curl_easy_setopt_abstract_unix_socket) {
 #if CURL_AT_LEAST_VERSION(7, 53, 0)
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_ABSTRACT_UNIX_SOCKET);
 #else
-    E("curl_easy_setopt_abstract_unix_socket requires curl 7.53.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_abstract_unix_socket requires curl 7.53.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_accept_encoding) {
 #if CURL_AT_LEAST_VERSION(7, 21, 6)
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_ACCEPT_ENCODING);
 #else
-    E("curl_easy_setopt_accept_encoding requires curl 7.21.6 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_accept_encoding requires curl 7.21.6 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_cainfo) {
 #if CURL_AT_LEAST_VERSION(7, 60, 0)
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_CAINFO);
 #else
-    E("curl_easy_setopt_cainfo requires curl 7.60.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_cainfo requires curl 7.60.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_capath) {
 #if CURL_AT_LEAST_VERSION(7, 56, 0)
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_CAPATH);
 #else
-    E("curl_easy_setopt_capath requires curl 7.56.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_capath requires curl 7.56.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_cookiefile) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_COOKIEFILE); }
@@ -396,7 +396,7 @@ EXTENSION(pg_curl_easy_setopt_cookielist) {
 #if CURL_AT_LEAST_VERSION(7, 14, 1)
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_COOKIELIST);
 #else
-    E("curl_easy_setopt_cookielist requires curl 7.14.1 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_cookielist requires curl 7.14.1 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_cookie) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_COOKIE); }
@@ -404,56 +404,56 @@ EXTENSION(pg_curl_easy_setopt_crlfile) {
 #if CURL_AT_LEAST_VERSION(7, 19, 0)
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_CRLFILE);
 #else
-    E("curl_easy_setopt_crlfile requires curl 7.19.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_crlfile requires curl 7.19.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_customrequest) {
 #if CURL_AT_LEAST_VERSION(7, 26, 0)
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_CUSTOMREQUEST);
 #else
-    E("curl_easy_setopt_customrequest requires curl 7.26.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_customrequest requires curl 7.26.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_default_protocol) {
 #if CURL_AT_LEAST_VERSION(7, 45, 0)
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_DEFAULT_PROTOCOL);
 #else
-    E("curl_easy_setopt_default_protocol requires curl 7.45.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_default_protocol requires curl 7.45.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_dns_interface) {
 #if CURL_AT_LEAST_VERSION(7, 33, 0)
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_DNS_INTERFACE);
 #else
-    E("curl_easy_setopt_dns_interface requires curl 7.33.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_dns_interface requires curl 7.33.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_dns_local_ip4) {
 #if CURL_AT_LEAST_VERSION(7, 33, 0)
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_DNS_LOCAL_IP4);
 #else
-    E("curl_easy_setopt_dns_local_ip4 requires curl 7.33.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_dns_local_ip4 requires curl 7.33.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_dns_local_ip6) {
 #if CURL_AT_LEAST_VERSION(7, 33, 0)
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_DNS_LOCAL_IP6);
 #else
-    E("curl_easy_setopt_dns_local_ip6 requires curl 7.33.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_dns_local_ip6 requires curl 7.33.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_dns_servers) {
 #if CURL_AT_LEAST_VERSION(7, 24, 0)
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_DNS_SERVERS);
 #else
-    E("url_easy_setopt_dns_servers requires curl 7.24.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("url_easy_setopt_dns_servers requires curl 7.24.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_doh_url) {
 #if CURL_AT_LEAST_VERSION(7, 62, 0)
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_DOH_URL);
 #else
-    E("curl_easy_setopt_doh_url requires curl 7.62.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_doh_url requires curl 7.62.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_egdsocket) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_EGDSOCKET); }
@@ -461,28 +461,28 @@ EXTENSION(pg_curl_easy_setopt_ftp_account) {
 #if CURL_AT_LEAST_VERSION(7, 13, 0)
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_FTP_ACCOUNT);
 #else
-    E("curl_easy_setopt_ftp_account requires curl 7.13.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_ftp_account requires curl 7.13.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_ftp_alternative_to_user) {
 #if CURL_AT_LEAST_VERSION(7, 15, 5)
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_FTP_ALTERNATIVE_TO_USER);
 #else
-    E("curl_easy_setopt_ftp_alternative_to_user requires curl 7.15.5 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_ftp_alternative_to_user requires curl 7.15.5 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_ftpport) {
 #if CURL_AT_LEAST_VERSION(7, 19, 5)
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_FTPPORT);
 #else
-    E("curl_easy_setopt_ftpport requires curl 7.19.5 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_ftpport requires curl 7.19.5 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_interface) {
 #if CURL_AT_LEAST_VERSION(7, 24, 0)
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_INTERFACE);
 #else
-    E("curl_easy_setopt_interface requires curl 7.24.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_interface requires curl 7.24.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_issuercert) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_ISSUERCERT); }
@@ -490,189 +490,189 @@ EXTENSION(pg_curl_easy_setopt_keypasswd) {
 #if CURL_AT_LEAST_VERSION(7, 16, 5)
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_KEYPASSWD);
 #else
-    E("curl_easy_setopt_keypasswd requires curl 7.16.5 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_keypasswd requires curl 7.16.5 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_krblevel) {
 #if CURL_AT_LEAST_VERSION(7, 16, 4)
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_KRBLEVEL);
 #else
-    E("curl_easy_setopt_krblevel requires curl 7.16.4 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_krblevel requires curl 7.16.4 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_login_options) {
 #if CURL_AT_LEAST_VERSION(7, 34, 0)
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_LOGIN_OPTIONS);
 #else
-    E("curl_easy_setopt_login_options requires curl 7.34.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_login_options requires curl 7.34.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_mail_auth) {
 #if CURL_AT_LEAST_VERSION(7, 25, 0)
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_MAIL_AUTH);
 #else
-    E("curl_easy_setopt_mail_auth requires curl 7.25.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_mail_auth requires curl 7.25.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_mail_from) {
 #if CURL_AT_LEAST_VERSION(7, 20, 0)
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_MAIL_FROM);
 #else
-    E("curl_easy_setopt_mail_from requires curl 7.20.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_mail_from requires curl 7.20.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_noproxy) {
 #if CURL_AT_LEAST_VERSION(7, 19, 4)
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_NOPROXY);
 #else
-    E("curl_easy_setopt_noproxy requires curl 7.19.4 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_noproxy requires curl 7.19.4 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_password) {
 #if CURL_AT_LEAST_VERSION(7, 19, 1)
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_PASSWORD);
 #else
-    E("curl_easy_setopt_password requires curl 7.19.1 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_password requires curl 7.19.1 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_pinnedpublickey) {
 #if CURL_AT_LEAST_VERSION(7, 39, 0)
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_PINNEDPUBLICKEY);
 #else
-    E("curl_easy_setopt_pinnedpublickey requires curl 7.39.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_pinnedpublickey requires curl 7.39.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_pre_proxy) {
 #if CURL_AT_LEAST_VERSION(7, 52, 0)
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_PRE_PROXY);
 #else
-    E("curl_easy_setopt_pre_proxy requires curl 7.52.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_pre_proxy requires curl 7.52.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_proxy_cainfo) {
 #if CURL_AT_LEAST_VERSION(7, 52, 0)
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_PROXY_CAINFO);
 #else
-    E("curl_easy_setopt_proxy_cainfo requires curl 7.52.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_proxy_cainfo requires curl 7.52.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_proxy_capath) {
 #if CURL_AT_LEAST_VERSION(7, 52, 0)
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_PROXY_CAPATH);
 #else
-    E("curl_easy_setopt_proxy_capath requires curl 7.52.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_proxy_capath requires curl 7.52.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_proxy_crlfile) {
 #if CURL_AT_LEAST_VERSION(7, 52, 0)
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_PROXY_CRLFILE);
 #else
-    E("curl_easy_setopt_proxy_crlfile requires curl 7.52.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_proxy_crlfile requires curl 7.52.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_proxy_keypasswd) {
 #if CURL_AT_LEAST_VERSION(7, 52, 0)
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_PROXY_KEYPASSWD);
 #else
-    E("curl_easy_setopt_proxy_keypasswd requires curl 7.52.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_proxy_keypasswd requires curl 7.52.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_proxypassword) {
 #if CURL_AT_LEAST_VERSION(7, 19, 1)
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_PROXYPASSWORD);
 #else
-    E("curl_easy_setopt_proxypassword requires curl 7.19.1 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_proxypassword requires curl 7.19.1 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_proxy_pinnedpublickey) {
 #if CURL_AT_LEAST_VERSION(7, 52, 0)
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_PROXY_PINNEDPUBLICKEY);
 #else
-    E("curl_easy_setopt_proxy_pinnedpublickey requires curl 7.52.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_proxy_pinnedpublickey requires curl 7.52.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_proxy_service_name) {
 #if CURL_AT_LEAST_VERSION(7, 43, 0)
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_PROXY_SERVICE_NAME);
 #else
-    E("curl_easy_setopt_proxy_service_name requires curl 7.43.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_proxy_service_name requires curl 7.43.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_proxy) {
 #if CURL_AT_LEAST_VERSION(7, 14, 1)
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_PROXY);
 #else
-    E("curl_easy_setopt_proxy requires curl 7.14.1 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_proxy requires curl 7.14.1 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_proxy_sslcert) {
 #if CURL_AT_LEAST_VERSION(7, 52, 0)
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_PROXY_SSLCERT);
 #else
-    E("curl_easy_setopt_proxy_sslcert requires curl 7.52.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_proxy_sslcert requires curl 7.52.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_proxy_sslcerttype) {
 #if CURL_AT_LEAST_VERSION(7, 52, 0)
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_PROXY_SSLCERTTYPE);
 #else
-    E("curl_easy_setopt_proxy_sslcerttype requires curl 7.52.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_proxy_sslcerttype requires curl 7.52.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_proxy_ssl_cipher_list) {
 #if CURL_AT_LEAST_VERSION(7, 52, 0)
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_PROXY_SSL_CIPHER_LIST);
 #else
-    E("curl_easy_setopt_proxy_ssl_cipher_list requires curl 7.52.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_proxy_ssl_cipher_list requires curl 7.52.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_proxy_sslkey) {
 #if CURL_AT_LEAST_VERSION(7, 52, 0)
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_PROXY_SSLKEY);
 #else
-    E("curl_easy_setopt_proxy_sslkey requires curl 7.52.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_proxy_sslkey requires curl 7.52.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_proxy_sslkeytype) {
 #if CURL_AT_LEAST_VERSION(7, 52, 0)
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_PROXY_SSLKEYTYPE);
 #else
-    E("curl_easy_setopt_proxy_sslkeytype requires curl 7.52.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_proxy_sslkeytype requires curl 7.52.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_proxy_tls13_ciphers) {
 #if CURL_AT_LEAST_VERSION(7, 61, 0)
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_PROXY_TLS13_CIPHERS);
 #else
-    E("curl_easy_setopt_proxy_tls13_ciphers requires curl 7.61.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_proxy_tls13_ciphers requires curl 7.61.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_proxy_tlsauth_password) {
 #if CURL_AT_LEAST_VERSION(7, 52, 0)
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_PROXY_TLSAUTH_PASSWORD);
 #else
-    E("curl_easy_setopt_proxy_tlsauth_password requires curl 7.52.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_proxy_tlsauth_password requires curl 7.52.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_proxy_tlsauth_type) {
 #if CURL_AT_LEAST_VERSION(7, 52, 0)
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_PROXY_TLSAUTH_TYPE);
 #else
-    E("curl_easy_setopt_proxy_tlsauth_type requires curl 7.52.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_proxy_tlsauth_type requires curl 7.52.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_proxy_tlsauth_username) {
 #if CURL_AT_LEAST_VERSION(7, 52, 0)
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_PROXY_TLSAUTH_USERNAME);
 #else
-    E("curl_easy_setopt_proxy_tlsauth_username requires curl 7.52.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_proxy_tlsauth_username requires curl 7.52.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_proxyusername) {
 #if CURL_AT_LEAST_VERSION(7, 19, 1)
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_PROXYUSERNAME);
 #else
-    E("curl_easy_setopt_proxyusername requires curl 7.19.1 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_proxyusername requires curl 7.19.1 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_proxyuserpwd) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_PROXYUSERPWD); }
@@ -681,7 +681,7 @@ EXTENSION(pg_curl_easy_setopt_range) {
 #if CURL_AT_LEAST_VERSION(7, 18, 0)
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_RANGE);
 #else
-    E("curl_easy_setopt_range requires curl 7.18.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_range requires curl 7.18.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_referer) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_REFERER); }
@@ -689,35 +689,35 @@ EXTENSION(pg_curl_easy_setopt_request_target) {
 #if CURL_AT_LEAST_VERSION(7, 55, 0)
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_REQUEST_TARGET);
 #else
-    E("curl_easy_setopt_request_target requires curl 7.55.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_request_target requires curl 7.55.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_rtsp_session_id) {
 #if CURL_AT_LEAST_VERSION(7, 20, 0)
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_RTSP_SESSION_ID);
 #else
-    E("curl_easy_setopt_rtsp_session_id requires curl 7.20.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_rtsp_session_id requires curl 7.20.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_rtsp_stream_uri) {
 #if CURL_AT_LEAST_VERSION(7, 20, 0)
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_RTSP_STREAM_URI);
 #else
-    E("curl_easy_setopt_rtsp_stream_uri requires curl 7.20.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_rtsp_stream_uri requires curl 7.20.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_rtsp_transport) {
 #if CURL_AT_LEAST_VERSION(7, 20, 0)
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_RTSP_TRANSPORT);
 #else
-    E("curl_easy_setopt_rtsp_transport requires curl 7.20.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_rtsp_transport requires curl 7.20.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_service_name) {
 #if CURL_AT_LEAST_VERSION(7, 43, 0)
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_SERVICE_NAME);
 #else
-    E("curl_easy_setopt_service_name requires curl 7.43.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_service_name requires curl 7.43.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_socks5_gssapi_service) {
@@ -725,35 +725,35 @@ EXTENSION(pg_curl_easy_setopt_socks5_gssapi_service) {
     W("curl_easy_setopt_socks5_gssapi_service deprecated, use curl_easy_setopt_proxy_service_name instead");
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_SOCKS5_GSSAPI_SERVICE);
 #else
-    E("curl_easy_setopt_socks5_gssapi_service requires curl 7.19.4 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_socks5_gssapi_service requires curl 7.19.4 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_ssh_host_public_key_md5) {
 #if CURL_AT_LEAST_VERSION(7, 17, 1)
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_SSH_HOST_PUBLIC_KEY_MD5);
 #else
-    E("curl_easy_setopt_ssh_host_public_key_md5 requires curl 7.17.1 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_ssh_host_public_key_md5 requires curl 7.17.1 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_ssh_knownhosts) {
 #if CURL_AT_LEAST_VERSION(7, 19, 6)
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_SSH_KNOWNHOSTS);
 #else
-    E("curl_easy_setopt_ssh_knownhosts requires curl 7.19.6 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_ssh_knownhosts requires curl 7.19.6 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_ssh_private_keyfile) {
 #if CURL_AT_LEAST_VERSION(7, 16, 1)
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_SSH_PRIVATE_KEYFILE);
 #else
-    E("curl_easy_setopt_ssh_private_keyfile requires curl 7.16.1 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_ssh_private_keyfile requires curl 7.16.1 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_ssh_public_keyfile) {
 #if CURL_AT_LEAST_VERSION(7, 26, 0)
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_SSH_PUBLIC_KEYFILE);
 #else
-    E("curl_easy_setopt_ssh_public_keyfile requires curl 7.26.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_ssh_public_keyfile requires curl 7.26.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_sslcert) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_SSLCERT); }
@@ -761,7 +761,7 @@ EXTENSION(pg_curl_easy_setopt_sslcerttype) {
 #if CURL_AT_LEAST_VERSION(7, 9, 3)
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_SSLCERTTYPE);
 #else
-    E("curl_easy_setopt_sslcerttype requires curl 7.9.3 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_sslcerttype requires curl 7.9.3 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_ssl_cipher_list) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_SSL_CIPHER_LIST); }
@@ -772,42 +772,42 @@ EXTENSION(pg_curl_easy_setopt_tls13_ciphers) {
 #if CURL_AT_LEAST_VERSION(7, 61, 0)
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_TLS13_CIPHERS);
 #else
-    E("curl_easy_setopt_tls13_ciphers requires curl 7.61.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_tls13_ciphers requires curl 7.61.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_tlsauth_password) {
 #if CURL_AT_LEAST_VERSION(7, 21, 4)
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_TLSAUTH_PASSWORD);
 #else
-    E("curl_easy_setopt_tlsauth_password requires curl 7.21.4 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_tlsauth_password requires curl 7.21.4 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_tlsauth_type) {
 #if CURL_AT_LEAST_VERSION(7, 21, 4)
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_TLSAUTH_TYPE);
 #else
-    E("curl_easy_setopt_tlsauth_type requires curl 7.21.4 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_tlsauth_type requires curl 7.21.4 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_tlsauth_username) {
 #if CURL_AT_LEAST_VERSION(7, 21, 4)
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_TLSAUTH_USERNAME);
 #else
-    E("curl_easy_setopt_tlsauth_username requires curl 7.21.4 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_tlsauth_username requires curl 7.21.4 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_unix_socket_path) {
 #if CURL_AT_LEAST_VERSION(7, 40, 0)
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_UNIX_SOCKET_PATH);
 #else
-    E("curl_easy_setopt_unix_socket_path requires curl 7.40.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_unix_socket_path requires curl 7.40.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_url) {
 #if CURL_AT_LEAST_VERSION(7, 31, 0)
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_URL);
 #else
-    E("curl_easy_setopt_url requires curl 7.31.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_url requires curl 7.31.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_useragent) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_USERAGENT); }
@@ -815,7 +815,7 @@ EXTENSION(pg_curl_easy_setopt_username) {
 #if CURL_AT_LEAST_VERSION(7, 19, 1)
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_USERNAME);
 #else
-    E("curl_easy_setopt_username requires curl 7.19.1 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_username requires curl 7.19.1 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_userpwd) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_USERPWD); }
@@ -823,7 +823,7 @@ EXTENSION(pg_curl_easy_setopt_xoauth2_bearer) {
 #if CURL_AT_LEAST_VERSION(7, 33, 0)
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_XOAUTH2_BEARER);
 #else
-    E("curl_easy_setopt_xoauth2_bearer requires curl 7.33.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_xoauth2_bearer requires curl 7.33.0 or later")));
 #endif
 }
 
@@ -840,21 +840,21 @@ EXTENSION(pg_curl_easy_setopt_accepttimeout_ms) {
 #if CURL_AT_LEAST_VERSION(7, 24, 0)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_ACCEPTTIMEOUT_MS);
 #else
-    E("curl_easy_setopt_accepttimeout_ms requires curl 7.24.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_accepttimeout_ms requires curl 7.24.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_address_scope) {
 #if CURL_AT_LEAST_VERSION(7, 19, 0)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_ADDRESS_SCOPE);
 #else
-    E("curl_easy_setopt_address_scope requires curl 7.19.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_address_scope requires curl 7.19.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_append) {
 #if CURL_AT_LEAST_VERSION(7, 16, 5)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_APPEND);
 #else
-    E("curl_easy_setopt_append requires curl 7.16.5 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_append requires curl 7.16.5 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_autoreferer) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_AUTOREFERER); }
@@ -862,21 +862,21 @@ EXTENSION(pg_curl_easy_setopt_buffersize) {
 #if CURL_AT_LEAST_VERSION(7, 10, 0)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_BUFFERSIZE);
 #else
-    E("curl_easy_setopt_buffersize requires curl 7.10.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_buffersize requires curl 7.10.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_certinfo) {
 #if CURL_AT_LEAST_VERSION(7, 50, 0)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_CERTINFO);
 #else
-    E("curl_easy_setopt_certinfo requires curl 7.50.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_certinfo requires curl 7.50.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_connect_only) {
 #if CURL_AT_LEAST_VERSION(7, 15, 2)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_CONNECT_ONLY);
 #else
-    E("curl_easy_setopt_connect_only requires curl 7.15.2 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_connect_only requires curl 7.15.2 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_connecttimeout_ms) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_CONNECTTIMEOUT_MS); }
@@ -887,14 +887,14 @@ EXTENSION(pg_curl_easy_setopt_dirlistonly) {
 #if CURL_AT_LEAST_VERSION(7, 16, 5)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_DIRLISTONLY);
 #else
-    E("curl_easy_setopt_dirlistonly requires curl 7.16.5 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_dirlistonly requires curl 7.16.5 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_disallow_username_in_url) {
 #if CURL_AT_LEAST_VERSION(7, 61, 0)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_DISALLOW_USERNAME_IN_URL);
 #else
-    E("curl_easy_setopt_disallow_username_in_url requires curl 7.61.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_disallow_username_in_url requires curl 7.61.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_dns_cache_timeout) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_DNS_CACHE_TIMEOUT); }
@@ -902,7 +902,7 @@ EXTENSION(pg_curl_easy_setopt_dns_shuffle_addresses) {
 #if CURL_AT_LEAST_VERSION(7, 60, 0)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_DNS_SHUFFLE_ADDRESSES);
 #else
-    E("curl_easy_setopt_dns_shuffle_addresses requires curl 7.60.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_dns_shuffle_addresses requires curl 7.60.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_dns_use_global_cache) {
@@ -915,7 +915,7 @@ EXTENSION(pg_curl_easy_setopt_expect_100_timeout_ms) {
 #if CURL_AT_LEAST_VERSION(7, 36, 0)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_EXPECT_100_TIMEOUT_MS);
 #else
-    E("curl_easy_setopt_expect_100_timeout_ms requires curl 7.36.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_expect_100_timeout_ms requires curl 7.36.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_failonerror) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_FAILONERROR); }
@@ -927,42 +927,42 @@ EXTENSION(pg_curl_easy_setopt_ftp_create_missing_dirs) {
 #if CURL_AT_LEAST_VERSION(7, 10, 7)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_FTP_CREATE_MISSING_DIRS);
 #else
-    E("curl_easy_setopt_ftp_create_missing_dirs requires curl 7.10.7 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_ftp_create_missing_dirs requires curl 7.10.7 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_ftp_filemethod) {
 #if CURL_AT_LEAST_VERSION(7, 15, 1)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_FTP_FILEMETHOD);
 #else
-    E("curl_easy_setopt_ftp_filemethod requires curl 7.15.1 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_ftp_filemethod requires curl 7.15.1 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_ftp_skip_pasv_ip) {
 #if CURL_AT_LEAST_VERSION(7, 14, 2)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_FTP_SKIP_PASV_IP);
 #else
-    E("curl_easy_setopt_ftp_skip_pasv_ip requires curl 7.14.2 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_ftp_skip_pasv_ip requires curl 7.14.2 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_ftpsslauth) {
 #if CURL_AT_LEAST_VERSION(7, 12, 2)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_FTPSSLAUTH);
 #else
-    E("curl_easy_setopt_ftpsslauth requires curl 7.12.2 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_ftpsslauth requires curl 7.12.2 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_ftp_ssl_ccc) {
 #if CURL_AT_LEAST_VERSION(7, 16, 1)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_FTP_SSL_CCC);
 #else
-    E("curl_easy_setopt_ftp_ssl_ccc requires curl 7.16.1 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_ftp_ssl_ccc requires curl 7.16.1 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_ftp_use_eprt) {
 #if CURL_AT_LEAST_VERSION(7, 10, 5)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_FTP_USE_EPRT);
 #else
-    E("curl_easy_setopt_ftp_use_eprt requires curl 7.10.5 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_ftp_use_eprt requires curl 7.10.5 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_ftp_use_epsv) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_FTP_USE_EPSV); }
@@ -970,28 +970,28 @@ EXTENSION(pg_curl_easy_setopt_ftp_use_pret) {
 #if CURL_AT_LEAST_VERSION(7, 20, 0)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_FTP_USE_PRET);
 #else
-    E("curl_easy_setopt_ftp_use_pret requires curl 7.20.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_ftp_use_pret requires curl 7.20.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_gssapi_delegation) {
 #if CURL_AT_LEAST_VERSION(7, 22, 0)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_GSSAPI_DELEGATION);
 #else
-    E("curl_easy_setopt_gssapi_delegation requires curl 7.22.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_gssapi_delegation requires curl 7.22.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_happy_eyeballs_timeout_ms) {
 #if CURL_AT_LEAST_VERSION(7, 59, 0)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_HAPPY_EYEBALLS_TIMEOUT_MS);
 #else
-    E("curl_easy_setopt_happy_eyeballs_timeout_ms requires curl 7.59.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_happy_eyeballs_timeout_ms requires curl 7.59.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_haproxyprotocol) {
 #if CURL_AT_LEAST_VERSION(7, 60, 0)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_HAPROXYPROTOCOL);
 #else
-    E("curl_easy_setopt_haproxyprotocol requires curl 7.60.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_haproxyprotocol requires curl 7.60.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_header) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_HEADER); }
@@ -999,21 +999,21 @@ EXTENSION(pg_curl_easy_setopt_http09_allowed) {
 #if CURL_AT_LEAST_VERSION(7, 64, 0)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_HTTP09_ALLOWED);
 #else
-    E("curl_easy_setopt_http09_allowed requires curl 7.64.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_http09_allowed requires curl 7.64.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_httpauth) {
 #if CURL_AT_LEAST_VERSION(7, 10, 6)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_HTTPAUTH);
 #else
-    E("curl_easy_setopt_httpauth requires curl 7.10.6 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_httpauth requires curl 7.10.6 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_http_content_decoding) {
 #if CURL_AT_LEAST_VERSION(7, 16, 2)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_HTTP_CONTENT_DECODING);
 #else
-    E("curl_easy_setopt_http_content_decoding requires curl 7.16.2 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_http_content_decoding requires curl 7.16.2 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_httpget) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_HTTPGET); }
@@ -1022,7 +1022,7 @@ EXTENSION(pg_curl_easy_setopt_http_transfer_decoding) {
 #if CURL_AT_LEAST_VERSION(7, 16, 2)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_HTTP_TRANSFER_DECODING);
 #else
-    E("curl_easy_setopt_http_transfer_decoding requires curl 7.16.2 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_http_transfer_decoding requires curl 7.16.2 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_http_version) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_HTTP_VERSION); }
@@ -1030,7 +1030,7 @@ EXTENSION(pg_curl_easy_setopt_ignore_content_length) {
 #if CURL_AT_LEAST_VERSION(7, 14, 1)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_IGNORE_CONTENT_LENGTH);
 #else
-    E("curl_easy_setopt_ignore_content_length requires curl 7.14.1 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_ignore_content_length requires curl 7.14.1 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_ipresolve) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_IPRESOLVE); }
@@ -1038,21 +1038,21 @@ EXTENSION(pg_curl_easy_setopt_keep_sending_on_error) {
 #if CURL_AT_LEAST_VERSION(7, 51, 0)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_KEEP_SENDING_ON_ERROR);
 #else
-    E("curl_easy_setopt_keep_sending_on_error requires curl 7.51.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_keep_sending_on_error requires curl 7.51.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_localportrange) {
 #if CURL_AT_LEAST_VERSION(7, 15, 2)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_LOCALPORTRANGE);
 #else
-    E("curl_easy_setopt_localportrange requires curl 7.15.2 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_localportrange requires curl 7.15.2 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_localport) {
 #if CURL_AT_LEAST_VERSION(7, 15, 2)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_LOCALPORT);
 #else
-    E("curl_easy_setopt_localport requires curl 7.15.2 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_localport requires curl 7.15.2 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_low_speed_limit) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_LOW_SPEED_LIMIT); }
@@ -1065,14 +1065,14 @@ EXTENSION(pg_curl_easy_setopt_new_directory_perms) {
 #if CURL_AT_LEAST_VERSION(7, 16, 4)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_NEW_DIRECTORY_PERMS);
 #else
-    E("curl_easy_setopt_new_directory_perms requires curl 7.16.4 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_new_directory_perms requires curl 7.16.4 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_new_file_perms) {
 #if CURL_AT_LEAST_VERSION(7, 16, 4)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_NEW_FILE_PERMS);
 #else
-    E("curl_easy_setopt_new_file_perms requires curl 7.16.4 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_new_file_perms requires curl 7.16.4 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_nobody) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_NOBODY); }
@@ -1080,14 +1080,14 @@ EXTENSION(pg_curl_easy_setopt_path_as_is) {
 #if CURL_AT_LEAST_VERSION(7, 42, 0)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_PATH_AS_IS);
 #else
-    E("curl_easy_setopt_path_as_is requires curl 7.42.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_path_as_is requires curl 7.42.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_pipewait) {
 #if CURL_AT_LEAST_VERSION(7, 34, 0)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_PIPEWAIT);
 #else
-    E("curl_easy_setopt_pipewait requires curl 7.34.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_pipewait requires curl 7.34.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_port) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_PORT); }
@@ -1095,7 +1095,7 @@ EXTENSION(pg_curl_easy_setopt_postredir) {
 #if CURL_AT_LEAST_VERSION(7, 19, 1)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_POSTREDIR);
 #else
-    E("curl_easy_setopt_postredir requires curl 7.19.1 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_postredir requires curl 7.19.1 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_post) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_POST); }
@@ -1103,14 +1103,14 @@ EXTENSION(pg_curl_easy_setopt_protocols) {
 #if CURL_AT_LEAST_VERSION(7, 19, 4)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_PROTOCOLS);
 #else
-    E("curl_easy_setopt_protocols requires curl 7.19.4 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_protocols requires curl 7.19.4 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_proxyauth) {
 #if CURL_AT_LEAST_VERSION(7, 10, 7)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_PROXYAUTH);
 #else
-    E("curl_easy_setopt_proxyauth requires curl 7.10.7 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_proxyauth requires curl 7.10.7 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_proxyport) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_PROXYPORT); }
@@ -1118,35 +1118,35 @@ EXTENSION(pg_curl_easy_setopt_proxy_ssl_options) {
 #if CURL_AT_LEAST_VERSION(7, 52, 0)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_PROXY_SSL_OPTIONS);
 #else
-    E("curl_easy_setopt_proxy_ssl_options requires curl 7.52.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_proxy_ssl_options requires curl 7.52.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_proxy_ssl_verifyhost) {
 #if CURL_AT_LEAST_VERSION(7, 52, 0)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_PROXY_SSL_VERIFYHOST);
 #else
-    E("curl_easy_setopt_proxy_ssl_verifyhost requires curl 7.52.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_proxy_ssl_verifyhost requires curl 7.52.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_proxy_ssl_verifypeer) {
 #if CURL_AT_LEAST_VERSION(7, 52, 0)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_PROXY_SSL_VERIFYPEER);
 #else
-    E("curl_easy_setopt_proxy_ssl_verifypeer requires curl 7.52.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_proxy_ssl_verifypeer requires curl 7.52.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_proxy_sslversion) {
 #if CURL_AT_LEAST_VERSION(7, 52, 0)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_PROXY_SSLVERSION);
 #else
-    E("curl_easy_setopt_proxy_sslversion requires curl 7.52.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_proxy_sslversion requires curl 7.52.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_proxy_transfer_mode) {
 #if CURL_AT_LEAST_VERSION(7, 18, 0)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_PROXY_TRANSFER_MODE);
 #else
-    E("curl_easy_setopt_proxy_transfer_mode requires curl 7.18.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_proxy_transfer_mode requires curl 7.18.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_proxytype) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_PROXYTYPE); }
@@ -1160,7 +1160,7 @@ EXTENSION(pg_curl_easy_setopt_redir_protocols) {
 #if CURL_AT_LEAST_VERSION(7, 19, 4)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_REDIR_PROTOCOLS);
 #else
-    E("curl_easy_setopt_redir_protocols requires curl 7.19.4 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_redir_protocols requires curl 7.19.4 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_resume_from) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_RESUME_FROM); }
@@ -1168,98 +1168,98 @@ EXTENSION(pg_curl_easy_setopt_rtsp_client_cseq) {
 #if CURL_AT_LEAST_VERSION(7, 20, 0)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_RTSP_CLIENT_CSEQ);
 #else
-    E("curl_easy_setopt_rtsp_client_cseq requires curl 7.20.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_rtsp_client_cseq requires curl 7.20.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_rtsp_request) {
 #if CURL_AT_LEAST_VERSION(7, 20, 0)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_RTSP_REQUEST);
 #else
-    E("curl_easy_setopt_rtsp_request requires curl 7.20.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_rtsp_request requires curl 7.20.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_rtsp_server_cseq) {
 #if CURL_AT_LEAST_VERSION(7, 20, 0)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_RTSP_SERVER_CSEQ);
 #else
-    E("curl_easy_setopt_rtsp_server_cseq requires curl 7.20.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_rtsp_server_cseq requires curl 7.20.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_sasl_ir) {
 #if CURL_AT_LEAST_VERSION(7, 31, 0)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_SASL_IR);
 #else
-    E("curl_easy_setopt_sasl_ir requires curl 7.31.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_sasl_ir requires curl 7.31.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_server_response_timeout) {
 #if CURL_AT_LEAST_VERSION(7, 10, 8)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_SERVER_RESPONSE_TIMEOUT);
 #else
-    E("curl_easy_setopt_server_response_timeout requires curl 7.10.8 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_server_response_timeout requires curl 7.10.8 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_socks5_auth) {
 #if CURL_AT_LEAST_VERSION(7, 55, 0)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_SOCKS5_AUTH);
 #else
-    E("curl_easy_setopt_socks5_auth requires curl 7.55.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_socks5_auth requires curl 7.55.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_socks5_gssapi_nec) {
 #if CURL_AT_LEAST_VERSION(7, 19, 4)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_SOCKS5_GSSAPI_NEC);
 #else
-    E("curl_easy_setopt_socks5_gssapi_nec requires curl 7.19.4 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_socks5_gssapi_nec requires curl 7.19.4 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_ssh_auth_types) {
 #if CURL_AT_LEAST_VERSION(7, 16, 1)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_SSH_AUTH_TYPES);
 #else
-    E("curl_easy_setopt_ssh_auth_types requires curl 7.16.1 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_ssh_auth_types requires curl 7.16.1 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_ssh_compression) {
 #if CURL_AT_LEAST_VERSION(7, 56, 0)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_SSH_COMPRESSION);
 #else
-    E("curl_easy_setopt_ssh_compression requires curl 7.56.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_ssh_compression requires curl 7.56.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_ssl_enable_alpn) {
 #if CURL_AT_LEAST_VERSION(7, 36, 0)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_SSL_ENABLE_ALPN);
 #else
-    E("curl_easy_setopt_ssl_enable_alpn requires curl 7.36.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_ssl_enable_alpn requires curl 7.36.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_ssl_enable_npn) {
 #if CURL_AT_LEAST_VERSION(7, 36, 0)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_SSL_ENABLE_NPN);
 #else
-    E("curl_easy_setopt_ssl_enable_npn requires curl 7.36.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_ssl_enable_npn requires curl 7.36.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_ssl_falsestart) {
 #if CURL_AT_LEAST_VERSION(7, 42, 0)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_SSL_FALSESTART);
 #else
-    E("curl_easy_setopt_ssl_falsestart requires curl 7.42.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_ssl_falsestart requires curl 7.42.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_ssl_options) {
 #if CURL_AT_LEAST_VERSION(7, 25, 0)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_SSL_OPTIONS);
 #else
-    E("curl_easy_setopt_ssl_options requires curl 7.25.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_ssl_options requires curl 7.25.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_ssl_sessionid_cache) {
 #if CURL_AT_LEAST_VERSION(7, 16, 0)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_SSL_SESSIONID_CACHE);
 #else
-    E("curl_easy_setopt_ssl_sessionid_cache requires curl 7.16.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_ssl_sessionid_cache requires curl 7.16.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_ssl_verifyhost) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_SSL_VERIFYHOST); }
@@ -1268,49 +1268,49 @@ EXTENSION(pg_curl_easy_setopt_ssl_verifystatus) {
 #if CURL_AT_LEAST_VERSION(7, 41, 0)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_SSL_VERIFYSTATUS);
 #else
-    E("curl_easy_setopt_ssl_verifystatus requires curl 7.41.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_ssl_verifystatus requires curl 7.41.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_sslversion) {
 #if CURL_AT_LEAST_VERSION(7, 18, 0)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_SSLVERSION);
 #else
-    E("curl_easy_setopt_sslversion requires curl 7.18.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_sslversion requires curl 7.18.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_stream_weight) {
 #if CURL_AT_LEAST_VERSION(7, 46, 0)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_STREAM_WEIGHT);
 #else
-    E("curl_easy_setopt_stream_weight requires curl 7.46.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_stream_weight requires curl 7.46.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_suppress_connect_headers) {
 #if CURL_AT_LEAST_VERSION(7, 54, 0)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_SUPPRESS_CONNECT_HEADERS);
 #else
-    E("curl_easy_setopt_suppress_connect_headers requires curl 7.54.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_suppress_connect_headers requires curl 7.54.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_tcp_fastopen) {
 #if CURL_AT_LEAST_VERSION(7, 49, 0)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_TCP_FASTOPEN);
 #else
-    E("curl_easy_setopt_tcp_fastopen requires curl 7.49.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_tcp_fastopen requires curl 7.49.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_tcp_keepalive) {
 #if CURL_AT_LEAST_VERSION(7, 25, 0)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_TCP_KEEPALIVE);
 #else
-    E("curl_easy_setopt_tcp_keepalive requires curl 7.25.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_tcp_keepalive requires curl 7.25.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_tcp_keepidle) {
 #if CURL_AT_LEAST_VERSION(7, 25, 0)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_TCP_KEEPIDLE);
 #else
-    E("curl_easy_setopt_tcp_keepidle requires curl 7.25.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_tcp_keepidle requires curl 7.25.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_tcp_keepintvl) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_TCP_KEEPINTVL); }
@@ -1319,14 +1319,14 @@ EXTENSION(pg_curl_easy_setopt_tftp_blksize) {
 #if CURL_AT_LEAST_VERSION(7, 19, 4)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_TFTP_BLKSIZE);
 #else
-    E("curl_easy_setopt_tftp_blksize requires curl 7.19.4 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_tftp_blksize requires curl 7.19.4 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_tftp_no_options) {
 #if CURL_AT_LEAST_VERSION(7, 48, 0)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_TFTP_NO_OPTIONS);
 #else
-    E("curl_easy_setopt_tftp_no_options requires curl 7.48.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_tftp_no_options requires curl 7.48.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_timecondition) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_TIMECONDITION); }
@@ -1337,7 +1337,7 @@ EXTENSION(pg_curl_easy_setopt_transfer_encoding) {
 #if CURL_AT_LEAST_VERSION(7, 21, 6)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_TRANSFER_ENCODING);
 #else
-    E("curl_easy_setopt_transfer_encoding requires curl 7.21.6 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_transfer_encoding requires curl 7.21.6 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_transfertext) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_TRANSFERTEXT); }
@@ -1346,21 +1346,21 @@ EXTENSION(pg_curl_easy_setopt_upkeep_interval_ms) {
 #if CURL_AT_LEAST_VERSION(7, 62, 0)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_UPKEEP_INTERVAL_MS);
 #else
-    E("curl_easy_setopt_upkeep_interval_ms requires curl 7.62.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_upkeep_interval_ms requires curl 7.62.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_upload_buffersize) {
 #if CURL_AT_LEAST_VERSION(7, 62, 0)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_UPLOAD_BUFFERSIZE);
 #else
-    E("curl_easy_setopt_upload_buffersize requires curl 7.62.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_upload_buffersize requires curl 7.62.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_use_ssl) {
 #if CURL_AT_LEAST_VERSION(7, 16, 5)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_USE_SSL);
 #else
-    E("curl_easy_setopt_use_ssl requires curl 7.16.5 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_use_ssl requires curl 7.16.5 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_verbose) {
@@ -1371,7 +1371,7 @@ EXTENSION(pg_curl_easy_setopt_wildcardmatch) {
 #if CURL_AT_LEAST_VERSION(7, 21, 0)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_WILDCARDMATCH);
 #else
-    E("curl_easy_setopt_wildcardmatch requires curl 7.21.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_wildcardmatch requires curl 7.21.0 or later")));
 #endif
 }
 
@@ -1508,63 +1508,63 @@ EXTENSION(pg_curl_easy_getinfo_content_type) {
 #if CURL_AT_LEAST_VERSION(7, 9, 4)
     return pg_curl_easy_getinfo_char(fcinfo, CURLINFO_CONTENT_TYPE);
 #else
-    E("curl_easy_getinfo_content_type requires curl 7.9.4 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_getinfo_content_type requires curl 7.9.4 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_getinfo_effective_url) {
 #if CURL_AT_LEAST_VERSION(7, 4, 0)
     return pg_curl_easy_getinfo_char(fcinfo, CURLINFO_EFFECTIVE_URL);
 #else
-    E("curl_easy_getinfo_effective_url requires curl 7.4.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_getinfo_effective_url requires curl 7.4.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_getinfo_ftp_entry_path) {
 #if CURL_AT_LEAST_VERSION(7, 15, 4)
     return pg_curl_easy_getinfo_char(fcinfo, CURLINFO_FTP_ENTRY_PATH);
 #else
-    E("curl_easy_getinfo_ftp_entry_path requires curl 7.15.4 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_getinfo_ftp_entry_path requires curl 7.15.4 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_getinfo_local_ip) {
 #if CURL_AT_LEAST_VERSION(7, 21, 0)
     return pg_curl_easy_getinfo_char(fcinfo, CURLINFO_LOCAL_IP);
 #else
-    E("curl_easy_getinfo_local_ip requires curl 7.21.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_getinfo_local_ip requires curl 7.21.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_getinfo_primary_ip) {
 #if CURL_AT_LEAST_VERSION(7, 19, 0)
     return pg_curl_easy_getinfo_char(fcinfo, CURLINFO_PRIMARY_IP);
 #else
-    E("curl_easy_getinfo_primary_ip requires curl 7.19.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_getinfo_primary_ip requires curl 7.19.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_getinfo_private) {
 #if CURL_AT_LEAST_VERSION(7, 10, 3)
     return pg_curl_easy_getinfo_char(fcinfo, CURLINFO_PRIVATE);
 #else
-    E("curl_easy_getinfo_private requires curl 7.10.3 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_getinfo_private requires curl 7.10.3 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_getinfo_redirect_url) {
 #if CURL_AT_LEAST_VERSION(7, 18, 2)
     return pg_curl_easy_getinfo_char(fcinfo, CURLINFO_REDIRECT_URL);
 #else
-    E("curl_easy_getinfo_redirect_url requires curl 7.18.2 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_getinfo_redirect_url requires curl 7.18.2 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_getinfo_rtsp_session_id) {
 #if CURL_AT_LEAST_VERSION(7, 20, 0)
     return pg_curl_easy_getinfo_char(fcinfo, CURLINFO_RTSP_SESSION_ID);
 #else
-    E("curl_easy_getinfo_rtsp_session_id requires curl 7.20.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_getinfo_rtsp_session_id requires curl 7.20.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_getinfo_scheme) {
 #if CURL_AT_LEAST_VERSION(7, 52, 0)
     return pg_curl_easy_getinfo_char(fcinfo, CURLINFO_SCHEME);
 #else
-    E("curl_easy_getinfo_scheme requires curl 7.52.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_getinfo_scheme requires curl 7.52.0 or later")));
 #endif
 }
 
@@ -1583,147 +1583,147 @@ EXTENSION(pg_curl_easy_getinfo_condition_unmet) {
 #if CURL_AT_LEAST_VERSION(7, 19, 4)
     return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_CONDITION_UNMET);
 #else
-    E("curl_easy_getinfo_condition_unmet requires curl 7.19.4 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_getinfo_condition_unmet requires curl 7.19.4 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_getinfo_filetime) {
 #if CURL_AT_LEAST_VERSION(7, 5, 0)
     return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_FILETIME);
 #else
-    E("curl_easy_getinfo_filetime requires curl 7.5.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_getinfo_filetime requires curl 7.5.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_getinfo_header_size) {
 #if CURL_AT_LEAST_VERSION(7, 4, 1)
     return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_HEADER_SIZE);
 #else
-    E("curl_easy_getinfo_header_size requires curl 7.4.1 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_getinfo_header_size requires curl 7.4.1 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_getinfo_httpauth_avail) {
 #if CURL_AT_LEAST_VERSION(7, 10, 8)
     return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_HTTPAUTH_AVAIL);
 #else
-    E("curl_easy_getinfo_httpauth_avail requires curl 7.10.8 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_getinfo_httpauth_avail requires curl 7.10.8 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_getinfo_http_connectcode) {
 #if CURL_AT_LEAST_VERSION(7, 10, 7)
     return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_HTTP_CONNECTCODE);
 #else
-    E("curl_easy_getinfo_http_connectcode requires curl 7.10.7 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_getinfo_http_connectcode requires curl 7.10.7 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_getinfo_http_version) {
 #if CURL_AT_LEAST_VERSION(7, 50, 0)
     return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_HTTP_VERSION);
 #else
-    E("curl_easy_getinfo_http_version requires curl 7.50.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_getinfo_http_version requires curl 7.50.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_getinfo_lastsocket) {
 #if CURL_AT_LEAST_VERSION(7, 15, 2)
     return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_LASTSOCKET);
 #else
-    E("curl_easy_getinfo_lastsocket requires curl 7.15.2 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_getinfo_lastsocket requires curl 7.15.2 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_getinfo_local_port) {
 #if CURL_AT_LEAST_VERSION(7, 21, 0)
     return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_LOCAL_PORT);
 #else
-    E("curl_easy_getinfo_local_port requires curl 7.21.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_getinfo_local_port requires curl 7.21.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_getinfo_num_connects) {
 #if CURL_AT_LEAST_VERSION(7, 12, 3)
     return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_NUM_CONNECTS);
 #else
-    E("curl_easy_getinfo_num_connects requires curl 7.12.3 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_getinfo_num_connects requires curl 7.12.3 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_getinfo_os_errno) {
 #if CURL_AT_LEAST_VERSION(7, 12, 2)
     return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_OS_ERRNO);
 #else
-    E("curl_easy_getinfo_os_errno requires curl 7.12.2 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_getinfo_os_errno requires curl 7.12.2 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_getinfo_primary_port) {
 #if CURL_AT_LEAST_VERSION(7, 21, 0)
     return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_PRIMARY_PORT);
 #else
-    E("curl_easy_getinfo_primary_port requires curl 7.21.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_getinfo_primary_port requires curl 7.21.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_getinfo_protocol) {
 #if CURL_AT_LEAST_VERSION(7, 52, 0)
     return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_PROTOCOL);
 #else
-    E("curl_easy_getinfo_protocol requires curl 7.52.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_getinfo_protocol requires curl 7.52.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_getinfo_proxyauth_avail) {
 #if CURL_AT_LEAST_VERSION(7, 10, 8)
     return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_PROXYAUTH_AVAIL);
 #else
-    E("curl_easy_getinfo_proxyauth_avail requires curl 7.10.8 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_getinfo_proxyauth_avail requires curl 7.10.8 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_getinfo_proxy_ssl_verifyresult) {
 #if CURL_AT_LEAST_VERSION(7, 52, 0)
     return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_PROXY_SSL_VERIFYRESULT);
 #else
-    E("curl_easy_getinfo_proxy_ssl_verifyresult requires curl 7.52.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_getinfo_proxy_ssl_verifyresult requires curl 7.52.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_getinfo_redirect_count) {
 #if CURL_AT_LEAST_VERSION(7, 9, 7)
     return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_REDIRECT_COUNT);
 #else
-    E("curl_easy_getinfo_redirect_count requires curl 7.9.7 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_getinfo_redirect_count requires curl 7.9.7 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_getinfo_request_size) {
 #if CURL_AT_LEAST_VERSION(7, 4, 1)
     return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_REQUEST_SIZE);
 #else
-    E("curl_easy_getinfo_request_size requires curl 7.4.1 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_getinfo_request_size requires curl 7.4.1 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_getinfo_response_code) {
 #if CURL_AT_LEAST_VERSION(7, 10, 8)
     return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_RESPONSE_CODE);
 #else
-    E("curl_easy_getinfo_response_code requires curl 7.10.8 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_getinfo_response_code requires curl 7.10.8 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_getinfo_rtsp_client_cseq) {
 #if CURL_AT_LEAST_VERSION(7, 20, 0)
     return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_RTSP_CLIENT_CSEQ);
 #else
-    E("curl_easy_getinfo_rtsp_client_cseq requires curl 7.20.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_getinfo_rtsp_client_cseq requires curl 7.20.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_getinfo_rtsp_cseq_recv) {
 #if CURL_AT_LEAST_VERSION(7, 20, 0)
     return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_RTSP_CSEQ_RECV);
 #else
-    E("curl_easy_getinfo_rtsp_cseq_recv requires curl 7.20.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_getinfo_rtsp_cseq_recv requires curl 7.20.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_getinfo_rtsp_server_cseq) {
 #if CURL_AT_LEAST_VERSION(7, 20, 0)
     return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_RTSP_SERVER_CSEQ);
 #else
-    E("curl_easy_getinfo_rtsp_server_cseq requires curl 7.20.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_getinfo_rtsp_server_cseq requires curl 7.20.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_getinfo_ssl_verifyresult) {
 #if CURL_AT_LEAST_VERSION(7, 5, 0)
     return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_SSL_VERIFYRESULT);
 #else
-    E("curl_easy_getinfo_ssl_verifyresult requires curl 7.5.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_getinfo_ssl_verifyresult requires curl 7.5.0 or later")));
 #endif
 }
 
@@ -1733,28 +1733,28 @@ EXTENSION(pg_curl_http_version_2_0) {
 #if CURL_AT_LEAST_VERSION(7, 33, 0)
     PG_RETURN_INT64(CURL_HTTP_VERSION_2_0);
 #else
-    E("_curl_http_version_2_0 requires curl 7.33.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("_curl_http_version_2_0 requires curl 7.33.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_http_version_2_prior_knowledge) {
 #if CURL_AT_LEAST_VERSION(7, 49, 0)
     PG_RETURN_INT64(CURL_HTTP_VERSION_2_PRIOR_KNOWLEDGE);
 #else
-    E("curl_http_version_2_prior_knowledge requires curl 7.49.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_http_version_2_prior_knowledge requires curl 7.49.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_http_version_2tls) {
 #if CURL_AT_LEAST_VERSION(7, 47, 0)
     PG_RETURN_INT64(CURL_HTTP_VERSION_2TLS);
 #else
-    E("curl_http_version_2tls requires curl 7.47.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_http_version_2tls requires curl 7.47.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_http_version_3) {
 #if CURL_AT_LEAST_VERSION(7, 66, 0)
     PG_RETURN_INT64(CURL_HTTP_VERSION_3);
 #else
-    E("curl_http_version_3 requires curl 7.66.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_http_version_3 requires curl 7.66.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_http_version_none) { PG_RETURN_INT64(CURL_HTTP_VERSION_NONE); }
@@ -1763,28 +1763,28 @@ EXTENSION(pg_curlusessl_none) {
 #if CURL_AT_LEAST_VERSION(7, 11, 0)
     PG_RETURN_INT64(CURLUSESSL_NONE);
 #else
-    E("curlusessl_none requires curl 7.11.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curlusessl_none requires curl 7.11.0 or later")));
 #endif
 }
 EXTENSION(pg_curlusessl_try) {
 #if CURL_AT_LEAST_VERSION(7, 11, 0)
     PG_RETURN_INT64(CURLUSESSL_TRY);
 #else
-    E("curlusessl_try requires curl 7.11.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curlusessl_try requires curl 7.11.0 or later")));
 #endif
 }
 EXTENSION(pg_curlusessl_control) {
 #if CURL_AT_LEAST_VERSION(7, 11, 0)
     PG_RETURN_INT64(CURLUSESSL_CONTROL);
 #else
-    E("curlusessl_control requires curl 7.11.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curlusessl_control requires curl 7.11.0 or later")));
 #endif
 }
 EXTENSION(pg_curlusessl_all) {
 #if CURL_AT_LEAST_VERSION(7, 11, 0)
     PG_RETURN_INT64(CURLUSESSL_ALL);
 #else
-    E("curlusessl_all requires curl 7.11.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curlusessl_all requires curl 7.11.0 or later")));
 #endif
 }
 
@@ -1808,63 +1808,63 @@ EXTENSION(pg_curl_sslversion_tlsv1_0) {
 #if CURL_AT_LEAST_VERSION(7, 34, 0)
     PG_RETURN_INT64(CURL_SSLVERSION_TLSv1_0);
 #else
-    E("curl_sslversion_tlsv1_0 requires curl 7.34.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_sslversion_tlsv1_0 requires curl 7.34.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_sslversion_tlsv1_1) {
 #if CURL_AT_LEAST_VERSION(7, 34, 0)
     PG_RETURN_INT64(CURL_SSLVERSION_TLSv1_1);
 #else
-    E("curl_sslversion_tlsv1_1 requires curl 7.34.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_sslversion_tlsv1_1 requires curl 7.34.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_sslversion_tlsv1_2) {
 #if CURL_AT_LEAST_VERSION(7, 34, 0)
     PG_RETURN_INT64(CURL_SSLVERSION_TLSv1_2);
 #else
-    E("curl_sslversion_tlsv1_2 requires curl 7.34.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_sslversion_tlsv1_2 requires curl 7.34.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_sslversion_tlsv1_3) {
 #if CURL_AT_LEAST_VERSION(7, 52, 0)
     PG_RETURN_INT64(CURL_SSLVERSION_TLSv1_3);
 #else
-    E("curl_sslversion_tlsv1_3 requires curl 7.52.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_sslversion_tlsv1_3 requires curl 7.52.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_sslversion_max_default) {
 #if CURL_AT_LEAST_VERSION(7, 54, 0)
     PG_RETURN_INT64(CURL_SSLVERSION_MAX_DEFAULT);
 #else
-    E("curl_sslversion_max_default requires curl 7.54.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_sslversion_max_default requires curl 7.54.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_sslversion_max_tlsv1_0) {
 #if CURL_AT_LEAST_VERSION(7, 54, 0)
     PG_RETURN_INT64(CURL_SSLVERSION_MAX_TLSv1_0);
 #else
-    E("curl_sslversion_max_tlsv1_0 requires curl 7.54.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_sslversion_max_tlsv1_0 requires curl 7.54.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_sslversion_max_tlsv1_1) {
 #if CURL_AT_LEAST_VERSION(7, 54, 0)
     PG_RETURN_INT64(CURL_SSLVERSION_MAX_TLSv1_1);
 #else
-    E("curl_sslversion_max_tlsv1_1 requires curl 7.54.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_sslversion_max_tlsv1_1 requires curl 7.54.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_sslversion_max_tlsv1_2) {
 #if CURL_AT_LEAST_VERSION(7, 54, 0)
     PG_RETURN_INT64(CURL_SSLVERSION_MAX_TLSv1_2);
 #else
-    E("curl_sslversion_max_tlsv1_2 requires curl 7.54.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_sslversion_max_tlsv1_2 requires curl 7.54.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_sslversion_max_tlsv1_3) {
 #if CURL_AT_LEAST_VERSION(7, 54, 0)
     PG_RETURN_INT64(CURL_SSLVERSION_MAX_TLSv1_3);
 #else
-    E("curl_sslversion_max_tlsv1_3 requires curl 7.54.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_sslversion_max_tlsv1_3 requires curl 7.54.0 or later")));
 #endif
 }
 
@@ -1872,42 +1872,42 @@ EXTENSION(pg_curlsslopt_allow_beast) {
 #if CURL_AT_LEAST_VERSION(7, 25, 0)
     PG_RETURN_INT64(CURLSSLOPT_ALLOW_BEAST);
 #else
-    E("curlsslopt_allow_beast requires curl 7.25.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curlsslopt_allow_beast requires curl 7.25.0 or later")));
 #endif
 }
 EXTENSION(pg_curlsslopt_no_revoke) {
 #if CURL_AT_LEAST_VERSION(7, 44, 0)
     PG_RETURN_INT64(CURLSSLOPT_NO_REVOKE);
 #else
-    E("curlsslopt_no_revoke requires curl 7.44.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curlsslopt_no_revoke requires curl 7.44.0 or later")));
 #endif
 }
 EXTENSION(pg_curlsslopt_no_partialchain) {
 #if CURL_AT_LEAST_VERSION(7, 68, 0)
     PG_RETURN_INT64(CURLSSLOPT_NO_PARTIALCHAIN);
 #else
-    E("curlsslopt_no_partialchain requires curl 7.68.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curlsslopt_no_partialchain requires curl 7.68.0 or later")));
 #endif
 }
 EXTENSION(pg_curlsslopt_revoke_best_effort) {
 #if CURL_AT_LEAST_VERSION(7, 70, 0)
     PG_RETURN_INT64(CURLSSLOPT_REVOKE_BEST_EFFORT);
 #else
-    E("curlsslopt_revoke_best_effort requires curl 7.70.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curlsslopt_revoke_best_effort requires curl 7.70.0 or later")));
 #endif
 }
 EXTENSION(pg_curlsslopt_native_ca) {
 #if CURL_AT_LEAST_VERSION(7, 71, 0)
     PG_RETURN_INT64(CURLSSLOPT_NATIVE_CA);
 #else
-    E("curlsslopt_native_ca requires curl 7.71.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curlsslopt_native_ca requires curl 7.71.0 or later")));
 #endif
 }
 EXTENSION(pg_curlsslopt_auto_client_cert) {
 #if CURL_AT_LEAST_VERSION(7, 77, 0)
     PG_RETURN_INT64(CURLSSLOPT_AUTO_CLIENT_CERT);
 #else
-    E("curlsslopt_auto_client_cert requires curl 7.77.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curlsslopt_auto_client_cert requires curl 7.77.0 or later")));
 #endif
 }
 
@@ -1915,42 +1915,42 @@ EXTENSION(pg_curlssh_auth_publickey) {
 #if CURL_AT_LEAST_VERSION(7, 16, 1)
     PG_RETURN_INT64(CURLSSH_AUTH_PUBLICKEY);
 #else
-    E("curlssh_auth_publickey requires curl 7.16.1 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curlssh_auth_publickey requires curl 7.16.1 or later")));
 #endif
 }
 EXTENSION(pg_curlssh_auth_password) {
 #if CURL_AT_LEAST_VERSION(7, 16, 1)
     PG_RETURN_INT64(CURLSSH_AUTH_PASSWORD);
 #else
-    E("curlssh_auth_password requires curl 7.16.1 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curlssh_auth_password requires curl 7.16.1 or later")));
 #endif
 }
 EXTENSION(pg_curlssh_auth_host) {
 #if CURL_AT_LEAST_VERSION(7, 16, 1)
     PG_RETURN_INT64(CURLSSH_AUTH_HOST);
 #else
-    E("curlssh_auth_host requires curl 7.16.1 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curlssh_auth_host requires curl 7.16.1 or later")));
 #endif
 }
 EXTENSION(pg_curlssh_auth_keyboard) {
 #if CURL_AT_LEAST_VERSION(7, 16, 1)
     PG_RETURN_INT64(CURLSSH_AUTH_KEYBOARD);
 #else
-    E("curlssh_auth_keyboard requires curl 7.16.1 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curlssh_auth_keyboard requires curl 7.16.1 or later")));
 #endif
 }
 EXTENSION(pg_curlssh_auth_agent) {
 #if CURL_AT_LEAST_VERSION(7, 28, 0)
     PG_RETURN_INT64(CURLSSH_AUTH_AGENT);
 #else
-    E("curlssh_auth_agent requires curl 7.28.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curlssh_auth_agent requires curl 7.28.0 or later")));
 #endif
 }
 EXTENSION(pg_curlssh_auth_any) {
 #if CURL_AT_LEAST_VERSION(7, 16, 1)
     PG_RETURN_INT64(CURLSSH_AUTH_ANY);
 #else
-    E("curlssh_auth_any requires curl 7.16.1 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curlssh_auth_any requires curl 7.16.1 or later")));
 #endif
 }
 
@@ -1958,77 +1958,77 @@ EXTENSION(pg_curlauth_basic) {
 #if CURL_AT_LEAST_VERSION(7, 10, 6)
     PG_RETURN_INT64(CURLAUTH_BASIC);
 #else
-    E("curlauth_basic requires curl 7.10.6 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curlauth_basic requires curl 7.10.6 or later")));
 #endif
 }
 EXTENSION(pg_curlauth_digest) {
 #if CURL_AT_LEAST_VERSION(7, 10, 6)
     PG_RETURN_INT64(CURLAUTH_DIGEST);
 #else
-    E("curlauth_digest requires curl 7.10.6 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curlauth_digest requires curl 7.10.6 or later")));
 #endif
 }
 EXTENSION(pg_curlauth_digest_ie) {
 #if CURL_AT_LEAST_VERSION(7, 19, 3)
     PG_RETURN_INT64(CURLAUTH_DIGEST_IE);
 #else
-    E("curlauth_digest_ie requires curl 7.19.3 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curlauth_digest_ie requires curl 7.19.3 or later")));
 #endif
 }
 EXTENSION(pg_curlauth_bearer) {
 #if CURL_AT_LEAST_VERSION(7, 61, 0)
     PG_RETURN_INT64(CURLAUTH_BEARER);
 #else
-    E("curlauth_bearer requires curl 7.61.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curlauth_bearer requires curl 7.61.0 or later")));
 #endif
 }
 EXTENSION(pg_curlauth_negotiate) {
 #if CURL_AT_LEAST_VERSION(7, 10, 6)
     PG_RETURN_INT64(CURLAUTH_NEGOTIATE);
 #else
-    E("curlauth_negotiate requires curl 7.10.6 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curlauth_negotiate requires curl 7.10.6 or later")));
 #endif
 }
 EXTENSION(pg_curlauth_ntlm) {
 #if CURL_AT_LEAST_VERSION(7, 10, 6)
     PG_RETURN_INT64(CURLAUTH_NTLM);
 #else
-    E("curlauth_ntlm requires curl 7.10.6 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curlauth_ntlm requires curl 7.10.6 or later")));
 #endif
 }
 EXTENSION(pg_curlauth_ntlm_wb) {
 #if CURL_AT_LEAST_VERSION(7, 22, 0)
     PG_RETURN_INT64(CURLAUTH_NTLM_WB);
 #else
-    E("curlauth_ntlm_wb requires curl 7.22.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curlauth_ntlm_wb requires curl 7.22.0 or later")));
 #endif
 }
 EXTENSION(pg_curlauth_any) {
 #if CURL_AT_LEAST_VERSION(7, 10, 6)
     PG_RETURN_INT64(CURLAUTH_ANY);
 #else
-    E("curlauth_any requires curl 7.10.6 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curlauth_any requires curl 7.10.6 or later")));
 #endif
 }
 EXTENSION(pg_curlauth_anysafe) {
 #if CURL_AT_LEAST_VERSION(7, 10, 6)
     PG_RETURN_INT64(CURLAUTH_ANYSAFE);
 #else
-    E("curlauth_anysafe requires curl 7.10.6 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curlauth_anysafe requires curl 7.10.6 or later")));
 #endif
 }
 EXTENSION(pg_curlauth_only) {
 #if CURL_AT_LEAST_VERSION(7, 21, 3)
     PG_RETURN_INT64(CURLAUTH_ONLY);
 #else
-    E("curlauth_only requires curl 7.21.3 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curlauth_only requires curl 7.21.3 or later")));
 #endif
 }
 EXTENSION(pg_curlauth_aws_sigv4) {
 #if CURL_AT_LEAST_VERSION(7, 75, 0)
     PG_RETURN_INT64(CURLAUTH_AWS_SIGV4);
 #else
-    E("curlauth_aws_sigv4 requires curl 7.75.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curlauth_aws_sigv4 requires curl 7.75.0 or later")));
 #endif
 }
 EXTENSION(pg_curlauth_gssapi) {
@@ -2042,7 +2042,7 @@ EXTENSION(pg_curlauth_none) {
 #if CURL_AT_LEAST_VERSION(7, 10, 6)
     PG_RETURN_INT64(CURLAUTH_NONE);
 #else
-    E("curlauth_none requires curl 7.10.6 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curlauth_none requires curl 7.10.6 or later")));
 #endif
 }
 
@@ -2050,77 +2050,77 @@ EXTENSION(pg_curl_rtspreq_options) {
 #if CURL_AT_LEAST_VERSION(7, 20, 0)
     PG_RETURN_INT64(CURL_RTSPREQ_OPTIONS);
 #else
-    E("curl_rtspreq_options requires curl 7.20.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_rtspreq_options requires curl 7.20.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_rtspreq_describe) {
 #if CURL_AT_LEAST_VERSION(7, 20, 0)
     PG_RETURN_INT64(CURL_RTSPREQ_DESCRIBE);
 #else
-    E("curl_rtspreq_describe requires curl 7.20.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_rtspreq_describe requires curl 7.20.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_rtspreq_announce) {
 #if CURL_AT_LEAST_VERSION(7, 20, 0)
     PG_RETURN_INT64(CURL_RTSPREQ_ANNOUNCE);
 #else
-    E("curl_rtspreq_announce requires curl 7.20.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_rtspreq_announce requires curl 7.20.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_rtspreq_setup) {
 #if CURL_AT_LEAST_VERSION(7, 20, 0)
     PG_RETURN_INT64(CURL_RTSPREQ_SETUP);
 #else
-    E("curl_rtspreq_setup requires curl 7.20.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_rtspreq_setup requires curl 7.20.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_rtspreq_play) {
 #if CURL_AT_LEAST_VERSION(7, 20, 0)
     PG_RETURN_INT64(CURL_RTSPREQ_PLAY);
 #else
-    E("curl_rtspreq_play requires curl 7.20.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_rtspreq_play requires curl 7.20.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_rtspreq_pause) {
 #if CURL_AT_LEAST_VERSION(7, 20, 0)
     PG_RETURN_INT64(CURL_RTSPREQ_PAUSE);
 #else
-    E("url_rtspreq_pause requires curl 7.20.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("url_rtspreq_pause requires curl 7.20.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_rtspreq_teardown) {
 #if CURL_AT_LEAST_VERSION(7, 20, 0)
     PG_RETURN_INT64(CURL_RTSPREQ_TEARDOWN);
 #else
-    E("curl_rtspreq_teardown requires curl 7.20.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_rtspreq_teardown requires curl 7.20.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_rtspreq_get_parameter) {
 #if CURL_AT_LEAST_VERSION(7, 20, 0)
     PG_RETURN_INT64(CURL_RTSPREQ_GET_PARAMETER);
 #else
-    E("curl_rtspreq_get_parameter requires curl 7.20.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_rtspreq_get_parameter requires curl 7.20.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_rtspreq_set_parameter) {
 #if CURL_AT_LEAST_VERSION(7, 20, 0)
     PG_RETURN_INT64(CURL_RTSPREQ_SET_PARAMETER);
 #else
-    E("curl_rtspreq_set_parameter requires curl 7.20.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_rtspreq_set_parameter requires curl 7.20.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_rtspreq_record) {
 #if CURL_AT_LEAST_VERSION(7, 20, 0)
     PG_RETURN_INT64(CURL_RTSPREQ_RECORD);
 #else
-    E("curl_rtspreq_record requires curl 7.20.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_rtspreq_record requires curl 7.20.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_rtspreq_receive) {
 #if CURL_AT_LEAST_VERSION(7, 20, 0)
     PG_RETURN_INT64(CURL_RTSPREQ_RECEIVE);
 #else
-    E("curl_rtspreq_receive requires curl 7.20.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_rtspreq_receive requires curl 7.20.0 or later")));
 #endif
 }
 
@@ -2128,203 +2128,203 @@ EXTENSION(pg_curlproto_dict) {
 #if CURL_AT_LEAST_VERSION(7, 19, 4)
     PG_RETURN_INT64(CURLPROTO_DICT);
 #else
-    E("curlproto_dict requires curl 7.19.4 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curlproto_dict requires curl 7.19.4 or later")));
 #endif
 }
 EXTENSION(pg_curlproto_file) {
 #if CURL_AT_LEAST_VERSION(7, 19, 4)
     PG_RETURN_INT64(CURLPROTO_FILE);
 #else
-    E("curlproto_file requires curl 7.19.4 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curlproto_file requires curl 7.19.4 or later")));
 #endif
 }
 EXTENSION(pg_curlproto_ftp) {
 #if CURL_AT_LEAST_VERSION(7, 19, 4)
     PG_RETURN_INT64(CURLPROTO_FTP);
 #else
-    E("curlproto_ftp requires curl 7.19.4 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curlproto_ftp requires curl 7.19.4 or later")));
 #endif
 }
 EXTENSION(pg_curlproto_ftps) {
 #if CURL_AT_LEAST_VERSION(7, 19, 4)
     PG_RETURN_INT64(CURLPROTO_FTPS);
 #else
-    E("curlproto_ftps requires curl 7.19.4 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curlproto_ftps requires curl 7.19.4 or later")));
 #endif
 }
 EXTENSION(pg_curlproto_gopher) {
 #if CURL_AT_LEAST_VERSION(7, 19, 4)
     PG_RETURN_INT64(CURLPROTO_GOPHER);
 #else
-    E("curlproto_gopher requires curl 7.19.4 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curlproto_gopher requires curl 7.19.4 or later")));
 #endif
 }
 EXTENSION(pg_curlproto_http) {
 #if CURL_AT_LEAST_VERSION(7, 19, 4)
     PG_RETURN_INT64(CURLPROTO_HTTP);
 #else
-    E("curlproto_http requires curl 7.19.4 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curlproto_http requires curl 7.19.4 or later")));
 #endif
 }
 EXTENSION(pg_curlproto_https) {
 #if CURL_AT_LEAST_VERSION(7, 19, 4)
     PG_RETURN_INT64(CURLPROTO_HTTPS);
 #else
-    E("curlproto_https requires curl 7.19.4 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curlproto_https requires curl 7.19.4 or later")));
 #endif
 }
 EXTENSION(pg_curlproto_imap) {
 #if CURL_AT_LEAST_VERSION(7, 19, 4)
     PG_RETURN_INT64(CURLPROTO_IMAP);
 #else
-    E("curlproto_imap requires curl 7.19.4 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curlproto_imap requires curl 7.19.4 or later")));
 #endif
 }
 EXTENSION(pg_curlproto_imaps) {
 #if CURL_AT_LEAST_VERSION(7, 19, 4)
     PG_RETURN_INT64(CURLPROTO_IMAPS);
 #else
-    E("curlproto_imaps requires curl 7.19.4 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curlproto_imaps requires curl 7.19.4 or later")));
 #endif
 }
 EXTENSION(pg_curlproto_ldap) {
 #if CURL_AT_LEAST_VERSION(7, 19, 4)
     PG_RETURN_INT64(CURLPROTO_LDAP);
 #else
-    E("curlproto_ldap requires curl 7.19.4 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curlproto_ldap requires curl 7.19.4 or later")));
 #endif
 }
 EXTENSION(pg_curlproto_ldaps) {
 #if CURL_AT_LEAST_VERSION(7, 19, 4)
     PG_RETURN_INT64(CURLPROTO_LDAPS);
 #else
-    E("curlproto_ldaps requires curl 7.19.4 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curlproto_ldaps requires curl 7.19.4 or later")));
 #endif
 }
 EXTENSION(pg_curlproto_pop3) {
 #if CURL_AT_LEAST_VERSION(7, 19, 4)
     PG_RETURN_INT64(CURLPROTO_POP3);
 #else
-    E("curlproto_pop3 requires curl 7.19.4 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curlproto_pop3 requires curl 7.19.4 or later")));
 #endif
 }
 EXTENSION(pg_curlproto_pop3s) {
 #if CURL_AT_LEAST_VERSION(7, 19, 4)
     PG_RETURN_INT64(CURLPROTO_POP3S);
 #else
-    E("curlproto_pop3s requires curl 7.19.4 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curlproto_pop3s requires curl 7.19.4 or later")));
 #endif
 }
 EXTENSION(pg_curlproto_rtmp) {
 #if CURL_AT_LEAST_VERSION(7, 19, 4)
     PG_RETURN_INT64(CURLPROTO_RTMP);
 #else
-    E("curlproto_rtmp requires curl 7.19.4 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curlproto_rtmp requires curl 7.19.4 or later")));
 #endif
 }
 EXTENSION(pg_curlproto_rtmpe) {
 #if CURL_AT_LEAST_VERSION(7, 19, 4)
     PG_RETURN_INT64(CURLPROTO_RTMPE);
 #else
-    E("curlproto_rtmpe requires curl 7.19.4 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curlproto_rtmpe requires curl 7.19.4 or later")));
 #endif
 }
 EXTENSION(pg_curlproto_rtmps) {
 #if CURL_AT_LEAST_VERSION(7, 19, 4)
     PG_RETURN_INT64(CURLPROTO_RTMPS);
 #else
-    E("curlproto_rtmps requires curl 7.19.4 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curlproto_rtmps requires curl 7.19.4 or later")));
 #endif
 }
 EXTENSION(pg_curlproto_rtmpt) {
 #if CURL_AT_LEAST_VERSION(7, 19, 4)
     PG_RETURN_INT64(CURLPROTO_RTMPT);
 #else
-    E("curlproto_rtmpt requires curl 7.19.4 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curlproto_rtmpt requires curl 7.19.4 or later")));
 #endif
 }
 EXTENSION(pg_curlproto_rtmpte) {
 #if CURL_AT_LEAST_VERSION(7, 19, 4)
     PG_RETURN_INT64(CURLPROTO_RTMPTE);
 #else
-    E("curlproto_rtmpte requires curl 7.19.4 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curlproto_rtmpte requires curl 7.19.4 or later")));
 #endif
 }
 EXTENSION(pg_curlproto_rtmpts) {
 #if CURL_AT_LEAST_VERSION(7, 19, 4)
     PG_RETURN_INT64(CURLPROTO_RTMPTS);
 #else
-    E("curlproto_rtmpts requires curl 7.19.4 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curlproto_rtmpts requires curl 7.19.4 or later")));
 #endif
 }
 EXTENSION(pg_curlproto_rtsp) {
 #if CURL_AT_LEAST_VERSION(7, 19, 4)
     PG_RETURN_INT64(CURLPROTO_RTSP);
 #else
-    E("curlproto_rtsp requires curl 7.19.4 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curlproto_rtsp requires curl 7.19.4 or later")));
 #endif
 }
 EXTENSION(pg_curlproto_scp) {
 #if CURL_AT_LEAST_VERSION(7, 19, 4)
     PG_RETURN_INT64(CURLPROTO_SCP);
 #else
-    E("curlproto_scp requires curl 7.19.4 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curlproto_scp requires curl 7.19.4 or later")));
 #endif
 }
 EXTENSION(pg_curlproto_sftp) {
 #if CURL_AT_LEAST_VERSION(7, 19, 4)
     PG_RETURN_INT64(CURLPROTO_SFTP);
 #else
-    E("curlproto_sftp requires curl 7.19.4 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curlproto_sftp requires curl 7.19.4 or later")));
 #endif
 }
 EXTENSION(pg_curlproto_smb) {
 #if CURL_AT_LEAST_VERSION(7, 19, 4)
     PG_RETURN_INT64(CURLPROTO_SMB);
 #else
-    E("curlproto_smb requires curl 7.19.4 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curlproto_smb requires curl 7.19.4 or later")));
 #endif
 }
 EXTENSION(pg_curlproto_smbs) {
 #if CURL_AT_LEAST_VERSION(7, 19, 4)
     PG_RETURN_INT64(CURLPROTO_SMBS);
 #else
-    E("curlproto_smbs requires curl 7.19.4 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curlproto_smbs requires curl 7.19.4 or later")));
 #endif
 }
 EXTENSION(pg_curlproto_smtp) {
 #if CURL_AT_LEAST_VERSION(7, 19, 4)
     PG_RETURN_INT64(CURLPROTO_SMTP);
 #else
-    E("curlproto_smtp requires curl 7.19.4 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curlproto_smtp requires curl 7.19.4 or later")));
 #endif
 }
 EXTENSION(pg_curlproto_smtps) {
 #if CURL_AT_LEAST_VERSION(7, 19, 4)
     PG_RETURN_INT64(CURLPROTO_SMTPS);
 #else
-    E("curlproto_smtps requires curl 7.19.4 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curlproto_smtps requires curl 7.19.4 or later")));
 #endif
 }
 EXTENSION(pg_curlproto_telnet) {
 #if CURL_AT_LEAST_VERSION(7, 19, 4)
     PG_RETURN_INT64(CURLPROTO_TELNET);
 #else
-    E("curlproto_telnet requires curl 7.19.4 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curlproto_telnet requires curl 7.19.4 or later")));
 #endif
 }
 EXTENSION(pg_curlproto_tftp) {
 #if CURL_AT_LEAST_VERSION(7, 19, 4)
     PG_RETURN_INT64(CURLPROTO_TFTP);
 #else
-    E("curlproto_tftp requires curl 7.19.4 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curlproto_tftp requires curl 7.19.4 or later")));
 #endif
 }
 EXTENSION(pg_curlproto_all) {
 #if CURL_AT_LEAST_VERSION(7, 19, 4)
     PG_RETURN_INT64(CURLPROTO_ALL);
 #else
-    E("curlproto_all requires curl 7.19.4 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curlproto_all requires curl 7.19.4 or later")));
 #endif
 }
 
@@ -2333,7 +2333,7 @@ EXTENSION(pg_curlproxy_https) {
 #if CURL_AT_LEAST_VERSION(7, 52, 0)
     PG_RETURN_INT64(CURLPROXY_HTTPS);
 #else
-    E("curlproxy_https requires curl 7.52.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curlproxy_https requires curl 7.52.0 or later")));
 #endif
 }
 EXTENSION(pg_curlproxy_http_1_0) { PG_RETURN_INT64(CURLPROXY_HTTP_1_0); }
@@ -2346,28 +2346,28 @@ EXTENSION(pg_curl_redir_post_301) {
 #if CURL_AT_LEAST_VERSION(7, 19, 1)
     PG_RETURN_INT64(CURL_REDIR_POST_301);
 #else
-    E("curl_redir_post_301 requires curl 7.19.1 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_redir_post_301 requires curl 7.19.1 or later")));
 #endif
 }
 EXTENSION(pg_curl_redir_post_302) {
 #if CURL_AT_LEAST_VERSION(7, 19, 1)
     PG_RETURN_INT64(CURL_REDIR_POST_302);
 #else
-    E("curl_redir_post_302 requires curl 7.19.1 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_redir_post_302 requires curl 7.19.1 or later")));
 #endif
 }
 EXTENSION(pg_curl_redir_post_303) {
 #if CURL_AT_LEAST_VERSION(7, 26, 0)
     PG_RETURN_INT64(CURL_REDIR_POST_303);
 #else
-    E("curl_redir_post_303 requires curl 7.26.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_redir_post_303 requires curl 7.26.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_redir_post_all) {
 #if CURL_AT_LEAST_VERSION(7, 19, 1)
     PG_RETURN_INT64(CURL_REDIR_POST_ALL);
 #else
-    E("curl_redir_post_all requires curl 7.19.1 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_redir_post_all requires curl 7.19.1 or later")));
 #endif
 }
 
@@ -2391,21 +2391,21 @@ EXTENSION(pg_curlgssapi_delegation_flag) {
 #if CURL_AT_LEAST_VERSION(7, 22, 0)
     PG_RETURN_INT64(CURLGSSAPI_DELEGATION_FLAG);
 #else
-    E("curlgssapi_delegation_flag requires curl 7.22.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curlgssapi_delegation_flag requires curl 7.22.0 or later")));
 #endif
 }
 EXTENSION(pg_curlgssapi_delegation_policy_flag) {
 #if CURL_AT_LEAST_VERSION(7, 22, 0)
     PG_RETURN_INT64(CURLGSSAPI_DELEGATION_POLICY_FLAG);
 #else
-    E("curlgssapi_delegation_policy_flag requires curl 7.22.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curlgssapi_delegation_policy_flag requires curl 7.22.0 or later")));
 #endif
 }
 EXTENSION(pg_curlgssapi_delegation_none) {
 #if CURL_AT_LEAST_VERSION(7, 22, 0)
     PG_RETURN_INT64(CURLGSSAPI_DELEGATION_NONE);
 #else
-    E("curlgssapi_delegation_none requires curl 7.22.0 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curlgssapi_delegation_none requires curl 7.22.0 or later")));
 #endif
 }
 
@@ -2413,21 +2413,21 @@ EXTENSION(pg_curlftpssl_ccc_none) {
 #if CURL_AT_LEAST_VERSION(7, 16, 1)
     PG_RETURN_INT64(CURLFTPSSL_CCC_NONE);
 #else
-    E("curlftpssl_ccc_none requires curl 7.16.1 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curlftpssl_ccc_none requires curl 7.16.1 or later")));
 #endif
 }
 EXTENSION(pg_curlftpssl_ccc_passive) {
 #if CURL_AT_LEAST_VERSION(7, 16, 1)
     PG_RETURN_INT64(CURLFTPSSL_CCC_PASSIVE);
 #else
-    E("curlftpssl_ccc_passive requires curl 7.16.1 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curlftpssl_ccc_passive requires curl 7.16.1 or later")));
 #endif
 }
 EXTENSION(pg_curlftpssl_ccc_active) {
 #if CURL_AT_LEAST_VERSION(7, 16, 1)
     PG_RETURN_INT64(CURLFTPSSL_CCC_ACTIVE);
 #else
-    E("curlftpssl_ccc_active requires curl 7.16.1 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curlftpssl_ccc_active requires curl 7.16.1 or later")));
 #endif
 }
 
@@ -2435,21 +2435,21 @@ EXTENSION(pg_curlftpauth_default) {
 #if CURL_AT_LEAST_VERSION(7, 12, 2)
     PG_RETURN_INT64(CURLFTPAUTH_DEFAULT);
 #else
-    E("curlftpauth_default requires curl 7.12.2 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curlftpauth_default requires curl 7.12.2 or later")));
 #endif
 }
 EXTENSION(pg_curlftpauth_ssl) {
 #if CURL_AT_LEAST_VERSION(7, 12, 2)
     PG_RETURN_INT64(CURLFTPAUTH_SSL);
 #else
-    E("curlftpauth_ssl requires curl 7.12.2 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curlftpauth_ssl requires curl 7.12.2 or later")));
 #endif
 }
 EXTENSION(pg_curlftpauth_tls) {
 #if CURL_AT_LEAST_VERSION(7, 12, 2)
     PG_RETURN_INT64(CURLFTPAUTH_TLS);
 #else
-    E("curlftpauth_tls requires curl 7.12.2 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curlftpauth_tls requires curl 7.12.2 or later")));
 #endif
 }
 
@@ -2457,21 +2457,21 @@ EXTENSION(pg_curlftpmethod_multicwd) {
 #if CURL_AT_LEAST_VERSION(7, 15, 1)
     PG_RETURN_INT64(CURLFTPMETHOD_MULTICWD);
 #else
-    E("curlftpmethod_multicwd requires curl 7.15.1 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curlftpmethod_multicwd requires curl 7.15.1 or later")));
 #endif
 }
 EXTENSION(pg_curlftpmethod_nocwd) {
 #if CURL_AT_LEAST_VERSION(7, 15, 1)
     PG_RETURN_INT64(CURLFTPMETHOD_NOCWD);
 #else
-    E("curlftpmethod_nocwd requires curl 7.15.1 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curlftpmethod_nocwd requires curl 7.15.1 or later")));
 #endif
 }
 EXTENSION(pg_curlftpmethod_singlecwd) {
 #if CURL_AT_LEAST_VERSION(7, 15, 1)
     PG_RETURN_INT64(CURLFTPMETHOD_SINGLECWD);
 #else
-    E("curlftpmethod_singlecwd requires curl 7.15.1 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curlftpmethod_singlecwd requires curl 7.15.1 or later")));
 #endif
 }
 
@@ -2479,21 +2479,21 @@ EXTENSION(pg_curlftp_create_dir) {
 #if CURL_AT_LEAST_VERSION(7, 10, 7)
     PG_RETURN_INT64(CURLFTP_CREATE_DIR);
 #else
-    E("curlftp_create_dir requires curl 7.10.7 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curlftp_create_dir requires curl 7.10.7 or later")));
 #endif
 }
 EXTENSION(pg_curlftp_create_dir_retry) {
 #if CURL_AT_LEAST_VERSION(7, 19, 4)
     PG_RETURN_INT64(CURLFTP_CREATE_DIR_RETRY);
 #else
-    E("curlftp_create_dir_retry requires curl 7.19.4 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curlftp_create_dir_retry requires curl 7.19.4 or later")));
 #endif
 }
 EXTENSION(pg_curlftp_create_dir_none) {
 #if CURL_AT_LEAST_VERSION(7, 10, 7)
     PG_RETURN_INT64(CURLFTP_CREATE_DIR_NONE);
 #else
-    E("curlftp_create_dir_none requires curl 7.10.7 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curlftp_create_dir_none requires curl 7.10.7 or later")));
 #endif
 }
 
