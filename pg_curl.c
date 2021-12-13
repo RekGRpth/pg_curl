@@ -210,7 +210,7 @@ EXTENSION(pg_curl_recipient_append) {
     struct curl_slist *temp = recipient;
     if (PG_ARGISNULL(0)) ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("curl_recipient_append requires argument email")));
     email = TextDatumGetCString(PG_GETARG_DATUM(0));
-    if ((temp = curl_slist_append(temp, email))) recipient = temp; else E("!curl_slist_append");
+    if ((temp = curl_slist_append(temp, email))) recipient = temp; else ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_slist_append")));
     pfree(email);
     PG_RETURN_BOOL(temp != NULL);
 #else
