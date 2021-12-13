@@ -73,13 +73,13 @@ static void *pg_curl_calloc_callback(size_t nmemb, size_t size) {
 void _PG_init(void); void _PG_init(void) {
     MemoryContext oldMemoryContext = MemoryContextSwitchTo(TopMemoryContext);
 #if CURL_AT_LEAST_VERSION(7, 12, 0)
-    if (curl_global_init_mem(CURL_GLOBAL_ALL, pg_curl_malloc_callback, pg_curl_free_callback, pg_curl_realloc_callback, pg_curl_strdup_callback, pg_curl_calloc_callback)) E("curl_global_init_mem");
+    if (curl_global_init_mem(CURL_GLOBAL_ALL, pg_curl_malloc_callback, pg_curl_free_callback, pg_curl_realloc_callback, pg_curl_strdup_callback, pg_curl_calloc_callback)) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_global_init_mem")));
 #elif CURL_AT_LEAST_VERSION(7, 8, 0)
-    if (curl_global_init(CURL_GLOBAL_ALL)) E("curl_global_init");
+    if (curl_global_init(CURL_GLOBAL_ALL)) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_global_init")));
 #endif
-    if (!(curl = curl_easy_init())) E("!curl_easy_init");
+    if (!(curl = curl_easy_init())) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_easy_init")));
 #if CURL_AT_LEAST_VERSION(7, 56, 0)
-    if (!(curl_mime_init(curl))) E("!curl_mime_init");
+    if (!(curl_mime_init(curl))) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_mime_init")));
     has_mime = false;
 #endif
     initStringInfo(&data_in_str);
