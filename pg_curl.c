@@ -1540,10 +1540,10 @@ static Datum pg_curl_easy_getinfo_long(PG_FUNCTION_ARGS, CURLINFO info) {
 #if CURL_AT_LEAST_VERSION(7, 4, 1)
     CURLcode res = CURL_LAST;
     long value;
-    if ((res = curl_easy_getinfo(curl, info, &value)) != CURLE_OK) E("curl_easy_getinfo(%i): %s", info, curl_easy_strerror(res));
+    if ((res = curl_easy_getinfo(curl, info, &value)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_getinfo failed: %s for %i", curl_easy_strerror(res), info)));
     PG_RETURN_INT64(value);
 #else
-    E("curl_easy_getinfo_* requires curl 7.4.1 or later");
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_getinfo_* requires curl 7.4.1 or later")));
 #endif
 }
 
@@ -1760,7 +1760,7 @@ EXTENSION(pg_curl_upkeep_interval_default) {
 #ifdef CURL_UPKEEP_INTERVAL_DEFAULT
     PG_RETURN_INT64(CURL_UPKEEP_INTERVAL_DEFAULT);
 #else
-    E("!CURL_UPKEEP_INTERVAL_DEFAULT");
+    ereport(ERROR, (errcode(ERRCODE_UNDEFINED_FUNCTION), errmsg("CURL_UPKEEP_INTERVAL_DEFAULT undefined")));
 #endif
 }
 
