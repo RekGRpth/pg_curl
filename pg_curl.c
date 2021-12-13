@@ -162,7 +162,7 @@ EXTENSION(pg_curl_easy_escape) {
     char *escape;
     if (PG_ARGISNULL(0)) ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("curl_easy_escape requires argument string")));
     string = DatumGetTextP(PG_GETARG_DATUM(0));
-    if (!(escape = curl_easy_escape(curl, VARDATA_ANY(string), VARSIZE_ANY_EXHDR(string)))) E("!curl_easy_escape");
+    if (!(escape = curl_easy_escape(curl, VARDATA_ANY(string), VARSIZE_ANY_EXHDR(string)))) PG_RETURN_NULL();
     string = cstring_to_text(escape);
     curl_free(escape);
     PG_RETURN_TEXT_P(string);
