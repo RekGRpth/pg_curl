@@ -117,7 +117,7 @@ EXTENSION(pg_curl_easy_header_reset) {
 EXTENSION(pg_curl_easy_mime_reset) {
 #if CURL_AT_LEAST_VERSION(7, 56, 0)
     curl_mime_free(mime);
-    if (!(mime = curl_mime_init(curl))) E("!curl_mime_init");
+    if (!(mime = curl_mime_init(curl))) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_mime_init")));
     has_mime = false;
     PG_RETURN_VOID();
 #else
