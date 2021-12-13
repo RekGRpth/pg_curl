@@ -13,7 +13,7 @@ CREATE OR REPLACE FUNCTION curl_header_append(name text, value text) RETURNS boo
 CREATE OR REPLACE FUNCTION curl_recipient_append(email text) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_recipient_append' LANGUAGE 'c';
 
 CREATE OR REPLACE FUNCTION curl_mime_data(data bytea, name text default null, file text default null, type text default null, code text default null, head text default null) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_mime_data_bytea' LANGUAGE 'c';
-CREATE OR REPLACE FUNCTION curl_mime_data(data text, name text default null, file text default null, type text default null, code text default null, head text default null) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_mime_data' LANGUAGE 'c';
+CREATE OR REPLACE FUNCTION curl_mime_data(data text, name text default null, file text default null, type text default null, code text default null, head text default null) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_mime_data_text' LANGUAGE 'c';
 CREATE OR REPLACE FUNCTION curl_mime_file(data text, name text default null, file text default null, type text default null, code text default null, head text default null) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_mime_file' LANGUAGE 'c';
 
 CREATE OR REPLACE FUNCTION curl_easy_setopt_copypostfields(parameter bytea) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_copypostfields' LANGUAGE 'c';
