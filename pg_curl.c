@@ -1401,39 +1401,39 @@ EXTENSION(pg_curl_easy_perform) {
             else elog(WARNING, "curl_easy_perform failed: %s for try %i", curl_easy_strerror(res), try);
             if (sleep) pg_usleep(sleep);
         } else {
-            if (strlen(errbuf)) elog(ERROR, "curl_easy_perform failed: %s and %s", curl_easy_strerror(res), errbuf);
-            else elog(ERROR, "curl_easy_perform failed: %s", curl_easy_strerror(res));
+            if (strlen(errbuf)) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("curl_easy_perform failed: %s and %s", curl_easy_strerror(res), errbuf)));
+            else ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("curl_easy_perform failed: %s", curl_easy_strerror(res))));
         }
     }
     PG_RETURN_BOOL(res == CURLE_OK);
 }
 
 EXTENSION(pg_curl_easy_getinfo_debug) {
-    if (!has_performed) elog(ERROR, "call curl_easy_perform first");
+    if (!has_performed) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("call curl_easy_perform first")));
     if (!debug_str.len) PG_RETURN_NULL();
     PG_RETURN_TEXT_P(cstring_to_text_with_len(debug_str.data, debug_str.len));
 }
 
 EXTENSION(pg_curl_easy_getinfo_header_in) {
-    if (!has_performed) elog(ERROR, "call curl_easy_perform first");
+    if (!has_performed) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("call curl_easy_perform first")));
     if (!header_in_str.len) PG_RETURN_NULL();
     PG_RETURN_TEXT_P(cstring_to_text_with_len(header_in_str.data, header_in_str.len));
 }
 
 EXTENSION(pg_curl_easy_getinfo_header_out) {
-    if (!has_performed) elog(ERROR, "call curl_easy_perform first");
+    if (!has_performed) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("call curl_easy_perform first")));
     if (!header_out_str.len) PG_RETURN_NULL();
     PG_RETURN_TEXT_P(cstring_to_text_with_len(header_out_str.data, header_out_str.len));
 }
 
 EXTENSION(pg_curl_easy_getinfo_data_in) {
-    if (!has_performed) elog(ERROR, "call curl_easy_perform first");
+    if (!has_performed) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("call curl_easy_perform first")));
     if (!data_in_str.len) PG_RETURN_NULL();
     PG_RETURN_BYTEA_P(cstring_to_text_with_len(data_in_str.data, data_in_str.len));
 }
 
 EXTENSION(pg_curl_easy_getinfo_data_out) {
-    if (!has_performed) elog(ERROR, "call curl_easy_perform first");
+    if (!has_performed) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("call curl_easy_perform first")));
     if (!data_out_str.len) PG_RETURN_NULL();
     PG_RETURN_BYTEA_P(cstring_to_text_with_len(data_out_str.data, data_out_str.len));
 }
