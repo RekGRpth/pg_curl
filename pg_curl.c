@@ -288,8 +288,8 @@ EXTENSION(pg_curl_easy_setopt_copypostfields) {
     bytea *parameter;
     if (PG_ARGISNULL(0)) ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("curl_easy_setopt_copypostfields requires argument parameter")));
     parameter = DatumGetTextP(PG_GETARG_DATUM(0));
-    if ((res = curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, VARSIZE_ANY_EXHDR(parameter))) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed: %s for CURLOPT_POSTFIELDSIZE and %li", curl_easy_strerror(res), VARSIZE_ANY_EXHDR(parameter))));
-    if ((res = curl_easy_setopt(curl, CURLOPT_COPYPOSTFIELDS, VARDATA_ANY(parameter))) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed: %s for CURLOPT_COPYPOSTFIELDS and %*.*s", curl_easy_strerror(res), (int)VARSIZE_ANY_EXHDR(parameter), (int)VARSIZE_ANY_EXHDR(parameter), VARDATA_ANY(parameter))));
+    if ((res = curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, VARSIZE_ANY_EXHDR(parameter))) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_POSTFIELDSIZE and %li", VARSIZE_ANY_EXHDR(parameter))));
+    if ((res = curl_easy_setopt(curl, CURLOPT_COPYPOSTFIELDS, VARDATA_ANY(parameter))) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_COPYPOSTFIELDS and %*.*s", (int)VARSIZE_ANY_EXHDR(parameter), (int)VARSIZE_ANY_EXHDR(parameter), VARDATA_ANY(parameter))));
     PG_RETURN_BOOL(res == CURLE_OK);
 #else
     ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_copypostfields requires curl 7.17.1 or later")));
