@@ -303,8 +303,8 @@ EXTENSION(pg_curl_easy_setopt_postfields) {
     parameter = DatumGetTextP(PG_GETARG_DATUM(0));
     resetStringInfo(&postfield_str);
     appendBinaryStringInfo(&postfield_str, VARDATA_ANY(parameter), VARSIZE_ANY_EXHDR(parameter));
-    if ((res = curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, postfield_str.len)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed: %s for CURLOPT_POSTFIELDSIZE and %li", curl_easy_strerror(res), VARSIZE_ANY_EXHDR(parameter))));
-    if ((res = curl_easy_setopt(curl, CURLOPT_POSTFIELDS, postfield_str.data)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed: %s for CURLOPT_POSTFIELDS and %*.*s", curl_easy_strerror(res), (int)VARSIZE_ANY_EXHDR(parameter), (int)VARSIZE_ANY_EXHDR(parameter), VARDATA_ANY(parameter))));
+    if ((res = curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, postfield_str.len)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_POSTFIELDSIZE and %li", VARSIZE_ANY_EXHDR(parameter))));
+    if ((res = curl_easy_setopt(curl, CURLOPT_POSTFIELDS, postfield_str.data)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_POSTFIELDS and %*.*s", (int)VARSIZE_ANY_EXHDR(parameter), (int)VARSIZE_ANY_EXHDR(parameter), VARDATA_ANY(parameter))));
     PG_RETURN_BOOL(res == CURLE_OK);
 }
 
