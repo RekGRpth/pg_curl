@@ -788,7 +788,7 @@ static Datum pg_curl_easy_setopt_long(PG_FUNCTION_ARGS, CURLoption option) {
     long parameter;
     if (PG_ARGISNULL(0)) ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("curl_easy_setopt_* requires argument parameter")));
     parameter = PG_GETARG_INT64(0);
-    if ((res = curl_easy_setopt(curl, option, parameter)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed: %s for %i and %li", curl_easy_strerror(res), option, parameter)));
+    if ((res = curl_easy_setopt(curl, option, parameter)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("%i and %li", option, parameter)));
     PG_RETURN_BOOL(res == CURLE_OK);
 }
 
