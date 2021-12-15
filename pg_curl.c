@@ -222,7 +222,7 @@ static Datum pg_curl_mime_data_or_file(PG_FUNCTION_ARGS, curl_mimepart *part) {
     if (head) {
         struct curl_slist *headers = NULL;
         if (!(headers = curl_slist_append(headers, head))) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_slist_append")));
-        if ((res = curl_mime_headers(part, headers, true)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_mime_headers failed: %s for %s", curl_easy_strerror(res), head)));
+        if ((res = curl_mime_headers(part, headers, true)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_mime_headers failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("%s", head)));
     }
     if (name) pfree(name);
     if (file) pfree(file);
