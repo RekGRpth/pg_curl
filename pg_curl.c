@@ -215,10 +215,10 @@ static Datum pg_curl_mime_data_or_file(PG_FUNCTION_ARGS, curl_mimepart *part) {
     if (!PG_ARGISNULL(3)) type = TextDatumGetCString(PG_GETARG_DATUM(3));
     if (!PG_ARGISNULL(4)) code = TextDatumGetCString(PG_GETARG_DATUM(4));
     if (!PG_ARGISNULL(5)) head = TextDatumGetCString(PG_GETARG_DATUM(5));
-    if (name && ((res = curl_mime_name(part, name)) != CURLE_OK)) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_mime_name failed: %s for %s", curl_easy_strerror(res), name)));
-    if (file && ((res = curl_mime_filename(part, file)) != CURLE_OK)) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_mime_filename failed: %s for %s", curl_easy_strerror(res), file)));
-    if (type && ((res = curl_mime_type(part, type)) != CURLE_OK)) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_mime_type failed: %s for %s", curl_easy_strerror(res), type)));
-    if (code && ((res = curl_mime_encoder(part, code)) != CURLE_OK)) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_mime_encoder failed: %s for %s", curl_easy_strerror(res), code)));
+    if (name && ((res = curl_mime_name(part, name)) != CURLE_OK)) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_mime_name failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("%s", name)));
+    if (file && ((res = curl_mime_filename(part, file)) != CURLE_OK)) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_mime_filename failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("%s", file)));
+    if (type && ((res = curl_mime_type(part, type)) != CURLE_OK)) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_mime_type failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("%s", type)));
+    if (code && ((res = curl_mime_encoder(part, code)) != CURLE_OK)) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_mime_encoder failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("%s", code)));
     if (head) {
         struct curl_slist *headers = NULL;
         if (!(headers = curl_slist_append(headers, head))) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_slist_append")));
