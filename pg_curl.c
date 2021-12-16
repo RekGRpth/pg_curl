@@ -1452,7 +1452,7 @@ static Datum pg_curl_easy_getinfo_char(PG_FUNCTION_ARGS, CURLINFO info) {
 #if CURL_AT_LEAST_VERSION(7, 4, 1)
     CURLcode res = CURL_LAST;
     char *value = NULL;
-    if ((res = curl_easy_getinfo(curl, info, &value)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_getinfo failed: %s for %i", curl_easy_strerror(res), info)));
+    if ((res = curl_easy_getinfo(curl, info, &value)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_getinfo failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("%i", info)));
     if (!value) PG_RETURN_NULL();
     PG_RETURN_TEXT_P(cstring_to_text(value));
 #else
