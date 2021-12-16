@@ -1397,12 +1397,12 @@ EXTENSION(pg_curl_easy_perform) {
         case CURLE_LDAP_INVALID_URL:
         case CURLE_ABORTED_BY_CALLBACK: try = 0; if (pgsql_interrupt_handler && pg_curl_interrupt_requested) { (*pgsql_interrupt_handler)(pg_curl_interrupt_requested); pg_curl_interrupt_requested = 0; } // fall through
         default: if (try) {
-            if (strlen(errbuf)) elog(WARNING, "curl_easy_perform failed: %s and %s for try %i", curl_easy_strerror(res), errbuf, try);
-            else elog(WARNING, "curl_easy_perform failed: %s for try %i", curl_easy_strerror(res), try);
+            if (strlen(errbuf)) ereport(WARNING, (errmsg("curl_easy_perform failed"), errdetail("%s and %s", curl_easy_strerror(res), errbuf), errcontext("try %i", try)));
+            else ereport(WARNING, (errmsg("curl_easy_perform failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("try %i", try)));
             if (sleep) pg_usleep(sleep);
         } else {
-            if (strlen(errbuf)) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("curl_easy_perform failed: %s and %s", curl_easy_strerror(res), errbuf)));
-            else ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("curl_easy_perform failed: %s", curl_easy_strerror(res))));
+            if (strlen(errbuf)) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("curl_easy_perform failed"), errdetail("%s and %s", curl_easy_strerror(res), errbuf)));
+            else ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("curl_easy_perform failed"), errdetail("%s", curl_easy_strerror(res))));
         }
     }
     PG_RETURN_BOOL(res == CURLE_OK);
