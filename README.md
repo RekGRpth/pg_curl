@@ -1,4 +1,4 @@
-# get
+# http get
 ```sql
 CREATE OR REPLACE FUNCTION get(url TEXT) RETURNS TEXT LANGUAGE SQL AS $BODY$
     WITH s AS (SELECT
@@ -10,7 +10,7 @@ CREATE OR REPLACE FUNCTION get(url TEXT) RETURNS TEXT LANGUAGE SQL AS $BODY$
 $BODY$;
 ```
 
-# urlencoded post
+# http urlencoded form post
 ```sql
 CREATE OR REPLACE FUNCTION post(url TEXT, request JSON) RETURNS TEXT LANGUAGE SQL AS $BODY$
     WITH s AS (SELECT
@@ -30,7 +30,22 @@ CREATE OR REPLACE FUNCTION post(url TEXT, request JSON) RETURNS TEXT LANGUAGE SQ
 $BODY$;
 ```
 
-# json post
+# http multipart/form-data form post
+```sql
+CREATE OR REPLACE FUNCTION post(url TEXT, request JSON) RETURNS TEXT LANGUAGE SQL AS $BODY$
+    with s AS (SELECT
+        curl_easy_reset(),
+        ( WITH s AS (
+            SELECT (json_each_text(request)).*
+        ) SELECT array_agg(curl_mime_data(value, name:=key)) FROM s),
+        curl_easy_setopt_url(url),
+        curl_easy_perform(),
+        curl_easy_getinfo_data_in()
+    ) SELECT convert_from(curl_easy_getinfo_data_in, 'utf-8') FROM s;
+$BODY$;
+```
+
+# http json post
 ```sql
 CREATE OR REPLACE FUNCTION post(url TEXT, request JSON) RETURNS TEXT LANGUAGE SQL AS $BODY$
     WITH s AS (SELECT
@@ -44,7 +59,7 @@ CREATE OR REPLACE FUNCTION post(url TEXT, request JSON) RETURNS TEXT LANGUAGE SQ
 $BODY$;
 ```
 
-# send email
+# email
 ```sql
 CREATE OR REPLACE FUNCTION email(url TEXT, username TEXT, password TEXT, subject TEXT, sender TEXT, recipient TEXT, body TEXT, type TEXT) RETURNS TEXT LANGUAGE SQL AS $BODY$
     WITH s AS (SELECT
