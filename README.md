@@ -79,7 +79,7 @@ CREATE OR REPLACE FUNCTION email(url TEXT, username TEXT, password TEXT, subject
 $BODY$;
 ```
 
-# convert headers to table
+# convert http headers to table
 ```sql
 WITH s AS (
     SELECT regexp_matches(curl_easy_getinfo_header_in(), E'([^ \t\r\n\f]+): ?([^\t\r\n\f]+)', 'g') AS s
