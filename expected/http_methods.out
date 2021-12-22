@@ -88,8 +88,9 @@ t
 t
 t
 t
+t
 content-type|application/json
-content-length|507
+content-length|540
 access-control-allow-origin|*
 access-control-allow-credentials|true
 {
@@ -107,11 +108,12 @@ access-control-allow-credentials|true
     },
     "json": null,
     "files": {
+        "filename.txt": "content"
     },
     "headers": {
         "Host": "httpbin.org",
         "Accept": "*/*",
         "Content-Type": "multipart/form-data",
-        "Content-Length": "317"
+        "Content-Length": "476"
     }
 }
