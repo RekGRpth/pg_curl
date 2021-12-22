@@ -38,6 +38,7 @@ select curl_easy_reset();
 select curl_easy_setopt_url('https://httpbin.org/post?a=b&c=&d');
 select curl_mime_data('f', name:='e');
 select curl_mime_data('', name:='g');
+select curl_mime_data(null, name:='h');
 select curl_easy_perform();
 with s as (
     select regexp_matches(curl_easy_getinfo_header_in(), E'([^ \t\r\n\f]+): ?([^\t\r\n\f]+)', 'g') as s
