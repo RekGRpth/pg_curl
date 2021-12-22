@@ -4,7 +4,6 @@ t
 t
 content-type|application/json
 content-length|274
-server|gunicorn/19.9.0
 access-control-allow-origin|*
 access-control-allow-credentials|true
 {
@@ -26,7 +25,6 @@ t
 t
 content-type|application/json
 content-length|502
-server|gunicorn/19.9.0
 access-control-allow-origin|*
 access-control-allow-credentials|true
 {
