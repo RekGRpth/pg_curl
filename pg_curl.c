@@ -240,11 +240,11 @@ EXTENSION(pg_curl_mime_data_text) {
 #if CURL_AT_LEAST_VERSION(7, 56, 0)
     CURLcode res = CURL_LAST;
     curl_mimepart *part;
-    text *data;
-    if (PG_ARGISNULL(0)) ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("curl_mime_data requires argument data")));
     if (!(part = curl_mime_addpart(mime))) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_mime_addpart")));
-    data = DatumGetTextP(PG_GETARG_DATUM(0));
-    if ((res = curl_mime_data(part, VARDATA_ANY(data), VARSIZE_ANY_EXHDR(data))) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_mime_data failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("%*.*s", (int)VARSIZE_ANY_EXHDR(data), (int)VARSIZE_ANY_EXHDR(data), VARDATA_ANY(data))));
+    if (!PG_ARGISNULL(0)) {
+        text *data = DatumGetTextP(PG_GETARG_DATUM(0));
+        if ((res = curl_mime_data(part, VARDATA_ANY(data), VARSIZE_ANY_EXHDR(data))) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_mime_data failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("%*.*s", (int)VARSIZE_ANY_EXHDR(data), (int)VARSIZE_ANY_EXHDR(data), VARDATA_ANY(data))));
+    }
     return pg_curl_mime_data_or_file(fcinfo, part);
 #else
     ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_mime_data requires curl 7.56.0 or later")));
@@ -253,13 +253,13 @@ EXTENSION(pg_curl_mime_data_text) {
 
 EXTENSION(pg_curl_mime_data_bytea) {
 #if CURL_AT_LEAST_VERSION(7, 56, 0)
-    bytea *data;
     CURLcode res = CURL_LAST;
     curl_mimepart *part;
-    if (PG_ARGISNULL(0)) ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("curl_mime_data requires argument data")));
     if (!(part = curl_mime_addpart(mime))) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_mime_addpart")));
-    data = DatumGetByteaP(PG_GETARG_DATUM(0));
-    if ((res = curl_mime_data(part, VARDATA_ANY(data), VARSIZE_ANY_EXHDR(data))) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_mime_data failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("%*.*s", (int)VARSIZE_ANY_EXHDR(data), (int)VARSIZE_ANY_EXHDR(data), VARDATA_ANY(data))));
+    if (!PG_ARGISNULL(0)) {
+        bytea *data = DatumGetByteaP(PG_GETARG_DATUM(0));
+        if ((res = curl_mime_data(part, VARDATA_ANY(data), VARSIZE_ANY_EXHDR(data))) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_mime_data failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("%*.*s", (int)VARSIZE_ANY_EXHDR(data), (int)VARSIZE_ANY_EXHDR(data), VARDATA_ANY(data))));
+    }
     return pg_curl_mime_data_or_file(fcinfo, part);
 #else
     ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_mime_data requires curl 7.56.0 or later")));
@@ -268,14 +268,15 @@ EXTENSION(pg_curl_mime_data_bytea) {
 
 EXTENSION(pg_curl_mime_file) {
 #if CURL_AT_LEAST_VERSION(7, 56, 0)
-    char *data;
     CURLcode res = CURL_LAST;
     curl_mimepart *part;
     if (PG_ARGISNULL(0)) ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("curl_mime_file requires argument data")));
     if (!(part = curl_mime_addpart(mime))) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_mime_addpart")));
-    data = TextDatumGetCString(PG_GETARG_DATUM(0));
-    if ((res = curl_mime_filedata(part, data)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_mime_name failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("%s", data)));
-    pfree(data);
+    if (!PG_ARGISNULL(0)) {
+        char *data = TextDatumGetCString(PG_GETARG_DATUM(0));
+        if ((res = curl_mime_filedata(part, data)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_mime_name failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("%s", data)));
+        pfree(data);
+    }
     return pg_curl_mime_data_or_file(fcinfo, part);
 #else
     ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_mime_file requires curl 7.56.0 or later")));
