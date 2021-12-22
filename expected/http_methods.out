@@ -1,0 +1,55 @@
+\unset ECHO
+
+t
+t
+content-type|application/json
+content-length|274
+server|gunicorn/19.9.0
+access-control-allow-origin|*
+access-control-allow-credentials|true
+{
+    "url": "https://httpbin.org/get?a=b&c=&d",
+    "args": {
+        "a": "b",
+        "c": "",
+        "d": ""
+    },
+    "headers": {
+        "Host": "httpbin.org",
+        "Accept": "*/*"
+    }
+}
+
+t
+t
+t
+t
+content-type|application/json
+content-length|502
+server|gunicorn/19.9.0
+access-control-allow-origin|*
+access-control-allow-credentials|true
+{
+    "url": "https://httpbin.org/post?a=b&c=&d",
+    "args": {
+        "a": "b",
+        "c": "",
+        "d": ""
+    },
+    "data": "{\"e\":\"f\",\"g\":\"\",\"h\":null}",
+    "form": {
+    },
+    "json": {
+        "e": "f",
+        "g": "",
+        "h": null
+    },
+    "files": {
+    },
+    "headers": {
+        "Host": "httpbin.org",
+        "Accept": "*/*",
+        "Content-Type": "application/json; charset=utf-8",
+        "Content-Length": "25"
+    }
+}
