@@ -33,7 +33,7 @@ $BODY$;
 # http multipart/form-data form post
 ```sql
 CREATE OR REPLACE FUNCTION post(url TEXT, request JSON) RETURNS TEXT LANGUAGE SQL AS $BODY$
-    with s AS (SELECT
+    WITH s AS (SELECT
         curl_easy_reset(),
         ( WITH s AS (
             SELECT (json_each_text(request)).*
@@ -77,4 +77,11 @@ CREATE OR REPLACE FUNCTION email(url TEXT, username TEXT, password TEXT, subject
         curl_easy_getinfo_header_in()
     ) SELECT curl_easy_getinfo_header_in FROM s;
 $BODY$;
+```
+
+# convert headers to table
+```sql
+WITH s AS (
+    SELECT regexp_matches(curl_easy_getinfo_header_in(), E'([^ \t\r\n\f]+): ?([^\t\r\n\f]+)', 'g') AS s
+) SELECT s[1] AS key, s[2] AS value FROM s;
 ```
