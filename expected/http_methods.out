@@ -51,3 +51,34 @@ access-control-allow-credentials|true
         "Content-Length": "25"
     }
 }
+
+t
+t
+t
+content-type|application/json
+content-length|468
+access-control-allow-origin|*
+access-control-allow-credentials|true
+{
+    "url": "https://httpbin.org/post?a=b&c=&d",
+    "args": {
+        "a": "b",
+        "c": "",
+        "d": ""
+    },
+    "data": "",
+    "form": {
+        "e": "f",
+        "g": "",
+        "h": ""
+    },
+    "json": null,
+    "files": {
+    },
+    "headers": {
+        "Host": "httpbin.org",
+        "Accept": "*/*",
+        "Content-Type": "application/x-www-form-urlencoded",
+        "Content-Length": "8"
+    }
+}
