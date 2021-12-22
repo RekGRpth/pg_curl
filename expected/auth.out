@@ -23,3 +23,16 @@ access-control-allow-credentials|true
   "user": "username"
 }
 
+
+t
+t
+t
+content-type|application/json
+content-length|49
+access-control-allow-origin|*
+access-control-allow-credentials|true
+{
+  "authenticated": true, 
+  "token": "token"
+}
+
