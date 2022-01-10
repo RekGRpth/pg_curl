@@ -6,6 +6,10 @@
 #include <signal.h>
 #include <utils/builtins.h>
 #include <utils/memutils.h>
+#if PG_VERSION_NUM >= 90300
+#else
+#include <libpq/pqsignal.h>
+#endif
 
 #include <curl/curl.h>
 
