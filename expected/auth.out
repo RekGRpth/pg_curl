@@ -4,7 +4,6 @@ t
 t
 t
 t
-content-length|0
 www-authenticate|Basic realm="Fake Realm"
 access-control-allow-origin|*
 access-control-allow-credentials|true
@@ -15,7 +14,6 @@ t
 t
 t
 content-type|application/json
-content-length|51
 access-control-allow-origin|*
 access-control-allow-credentials|true
 {
@@ -28,7 +26,6 @@ t
 t
 t
 content-type|application/json
-content-length|49
 access-control-allow-origin|*
 access-control-allow-credentials|true
 {

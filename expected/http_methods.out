@@ -3,7 +3,6 @@
 t
 t
 content-type|application/json
-content-length|274
 access-control-allow-origin|*
 access-control-allow-credentials|true
 {
@@ -24,7 +23,6 @@ t
 t
 t
 content-type|application/json
-content-length|502
 access-control-allow-origin|*
 access-control-allow-credentials|true
 {
@@ -56,7 +54,6 @@ t
 t
 t
 content-type|application/json
-content-length|468
 access-control-allow-origin|*
 access-control-allow-credentials|true
 {
@@ -90,7 +87,6 @@ t
 t
 t
 content-type|application/json
-content-length|540
 access-control-allow-origin|*
 access-control-allow-credentials|true
 {
