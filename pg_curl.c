@@ -1352,13 +1352,13 @@ static int pg_progress_callback(void *clientp, curl_off_t dltotal, curl_off_t dl
 
 static size_t pg_header_callback(char *buffer, size_t size, size_t nitems, void *userdata) {
     size *= nitems;
-    appendBinaryStringInfo(&header_in_str, buffer, size);
+    if (size) appendBinaryStringInfo(&header_in_str, buffer, size);
     return size;
 }
 
 static size_t pg_write_callback(char *ptr, size_t size, size_t nmemb, void *userdata) {
     size *= nmemb;
-    appendBinaryStringInfo(&data_in_str, ptr, size);
+    if (size) appendBinaryStringInfo(&data_in_str, ptr, size);
     return size;
 }
 
