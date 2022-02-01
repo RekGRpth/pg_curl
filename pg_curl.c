@@ -143,7 +143,7 @@ EXTENSION(pg_curl_easy_escape) {
     text *string;
     char *escape;
     if (PG_ARGISNULL(0)) ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("curl_easy_escape requires argument string")));
-    string = DatumGetTextPP(PG_GETARG_DATUM(0));
+    string = PG_GETARG_TEXT_PP(0);
     if (!(escape = curl_easy_escape(curl, VARDATA_ANY(string), VARSIZE_ANY_EXHDR(string)))) PG_RETURN_NULL();
     PG_FREE_IF_COPY(string, 0);
     string = cstring_to_text(escape);
@@ -160,7 +160,7 @@ EXTENSION(pg_curl_easy_unescape) {
     char *unescape;
     int outlength;
     if (PG_ARGISNULL(0)) ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("curl_easy_unescape requires argument url")));
-    url = DatumGetTextPP(PG_GETARG_DATUM(0));
+    url = PG_GETARG_TEXT_PP(0);
     if (!(unescape = curl_easy_unescape(curl, VARDATA_ANY(url), VARSIZE_ANY_EXHDR(url), &outlength))) PG_RETURN_NULL();
     PG_FREE_IF_COPY(url, 0);
     url = cstring_to_text_with_len(unescape, outlength);
@@ -238,7 +238,7 @@ EXTENSION(pg_curl_mime_data_text) {
     if (!mime && !(mime = curl_mime_init(curl))) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_mime_init")));
     if (!(part = curl_mime_addpart(mime))) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_mime_addpart")));
     if (!PG_ARGISNULL(0)) {
-        text *data = DatumGetTextPP(PG_GETARG_DATUM(0));
+        text *data = PG_GETARG_TEXT_PP(0);
         if ((res = curl_mime_data(part, VARDATA_ANY(data), VARSIZE_ANY_EXHDR(data))) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_mime_data failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("%*.*s", (int)VARSIZE_ANY_EXHDR(data), (int)VARSIZE_ANY_EXHDR(data), VARDATA_ANY(data))));
         PG_FREE_IF_COPY(data, 0);
     }
@@ -255,7 +255,7 @@ EXTENSION(pg_curl_mime_data_bytea) {
     if (!mime && !(mime = curl_mime_init(curl))) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_mime_init")));
     if (!(part = curl_mime_addpart(mime))) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_mime_addpart")));
     if (!PG_ARGISNULL(0)) {
-        bytea *data = DatumGetByteaPP(PG_GETARG_DATUM(0));
+        bytea *data = PG_GETARG_BYTEA_PP(0);
         if ((res = curl_mime_data(part, VARDATA_ANY(data), VARSIZE_ANY_EXHDR(data))) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_mime_data failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("%*.*s", (int)VARSIZE_ANY_EXHDR(data), (int)VARSIZE_ANY_EXHDR(data), VARDATA_ANY(data))));
         PG_FREE_IF_COPY(data, 0);
     }
@@ -288,7 +288,7 @@ EXTENSION(pg_curl_easy_setopt_copypostfields) {
     CURLcode res = CURL_LAST;
     bytea *parameter;
     if (PG_ARGISNULL(0)) ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("curl_easy_setopt_copypostfields requires argument parameter")));
-    parameter = DatumGetTextPP(PG_GETARG_DATUM(0));
+    parameter = PG_GETARG_TEXT_PP(0);
     if ((res = curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, VARSIZE_ANY_EXHDR(parameter))) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_POSTFIELDSIZE and %li", (long)VARSIZE_ANY_EXHDR(parameter))));
     if ((res = curl_easy_setopt(curl, CURLOPT_COPYPOSTFIELDS, VARDATA_ANY(parameter))) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_COPYPOSTFIELDS and %*.*s", (int)VARSIZE_ANY_EXHDR(parameter), (int)VARSIZE_ANY_EXHDR(parameter), VARDATA_ANY(parameter))));
     PG_FREE_IF_COPY(parameter, 0);
@@ -302,7 +302,7 @@ EXTENSION(pg_curl_easy_setopt_postfields) {
     CURLcode res = CURL_LAST;
     bytea *parameter;
     if (PG_ARGISNULL(0)) ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("curl_easy_setopt_postfields requires argument parameter")));
-    parameter = DatumGetTextPP(PG_GETARG_DATUM(0));
+    parameter = PG_GETARG_TEXT_PP(0);
     resetStringInfo(&postfield_str);
     appendBinaryStringInfo(&postfield_str, VARDATA_ANY(parameter), VARSIZE_ANY_EXHDR(parameter));
     PG_FREE_IF_COPY(parameter, 0);
