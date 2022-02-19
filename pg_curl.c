@@ -30,6 +30,9 @@ static StringInfoData header_in_str = {0};
 static StringInfoData header_out_str = {0};
 static StringInfoData postfield_str = {0};
 static struct curl_slist *header = NULL;
+static struct curl_slist *postquote = NULL;
+static struct curl_slist *prequote = NULL;
+static struct curl_slist *quote = NULL;
 #if CURL_AT_LEAST_VERSION(7, 20, 0)
 static struct curl_slist *recipient = NULL;
 #endif
@@ -83,6 +86,9 @@ void _PG_fini(void); void _PG_fini(void) {
     curl_mime_free(mime);
 #endif
     curl_slist_free_all(header);
+    curl_slist_free_all(postquote);
+    curl_slist_free_all(prequote);
+    curl_slist_free_all(quote);
 #if CURL_AT_LEAST_VERSION(7, 20, 0)
     curl_slist_free_all(recipient);
 #endif
@@ -108,6 +114,24 @@ EXTENSION(pg_curl_easy_mime_reset) {
 #endif
 }
 
+EXTENSION(pg_curl_easy_postquote_reset) {
+    curl_slist_free_all(postquote);
+    postquote = NULL;
+    PG_RETURN_VOID();
+}
+
+EXTENSION(pg_curl_easy_prequote_reset) {
+    curl_slist_free_all(prequote);
+    prequote = NULL;
+    PG_RETURN_VOID();
+}
+
+EXTENSION(pg_curl_easy_quote_reset) {
+    curl_slist_free_all(quote);
+    quote = NULL;
+    PG_RETURN_VOID();
+}
+
 EXTENSION(pg_curl_easy_recipient_reset) {
 #if CURL_AT_LEAST_VERSION(7, 20, 0)
     curl_slist_free_all(recipient);
@@ -120,6 +144,9 @@ EXTENSION(pg_curl_easy_recipient_reset) {
 
 EXTENSION(pg_curl_easy_reset) {
     pg_curl_easy_header_reset(fcinfo);
+    pg_curl_easy_postquote_reset(fcinfo);
+    pg_curl_easy_prequote_reset(fcinfo);
+    pg_curl_easy_quote_reset(fcinfo);
 #if CURL_AT_LEAST_VERSION(7, 56, 0)
     pg_curl_easy_mime_reset(fcinfo);
 #endif
@@ -185,6 +212,36 @@ EXTENSION(pg_curl_header_append) {
     pfree(name);
     pfree(value);
     pfree(buf.data);
+    PG_RETURN_BOOL(temp != NULL);
+}
+
+EXTENSION(pg_curl_postquote_append) {
+    char *command;
+    struct curl_slist *temp = postquote;
+    if (PG_ARGISNULL(0)) ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("curl_postquote_append requires argument command")));
+    command = TextDatumGetCString(PG_GETARG_DATUM(0));
+    if ((temp = curl_slist_append(temp, command))) postquote = temp; else ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_slist_append")));
+    pfree(command);
+    PG_RETURN_BOOL(temp != NULL);
+}
+
+EXTENSION(pg_curl_prequote_append) {
+    char *command;
+    struct curl_slist *temp = prequote;
+    if (PG_ARGISNULL(0)) ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("curl_prequote_append requires argument command")));
+    command = TextDatumGetCString(PG_GETARG_DATUM(0));
+    if ((temp = curl_slist_append(temp, command))) prequote = temp; else ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_slist_append")));
+    pfree(command);
+    PG_RETURN_BOOL(temp != NULL);
+}
+
+EXTENSION(pg_curl_quote_append) {
+    char *command;
+    struct curl_slist *temp = quote;
+    if (PG_ARGISNULL(0)) ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("curl_quote_append requires argument command")));
+    command = TextDatumGetCString(PG_GETARG_DATUM(0));
+    if ((temp = curl_slist_append(temp, command))) quote = temp; else ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_slist_append")));
+    pfree(command);
     PG_RETURN_BOOL(temp != NULL);
 }
 
@@ -1376,6 +1433,9 @@ EXTENSION(pg_curl_easy_perform) {
     if ((res = curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, errbuf)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_ERRORBUFFER")));
     if ((res = curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, pg_header_callback)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_HEADERFUNCTION")));
     if (header && ((res = curl_easy_setopt(curl, CURLOPT_HTTPHEADER, header)) != CURLE_OK)) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_HTTPHEADER")));
+    if (postquote && ((res = curl_easy_setopt(curl, CURLOPT_POSTQUOTE, postquote)) != CURLE_OK)) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_POSTQUOTE")));
+    if (prequote && ((res = curl_easy_setopt(curl, CURLOPT_PREQUOTE, prequote)) != CURLE_OK)) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_PREQUOTE")));
+    if (quote && ((res = curl_easy_setopt(curl, CURLOPT_QUOTE, quote)) != CURLE_OK)) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_QUOTE")));
 #if CURL_AT_LEAST_VERSION(7, 32, 0)
     if (recipient && ((res = curl_easy_setopt(curl, CURLOPT_MAIL_RCPT, recipient)) != CURLE_OK)) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_MAIL_RCPT")));
 #endif

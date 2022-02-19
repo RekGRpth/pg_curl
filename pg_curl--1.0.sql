@@ -3,6 +3,9 @@
 
 CREATE OR REPLACE FUNCTION curl_easy_header_reset() RETURNS void AS 'MODULE_PATHNAME', 'pg_curl_easy_header_reset' LANGUAGE 'c';
 CREATE OR REPLACE FUNCTION curl_easy_mime_reset() RETURNS void AS 'MODULE_PATHNAME', 'pg_curl_easy_mime_reset' LANGUAGE 'c';
+CREATE OR REPLACE FUNCTION curl_easy_postquote_reset() RETURNS void AS 'MODULE_PATHNAME', 'pg_curl_easy_postquote_reset' LANGUAGE 'c';
+CREATE OR REPLACE FUNCTION curl_easy_prequote_reset() RETURNS void AS 'MODULE_PATHNAME', 'pg_curl_easy_prequote_reset' LANGUAGE 'c';
+CREATE OR REPLACE FUNCTION curl_easy_quote_reset() RETURNS void AS 'MODULE_PATHNAME', 'pg_curl_easy_quote_reset' LANGUAGE 'c';
 CREATE OR REPLACE FUNCTION curl_easy_recipient_reset() RETURNS void AS 'MODULE_PATHNAME', 'pg_curl_easy_recipient_reset' LANGUAGE 'c';
 CREATE OR REPLACE FUNCTION curl_easy_reset() RETURNS void AS 'MODULE_PATHNAME', 'pg_curl_easy_reset' LANGUAGE 'c';
 
@@ -10,6 +13,9 @@ CREATE OR REPLACE FUNCTION curl_easy_escape(string text) RETURNS text AS 'MODULE
 CREATE OR REPLACE FUNCTION curl_easy_unescape(url text) RETURNS text AS 'MODULE_PATHNAME', 'pg_curl_easy_unescape' LANGUAGE 'c';
 
 CREATE OR REPLACE FUNCTION curl_header_append(name text, value text) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_header_append' LANGUAGE 'c';
+CREATE OR REPLACE FUNCTION curl_postquote_append(command text) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_postquote_append' LANGUAGE 'c';
+CREATE OR REPLACE FUNCTION curl_prequote_append(command text) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_prequote_append' LANGUAGE 'c';
+CREATE OR REPLACE FUNCTION curl_quote_append(command text) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_quote_append' LANGUAGE 'c';
 CREATE OR REPLACE FUNCTION curl_recipient_append(email text) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_recipient_append' LANGUAGE 'c';
 
 CREATE OR REPLACE FUNCTION curl_mime_data(data bytea, name text default null, file text default null, type text default null, code text default null, head text default null) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_mime_data_bytea' LANGUAGE 'c';
