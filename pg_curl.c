@@ -380,7 +380,7 @@ static Datum pg_curl_postfield_or_url_append(PG_FUNCTION_ARGS, StringInfoData *b
             if (!(escape = curl_easy_escape(curl, VARDATA_ANY(value), VARSIZE_ANY_EXHDR(value)))) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_escape failed")));
             appendStringInfoString(buf, escape);
         }
-        PG_FREE_IF_COPY(value, 0);
+        PG_FREE_IF_COPY(value, 1);
     }
     appendStringInfoChar(buf, '&');
     PG_RETURN_BOOL(res == CURLE_OK);
