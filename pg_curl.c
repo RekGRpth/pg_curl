@@ -368,8 +368,8 @@ EXTENSION(pg_curl_easy_setopt_url) {
 static Datum pg_curl_postfield_or_url_append(PG_FUNCTION_ARGS, StringInfoData *buf) {
     char *escape;
     CURLcode res = CURLE_OK;
-    text *name;
-    name = PG_GETARG_TEXT_PP(0);
+    text *name = PG_GETARG_TEXT_PP(0);
+    if (buf->len && buf->data[buf->len - 1] != '?') appendStringInfoChar(buf, '&');
     if (!(escape = curl_easy_escape(curl, VARDATA_ANY(name), VARSIZE_ANY_EXHDR(name)))) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_escape failed")));
     appendStringInfoString(buf, escape);
     PG_FREE_IF_COPY(name, 0);
@@ -382,7 +382,6 @@ static Datum pg_curl_postfield_or_url_append(PG_FUNCTION_ARGS, StringInfoData *b
         }
         PG_FREE_IF_COPY(value, 1);
     }
-    appendStringInfoChar(buf, '&');
     PG_RETURN_BOOL(res == CURLE_OK);
 }
 
