@@ -29,6 +29,7 @@ static StringInfoData debug = {0};
 static StringInfoData header_in = {0};
 static StringInfoData header_out = {0};
 static StringInfoData postfield = {0};
+static StringInfoData url = {0};
 static struct curl_slist *header = NULL;
 static struct curl_slist *postquote = NULL;
 static struct curl_slist *prequote = NULL;
@@ -75,6 +76,7 @@ void _PG_init(void); void _PG_init(void) {
     initStringInfo(&header_in);
     initStringInfo(&header_out);
     initStringInfo(&postfield);
+    initStringInfo(&url);
     pg_curl_interrupt_requested = 0;
     pgsql_interrupt_handler = pqsignal(SIGINT, pg_curl_interrupt_handler);
     MemoryContextSwitchTo(oldMemoryContext);
@@ -162,6 +164,7 @@ EXTENSION(pg_curl_easy_reset) {
     resetStringInfo(&header_in);
     resetStringInfo(&header_out);
     resetStringInfo(&postfield);
+    resetStringInfo(&url);
     PG_RETURN_VOID();
 }
 
@@ -365,6 +368,17 @@ EXTENSION(pg_curl_easy_setopt_postfields) {
     PG_FREE_IF_COPY(parameter, 0);
     if ((res = curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, postfield.len)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_POSTFIELDSIZE and %li", (long)VARSIZE_ANY_EXHDR(parameter))));
     if ((res = curl_easy_setopt(curl, CURLOPT_POSTFIELDS, postfield.data)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_POSTFIELDS and %*.*s", (int)VARSIZE_ANY_EXHDR(parameter), (int)VARSIZE_ANY_EXHDR(parameter), VARDATA_ANY(parameter))));
+    PG_RETURN_BOOL(res == CURLE_OK);
+}
+
+EXTENSION(pg_curl_easy_setopt_url) {
+    CURLcode res = CURLE_OK;
+    text *parameter;
+    if (PG_ARGISNULL(0)) ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("curl_easy_setopt_url requires argument parameter")));
+    parameter = PG_GETARG_TEXT_PP(0);
+    resetStringInfo(&url);
+    appendBinaryStringInfo(&url, VARDATA_ANY(parameter), VARSIZE_ANY_EXHDR(parameter));
+    PG_FREE_IF_COPY(parameter, 0);
     PG_RETURN_BOOL(res == CURLE_OK);
 }
 
@@ -827,13 +841,6 @@ EXTENSION(pg_curl_easy_setopt_unix_socket_path) {
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_UNIX_SOCKET_PATH);
 #else
     ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_unix_socket_path requires curl 7.40.0 or later")));
-#endif
-}
-EXTENSION(pg_curl_easy_setopt_url) {
-#if CURL_AT_LEAST_VERSION(7, 31, 0)
-    return pg_curl_easy_setopt_char(fcinfo, CURLOPT_URL);
-#else
-    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_url requires curl 7.31.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_useragent) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_USERAGENT); }
@@ -1444,6 +1451,7 @@ EXTENSION(pg_curl_easy_perform) {
 #endif
     if ((res = curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_NOPROGRESS and 0")));
     if ((res = curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1L)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_NOSIGNAL and 1")));
+    if ((res = curl_easy_setopt(curl, CURLOPT_URL, url.data)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_URL")));
     if ((res = curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, pg_write_callback)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_WRITEFUNCTION")));
 #if CURL_AT_LEAST_VERSION(7, 32, 0)
     if ((res = curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION, pg_progress_callback)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_XFERINFOFUNCTION")));
