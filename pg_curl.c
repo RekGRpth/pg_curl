@@ -344,15 +344,13 @@ EXTENSION(pg_curl_mime_file) {
 }
 
 EXTENSION(pg_curl_easy_setopt_postfields) {
-    CURLcode res = CURL_LAST;
+    CURLcode res = CURLE_OK;
     bytea *parameter;
     if (PG_ARGISNULL(0)) ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("curl_easy_setopt_postfields requires argument parameter")));
     parameter = PG_GETARG_TEXT_PP(0);
     resetStringInfo(&postfield);
     appendBinaryStringInfo(&postfield, VARDATA_ANY(parameter), VARSIZE_ANY_EXHDR(parameter));
     PG_FREE_IF_COPY(parameter, 0);
-    if ((res = curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, postfield.len)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_POSTFIELDSIZE and %li", (long)VARSIZE_ANY_EXHDR(parameter))));
-    if ((res = curl_easy_setopt(curl, CURLOPT_POSTFIELDS, postfield.data)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_POSTFIELDS and %*.*s", (int)VARSIZE_ANY_EXHDR(parameter), (int)VARSIZE_ANY_EXHDR(parameter), VARDATA_ANY(parameter))));
     PG_RETURN_BOOL(res == CURLE_OK);
 }
 
@@ -1436,6 +1434,8 @@ EXTENSION(pg_curl_easy_perform) {
 #endif
     if ((res = curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_NOPROGRESS and 0")));
     if ((res = curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1L)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_NOSIGNAL and 1")));
+    if (postfield.len && (res = curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, postfield.len)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_POSTFIELDSIZE")));
+    if (postfield.len && (res = curl_easy_setopt(curl, CURLOPT_POSTFIELDS, postfield.data)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_POSTFIELDS")));
     if ((res = curl_easy_setopt(curl, CURLOPT_URL, url.data)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_URL")));
     if ((res = curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, pg_write_callback)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_WRITEFUNCTION")));
 #if CURL_AT_LEAST_VERSION(7, 32, 0)
