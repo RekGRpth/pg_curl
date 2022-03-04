@@ -365,6 +365,37 @@ EXTENSION(pg_curl_easy_setopt_url) {
     PG_RETURN_BOOL(res == CURLE_OK);
 }
 
+static Datum pg_curl_postfield_or_url_append(PG_FUNCTION_ARGS, StringInfoData *buf) {
+    char *escape;
+    CURLcode res = CURLE_OK;
+    text *name;
+    name = PG_GETARG_TEXT_PP(0);
+    if (!(escape = curl_easy_escape(curl, VARDATA_ANY(name), VARSIZE_ANY_EXHDR(name)))) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_escape failed")));
+    appendStringInfoString(buf, escape);
+    PG_FREE_IF_COPY(name, 0);
+    if (!PG_ARGISNULL(1)) {
+        text *value = PG_GETARG_TEXT_PP(1);
+        appendStringInfoChar(buf, '=');
+        if (VARSIZE_ANY_EXHDR(value)) {
+            if (!(escape = curl_easy_escape(curl, VARDATA_ANY(value), VARSIZE_ANY_EXHDR(value)))) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_escape failed")));
+            appendStringInfoString(buf, escape);
+        }
+        PG_FREE_IF_COPY(value, 0);
+    }
+    appendStringInfoChar(buf, '&');
+    PG_RETURN_BOOL(res == CURLE_OK);
+}
+
+EXTENSION(pg_curl_postfield_append) {
+    if (PG_ARGISNULL(0)) ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("pg_curl_postfield_append requires argument name")));
+    return pg_curl_postfield_or_url_append(fcinfo, &postfield);
+}
+
+EXTENSION(pg_curl_url_append) {
+    if (PG_ARGISNULL(0)) ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("pg_curl_url_append requires argument name")));
+    return pg_curl_postfield_or_url_append(fcinfo, &url);
+}
+
 static Datum pg_curl_easy_setopt_char(PG_FUNCTION_ARGS, CURLoption option) {
     CURLcode res = CURL_LAST;
     char *parameter;

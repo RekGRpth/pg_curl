@@ -12,6 +12,9 @@ CREATE OR REPLACE FUNCTION curl_easy_reset() RETURNS void AS 'MODULE_PATHNAME', 
 CREATE OR REPLACE FUNCTION curl_easy_escape(string text) RETURNS text AS 'MODULE_PATHNAME', 'pg_curl_easy_escape' LANGUAGE 'c';
 CREATE OR REPLACE FUNCTION curl_easy_unescape(url text) RETURNS text AS 'MODULE_PATHNAME', 'pg_curl_easy_unescape' LANGUAGE 'c';
 
+CREATE OR REPLACE FUNCTION curl_postfield_append(name text, value text default null) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_postfield_append' LANGUAGE 'c';
+CREATE OR REPLACE FUNCTION curl_url_append(name text, value text default null) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_url_append' LANGUAGE 'c';
+
 CREATE OR REPLACE FUNCTION curl_header_append(name text, value text) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_header_append' LANGUAGE 'c';
 CREATE OR REPLACE FUNCTION curl_postquote_append(command text) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_postquote_append' LANGUAGE 'c';
 CREATE OR REPLACE FUNCTION curl_prequote_append(command text) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_prequote_append' LANGUAGE 'c';

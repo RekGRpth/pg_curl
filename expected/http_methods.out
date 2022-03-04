@@ -2,11 +2,14 @@
 
 t
 t
+t
+t
+t
 content-type|application/json
 access-control-allow-origin|*
 access-control-allow-credentials|true
 {
-    "url": "https://httpbin.org/get?a=b&c=&d",
+    "url": "https://httpbin.org/get?a=b&c=&d&",
     "args": {
         "a": "b",
         "c": "",
@@ -22,11 +25,14 @@ t
 t
 t
 t
+t
+t
+t
 content-type|application/json
 access-control-allow-origin|*
 access-control-allow-credentials|true
 {
-    "url": "https://httpbin.org/post?a=b&c=&d",
+    "url": "https://httpbin.org/post?a=b&c=&d&",
     "args": {
         "a": "b",
         "c": "",
@@ -53,11 +59,16 @@ access-control-allow-credentials|true
 t
 t
 t
+t
+t
+t
+t
+t
 content-type|application/json
 access-control-allow-origin|*
 access-control-allow-credentials|true
 {
-    "url": "https://httpbin.org/post?a=b&c=&d",
+    "url": "https://httpbin.org/post?a=b&c=&d&",
     "args": {
         "a": "b",
         "c": "",
@@ -76,10 +87,13 @@ access-control-allow-credentials|true
         "Host": "httpbin.org",
         "Accept": "*/*",
         "Content-Type": "application/x-www-form-urlencoded",
-        "Content-Length": "8"
+        "Content-Length": "9"
     }
 }
 
+t
+t
+t
 t
 t
 t
@@ -90,7 +104,7 @@ content-type|application/json
 access-control-allow-origin|*
 access-control-allow-credentials|true
 {
-    "url": "https://httpbin.org/post?a=b&c=&d",
+    "url": "https://httpbin.org/post?a=b&c=&d&",
     "args": {
         "a": "b",
         "c": "",
