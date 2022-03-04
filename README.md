@@ -15,14 +15,9 @@ $BODY$;
 CREATE OR REPLACE FUNCTION post(url TEXT, request JSON) RETURNS TEXT LANGUAGE SQL AS $BODY$
     WITH s AS (SELECT
         curl_easy_reset(),
-        curl_easy_setopt_postfields((
-            WITH s AS (
-                SELECT (json_each_text(request)).*
-            ) SELECT convert_to(array_to_string(array_agg(concat_ws('=',
-                curl_easy_escape(key),
-                curl_easy_escape(value)
-            )), '&'), 'utf-8') FROM s
-        )),
+        ( WITH s AS (
+            SELECT (json_each_text(request)).*
+        ) SELECT array_agg(curl_postfield_append(key, value)) FROM s),
         curl_easy_setopt_url(url),
         curl_easy_perform(),
         curl_easy_getinfo_data_in()
