@@ -123,7 +123,6 @@ access-control-allow-credentials|true
     "headers": {
         "Host": "httpbin.org",
         "Accept": "*/*",
-        "Content-Type": "multipart/form-data",
         "Content-Length": "476"
     }
 }
