@@ -672,6 +672,13 @@ EXTENSION(pg_curl_easy_setopt_proxy) {
     ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_proxy requires curl 7.14.1 or later")));
 #endif
 }
+EXTENSION(pg_curl_easy_setopt_proxy_sslcert_blob) {
+#if CURL_AT_LEAST_VERSION(7, 71, 0)
+    return pg_curl_easy_setopt_blob(fcinfo, CURLOPT_PROXY_SSLCERT_BLOB);
+#else
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_proxy_sslcert_blob requires curl 7.71.0 or later")));
+#endif
+}
 EXTENSION(pg_curl_easy_setopt_proxy_sslcert) {
 #if CURL_AT_LEAST_VERSION(7, 52, 0)
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_PROXY_SSLCERT);
