@@ -559,6 +559,13 @@ EXTENSION(pg_curl_easy_setopt_interface) {
     ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_interface requires curl 7.24.0 or later")));
 #endif
 }
+EXTENSION(pg_curl_easy_setopt_issuercert_blob) {
+#if CURL_AT_LEAST_VERSION(7, 71, 0)
+    return pg_curl_easy_setopt_blob(fcinfo, CURLOPT_ISSUERCERT_BLOB);
+#else
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_issuercert_blob requires curl 7.71.0 or later")));
+#endif
+}
 EXTENSION(pg_curl_easy_setopt_issuercert) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_ISSUERCERT); }
 EXTENSION(pg_curl_easy_setopt_keypasswd) {
 #if CURL_AT_LEAST_VERSION(7, 16, 5)

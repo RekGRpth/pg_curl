@@ -49,6 +49,7 @@ CREATE OR REPLACE FUNCTION curl_easy_setopt_ftp_account(parameter text) RETURNS 
 CREATE OR REPLACE FUNCTION curl_easy_setopt_ftp_alternative_to_user(parameter text) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_ftp_alternative_to_user' LANGUAGE 'c';
 CREATE OR REPLACE FUNCTION curl_easy_setopt_ftpport(parameter text) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_ftpport' LANGUAGE 'c';
 CREATE OR REPLACE FUNCTION curl_easy_setopt_interface(parameter text) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_interface' LANGUAGE 'c';
+CREATE OR REPLACE FUNCTION curl_easy_setopt_issuercert_blob(parameter bytea) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_issuercert_blob' LANGUAGE 'c';
 CREATE OR REPLACE FUNCTION curl_easy_setopt_issuercert(parameter text) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_issuercert' LANGUAGE 'c';
 CREATE OR REPLACE FUNCTION curl_easy_setopt_keypasswd(parameter text) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_keypasswd' LANGUAGE 'c';
 CREATE OR REPLACE FUNCTION curl_easy_setopt_krblevel(parameter text) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_krblevel' LANGUAGE 'c';
