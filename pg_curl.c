@@ -847,6 +847,13 @@ EXTENSION(pg_curl_easy_setopt_sslcerttype) {
 }
 EXTENSION(pg_curl_easy_setopt_ssl_cipher_list) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_SSL_CIPHER_LIST); }
 EXTENSION(pg_curl_easy_setopt_sslengine) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_SSLENGINE); }
+EXTENSION(pg_curl_easy_setopt_sslkey_blob) {
+#if CURL_AT_LEAST_VERSION(7, 71, 0)
+    return pg_curl_easy_setopt_blob(fcinfo, CURLOPT_SSLKEY_BLOB);
+#else
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_sslkey_blob requires curl 7.71.0 or later")));
+#endif
+}
 EXTENSION(pg_curl_easy_setopt_sslkey) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_SSLKEY); }
 EXTENSION(pg_curl_easy_setopt_sslkeytype) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_SSLKEYTYPE); }
 EXTENSION(pg_curl_easy_setopt_tls13_ciphers) {

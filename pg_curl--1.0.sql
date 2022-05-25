@@ -96,6 +96,7 @@ CREATE OR REPLACE FUNCTION curl_easy_setopt_sslcert(parameter text) RETURNS bool
 CREATE OR REPLACE FUNCTION curl_easy_setopt_sslcerttype(parameter text) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_sslcerttype' LANGUAGE 'c';
 CREATE OR REPLACE FUNCTION curl_easy_setopt_ssl_cipher_list(parameter text) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_ssl_cipher_list' LANGUAGE 'c';
 CREATE OR REPLACE FUNCTION curl_easy_setopt_sslengine(parameter text) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_sslengine' LANGUAGE 'c';
+CREATE OR REPLACE FUNCTION curl_easy_setopt_sslkey_blob(parameter bytea) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_sslkey_blob' LANGUAGE 'c';
 CREATE OR REPLACE FUNCTION curl_easy_setopt_sslkey(parameter text) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_sslkey' LANGUAGE 'c';
 CREATE OR REPLACE FUNCTION curl_easy_setopt_sslkeytype(parameter text) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_sslkeytype' LANGUAGE 'c';
 CREATE OR REPLACE FUNCTION curl_easy_setopt_tls13_ciphers(parameter text) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_tls13_ciphers' LANGUAGE 'c';
