@@ -623,6 +623,13 @@ EXTENSION(pg_curl_easy_setopt_pre_proxy) {
     ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_pre_proxy requires curl 7.52.0 or later")));
 #endif
 }
+EXTENSION(pg_curl_easy_setopt_proxy_cainfo_blob) {
+#if CURL_AT_LEAST_VERSION(7, 77, 0)
+    return pg_curl_easy_setopt_blob(fcinfo, CURLOPT_PROXY_CAINFO_BLOB);
+#else
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_proxy_cainfo_blob requires curl 7.77.0 or later")));
+#endif
+}
 EXTENSION(pg_curl_easy_setopt_proxy_cainfo) {
 #if CURL_AT_LEAST_VERSION(7, 52, 0)
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_PROXY_CAINFO);

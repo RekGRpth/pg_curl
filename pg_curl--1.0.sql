@@ -59,6 +59,7 @@ CREATE OR REPLACE FUNCTION curl_easy_setopt_noproxy(parameter text) RETURNS bool
 CREATE OR REPLACE FUNCTION curl_easy_setopt_password(parameter text) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_password' LANGUAGE 'c';
 CREATE OR REPLACE FUNCTION curl_easy_setopt_pinnedpublickey(parameter text) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_pinnedpublickey' LANGUAGE 'c';
 CREATE OR REPLACE FUNCTION curl_easy_setopt_pre_proxy(parameter text) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_pre_proxy' LANGUAGE 'c';
+CREATE OR REPLACE FUNCTION curl_easy_setopt_proxy_cainfo_blob(parameter bytea) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_proxy_cainfo_blob' LANGUAGE 'c';
 CREATE OR REPLACE FUNCTION curl_easy_setopt_proxy_cainfo(parameter text) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_proxy_cainfo' LANGUAGE 'c';
 CREATE OR REPLACE FUNCTION curl_easy_setopt_proxy_capath(parameter text) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_proxy_capath' LANGUAGE 'c';
 CREATE OR REPLACE FUNCTION curl_easy_setopt_proxy_crlfile(parameter text) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_proxy_crlfile' LANGUAGE 'c';
