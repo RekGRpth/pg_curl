@@ -658,6 +658,20 @@ EXTENSION(pg_curl_easy_setopt_proxy_crlfile) {
     ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_proxy_crlfile requires curl 7.52.0 or later")));
 #endif
 }
+EXTENSION(pg_curl_easy_setopt_proxy_issuercert_blob) {
+#if CURL_AT_LEAST_VERSION(7, 71, 0)
+    return pg_curl_easy_setopt_blob(fcinfo, CURLOPT_PROXY_ISSUERCERT_BLOB);
+#else
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_proxy_issuercert_blob requires curl 7.71.0 or later")));
+#endif
+}
+EXTENSION(pg_curl_easy_setopt_proxy_issuercert) {
+#if CURL_AT_LEAST_VERSION(7, 71, 0)
+    return pg_curl_easy_setopt_blob(fcinfo, CURLOPT_PROXY_ISSUERCERT);
+#else
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_proxy_issuercert requires curl 7.71.0 or later")));
+#endif
+}
 EXTENSION(pg_curl_easy_setopt_proxy_keypasswd) {
 #if CURL_AT_LEAST_VERSION(7, 52, 0)
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_PROXY_KEYPASSWD);
