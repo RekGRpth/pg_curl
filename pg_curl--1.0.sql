@@ -70,6 +70,7 @@ CREATE OR REPLACE FUNCTION curl_easy_setopt_proxy_sslcert_blob(parameter bytea) 
 CREATE OR REPLACE FUNCTION curl_easy_setopt_proxy_sslcert(parameter text) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_proxy_sslcert' LANGUAGE 'c';
 CREATE OR REPLACE FUNCTION curl_easy_setopt_proxy_sslcerttype(parameter text) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_proxy_sslcerttype' LANGUAGE 'c';
 CREATE OR REPLACE FUNCTION curl_easy_setopt_proxy_ssl_cipher_list(parameter text) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_proxy_ssl_cipher_list' LANGUAGE 'c';
+CREATE OR REPLACE FUNCTION curl_easy_setopt_proxy_sslkey_blob(parameter bytea) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_proxy_sslkey_blob' LANGUAGE 'c';
 CREATE OR REPLACE FUNCTION curl_easy_setopt_proxy_sslkey(parameter text) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_proxy_sslkey' LANGUAGE 'c';
 CREATE OR REPLACE FUNCTION curl_easy_setopt_proxy_sslkeytype(parameter text) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_proxy_sslkeytype' LANGUAGE 'c';
 CREATE OR REPLACE FUNCTION curl_easy_setopt_proxy_tls13_ciphers(parameter text) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_proxy_tls13_ciphers' LANGUAGE 'c';
