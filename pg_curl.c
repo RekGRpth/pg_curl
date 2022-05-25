@@ -443,6 +443,13 @@ EXTENSION(pg_curl_easy_setopt_accept_encoding) {
     ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_accept_encoding requires curl 7.21.6 or later")));
 #endif
 }
+EXTENSION(pg_curl_easy_setopt_cainfo_blob) {
+#if CURL_AT_LEAST_VERSION(7, 77, 0)
+    return pg_curl_easy_setopt_blob(fcinfo, CURLOPT_CAINFO_BLOB);
+#else
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_cainfo_blob requires curl 7.77.0 or later")));
+#endif
+}
 EXTENSION(pg_curl_easy_setopt_cainfo) {
 #if CURL_AT_LEAST_VERSION(7, 60, 0)
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_CAINFO);

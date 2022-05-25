@@ -29,6 +29,7 @@ CREATE OR REPLACE FUNCTION curl_easy_setopt_postfields(parameter bytea) RETURNS 
 
 CREATE OR REPLACE FUNCTION curl_easy_setopt_abstract_unix_socket(parameter text) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_abstract_unix_socket' LANGUAGE 'c';
 CREATE OR REPLACE FUNCTION curl_easy_setopt_accept_encoding(parameter text) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_accept_encoding' LANGUAGE 'c';
+CREATE OR REPLACE FUNCTION curl_easy_setopt_cainfo_blob(parameter bytea) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_cainfo_blob' LANGUAGE 'c';
 CREATE OR REPLACE FUNCTION curl_easy_setopt_cainfo(parameter text) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_cainfo' LANGUAGE 'c';
 CREATE OR REPLACE FUNCTION curl_easy_setopt_capath(parameter text) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_capath' LANGUAGE 'c';
 CREATE OR REPLACE FUNCTION curl_easy_setopt_cookiefile(parameter text) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_cookiefile' LANGUAGE 'c';
