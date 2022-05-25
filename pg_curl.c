@@ -395,6 +395,20 @@ EXTENSION(pg_curl_url_append) {
     return pg_curl_postfield_or_url_append(fcinfo, &url);
 }
 
+static Datum pg_curl_easy_setopt_blob(PG_FUNCTION_ARGS, CURLoption option) {
+    CURLcode res = CURLE_OK;
+    bytea *parameter;
+    struct curl_blob blob;
+    if (PG_ARGISNULL(0)) ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("curl_easy_setopt_* requires argument parameter")));
+    parameter = PG_GETARG_TEXT_PP(0);
+    blob.data = VARDATA_ANY(parameter);
+    blob.flags = CURL_BLOB_COPY;
+    blob.len = VARSIZE_ANY_EXHDR(parameter);
+    if ((res = curl_easy_setopt(curl, option, &blob)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("%i", option)));
+    PG_FREE_IF_COPY(parameter, 0);
+    PG_RETURN_BOOL(res == CURLE_OK);
+}
+
 static Datum pg_curl_easy_setopt_char(PG_FUNCTION_ARGS, CURLoption option) {
     CURLcode res = CURL_LAST;
     char *parameter;
@@ -807,6 +821,13 @@ EXTENSION(pg_curl_easy_setopt_ssh_public_keyfile) {
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_SSH_PUBLIC_KEYFILE);
 #else
     ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_ssh_public_keyfile requires curl 7.26.0 or later")));
+#endif
+}
+EXTENSION(pg_curl_easy_setopt_sslcert_blob) {
+#if CURL_AT_LEAST_VERSION(7, 71, 10)
+    return pg_curl_easy_setopt_blob(fcinfo, CURLOPT_SSLCERT_BLOB);
+#else
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_sslcert_blob requires curl 7.71.10 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_sslcert) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_SSLCERT); }
