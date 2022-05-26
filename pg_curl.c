@@ -395,8 +395,8 @@ EXTENSION(pg_curl_url_append) {
     return pg_curl_postfield_or_url_append(fcinfo, &url);
 }
 
-static Datum pg_curl_easy_setopt_blob(PG_FUNCTION_ARGS, CURLoption option) {
 #if CURL_AT_LEAST_VERSION(7, 71, 0)
+static Datum pg_curl_easy_setopt_blob(PG_FUNCTION_ARGS, CURLoption option) {
     CURLcode res = CURLE_OK;
     bytea *parameter;
     struct curl_blob blob;
@@ -408,10 +408,8 @@ static Datum pg_curl_easy_setopt_blob(PG_FUNCTION_ARGS, CURLoption option) {
     if ((res = curl_easy_setopt(curl, option, &blob)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("%i", option)));
     PG_FREE_IF_COPY(parameter, 0);
     PG_RETURN_BOOL(res == CURLE_OK);
-#else
-    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_*_blob requires curl 7.71.0 or later")));
-#endif
 }
+#endif
 
 static Datum pg_curl_easy_setopt_char(PG_FUNCTION_ARGS, CURLoption option) {
     CURLcode res = CURL_LAST;
