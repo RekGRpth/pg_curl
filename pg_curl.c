@@ -12,6 +12,7 @@
 #endif
 
 #include <curl/curl.h>
+#include <pthread.h>
 
 #define EXTENSION(function) Datum (function)(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(function); Datum (function)(PG_FUNCTION_ARGS)
 
@@ -22,6 +23,7 @@ static CURL *curl = NULL;
 static curl_mime *mime = NULL;
 #endif
 static int pg_curl_interrupt_requested = 0;
+static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 static pqsigfunc pgsql_interrupt_handler = NULL;
 static StringInfoData data_in = {0};
 static StringInfoData data_out = {0};
@@ -42,23 +44,41 @@ static void pg_curl_interrupt_handler(int sig) { pg_curl_interrupt_requested = s
 
 #if CURL_AT_LEAST_VERSION(7, 12, 0)
 static void *pg_curl_malloc_callback(size_t size) {
-    return size ? MemoryContextAlloc(TopMemoryContext, size) : NULL;
+    void *res;
+    pthread_mutex_lock(&mutex);
+    res = size ? MemoryContextAlloc(TopMemoryContext, size) : NULL;
+    pthread_mutex_unlock(&mutex);
+    return res;
 }
 
 static void pg_curl_free_callback(void *ptr) {
+    pthread_mutex_lock(&mutex);
     if (ptr) pfree(ptr);
+    pthread_mutex_unlock(&mutex);
 }
 
 static void *pg_curl_realloc_callback(void *ptr, size_t size) {
-    return (ptr && size) ? repalloc(ptr, size) : (size ? MemoryContextAlloc(TopMemoryContext, size) : ptr);
+    void *res;
+    pthread_mutex_lock(&mutex);
+    res = (ptr && size) ? repalloc(ptr, size) : (size ? MemoryContextAlloc(TopMemoryContext, size) : ptr);
+    pthread_mutex_unlock(&mutex);
+    return res;
 }
 
 static char *pg_curl_strdup_callback(const char *str) {
-    return MemoryContextStrdup(TopMemoryContext, str);
+    char *res;
+    pthread_mutex_lock(&mutex);
+    res = MemoryContextStrdup(TopMemoryContext, str);
+    pthread_mutex_unlock(&mutex);
+    return res;
 }
 
 static void *pg_curl_calloc_callback(size_t nmemb, size_t size) {
-    return MemoryContextAllocZero(TopMemoryContext, nmemb * size);
+    void *res;
+    pthread_mutex_lock(&mutex);
+    res = MemoryContextAllocZero(TopMemoryContext, nmemb * size);
+    pthread_mutex_unlock(&mutex);
+    return res;
 }
 #endif
 
