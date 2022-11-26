@@ -48,9 +48,11 @@ static void *pg_curl_malloc_callback(size_t size) {
     pthread_mutex_lock(&mutex);
     PG_TRY(); {
         res = size ? MemoryContextAlloc(TopMemoryContext, size) : NULL;
-    } PG_FINALLY(); {
+    } PG_CATCH(); {
         pthread_mutex_unlock(&mutex);
+        PG_RE_THROW();
     } PG_END_TRY();
+    pthread_mutex_unlock(&mutex);
     return res;
 }
 
@@ -58,9 +60,11 @@ static void pg_curl_free_callback(void *ptr) {
     pthread_mutex_lock(&mutex);
     PG_TRY(); {
         if (ptr) pfree(ptr);
-    } PG_FINALLY(); {
+    } PG_CATCH(); {
         pthread_mutex_unlock(&mutex);
+        PG_RE_THROW();
     } PG_END_TRY();
+    pthread_mutex_unlock(&mutex);
 }
 
 static void *pg_curl_realloc_callback(void *ptr, size_t size) {
@@ -68,9 +72,11 @@ static void *pg_curl_realloc_callback(void *ptr, size_t size) {
     pthread_mutex_lock(&mutex);
     PG_TRY(); {
         res = (ptr && size) ? repalloc(ptr, size) : (size ? MemoryContextAlloc(TopMemoryContext, size) : ptr);
-    } PG_FINALLY(); {
+    } PG_CATCH(); {
         pthread_mutex_unlock(&mutex);
+        PG_RE_THROW();
     } PG_END_TRY();
+    pthread_mutex_unlock(&mutex);
     return res;
 }
 
@@ -79,9 +85,11 @@ static char *pg_curl_strdup_callback(const char *str) {
     pthread_mutex_lock(&mutex);
     PG_TRY(); {
         res = MemoryContextStrdup(TopMemoryContext, str);
-    } PG_FINALLY(); {
+    } PG_CATCH(); {
         pthread_mutex_unlock(&mutex);
+        PG_RE_THROW();
     } PG_END_TRY();
+    pthread_mutex_unlock(&mutex);
     return res;
 }
 
@@ -90,9 +98,11 @@ static void *pg_curl_calloc_callback(size_t nmemb, size_t size) {
     pthread_mutex_lock(&mutex);
     PG_TRY(); {
         res = MemoryContextAllocZero(TopMemoryContext, nmemb * size);
-    } PG_FINALLY(); {
+    } PG_CATCH(); {
         pthread_mutex_unlock(&mutex);
+        PG_RE_THROW();
     } PG_END_TRY();
+    pthread_mutex_unlock(&mutex);
     return res;
 }
 #endif
