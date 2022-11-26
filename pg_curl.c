@@ -46,38 +46,53 @@ static void pg_curl_interrupt_handler(int sig) { pg_curl_interrupt_requested = s
 static void *pg_curl_malloc_callback(size_t size) {
     void *res;
     pthread_mutex_lock(&mutex);
-    res = size ? MemoryContextAlloc(TopMemoryContext, size) : NULL;
-    pthread_mutex_unlock(&mutex);
+    PG_TRY(); {
+        res = size ? MemoryContextAlloc(TopMemoryContext, size) : NULL;
+    } PG_FINALLY(); {
+        pthread_mutex_unlock(&mutex);
+    } PG_END_TRY();
     return res;
 }
 
 static void pg_curl_free_callback(void *ptr) {
     pthread_mutex_lock(&mutex);
-    if (ptr) pfree(ptr);
-    pthread_mutex_unlock(&mutex);
+    PG_TRY(); {
+        if (ptr) pfree(ptr);
+    } PG_FINALLY(); {
+        pthread_mutex_unlock(&mutex);
+    } PG_END_TRY();
 }
 
 static void *pg_curl_realloc_callback(void *ptr, size_t size) {
     void *res;
     pthread_mutex_lock(&mutex);
-    res = (ptr && size) ? repalloc(ptr, size) : (size ? MemoryContextAlloc(TopMemoryContext, size) : ptr);
-    pthread_mutex_unlock(&mutex);
+    PG_TRY(); {
+        res = (ptr && size) ? repalloc(ptr, size) : (size ? MemoryContextAlloc(TopMemoryContext, size) : ptr);
+    } PG_FINALLY(); {
+        pthread_mutex_unlock(&mutex);
+    } PG_END_TRY();
     return res;
 }
 
 static char *pg_curl_strdup_callback(const char *str) {
     char *res;
     pthread_mutex_lock(&mutex);
-    res = MemoryContextStrdup(TopMemoryContext, str);
-    pthread_mutex_unlock(&mutex);
+    PG_TRY(); {
+        res = MemoryContextStrdup(TopMemoryContext, str);
+    } PG_FINALLY(); {
+        pthread_mutex_unlock(&mutex);
+    } PG_END_TRY();
     return res;
 }
 
 static void *pg_curl_calloc_callback(size_t nmemb, size_t size) {
     void *res;
     pthread_mutex_lock(&mutex);
-    res = MemoryContextAllocZero(TopMemoryContext, nmemb * size);
-    pthread_mutex_unlock(&mutex);
+    PG_TRY(); {
+        res = MemoryContextAllocZero(TopMemoryContext, nmemb * size);
+    } PG_FINALLY(); {
+        pthread_mutex_unlock(&mutex);
+    } PG_END_TRY();
     return res;
 }
 #endif
