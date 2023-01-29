@@ -577,7 +577,12 @@ EXTENSION(pg_curl_easy_setopt_doh_url) {
     ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_doh_url requires curl 7.62.0 or later")));
 #endif
 }
-EXTENSION(pg_curl_easy_setopt_egdsocket) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_EGDSOCKET); }
+EXTENSION(pg_curl_easy_setopt_egdsocket) {
+#if CURL_AT_LEAST_VERSION(7, 84, 0)
+    ereport(WARNING, (errcode(ERRCODE_WARNING_DEPRECATED_FEATURE), errmsg("curl_easy_setopt_egdsocket deprecated")));
+#endif
+    return pg_curl_easy_setopt_char(fcinfo, CURLOPT_EGDSOCKET);
+}
 EXTENSION(pg_curl_easy_setopt_ftp_account) {
 #if CURL_AT_LEAST_VERSION(7, 13, 0)
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_FTP_ACCOUNT);
@@ -839,7 +844,12 @@ EXTENSION(pg_curl_easy_setopt_proxyusername) {
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_proxyuserpwd) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_PROXYUSERPWD); }
-EXTENSION(pg_curl_easy_setopt_random_file) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_RANDOM_FILE); }
+EXTENSION(pg_curl_easy_setopt_random_file) {
+#if CURL_AT_LEAST_VERSION(7, 84, 0)
+    ereport(WARNING, (errcode(ERRCODE_WARNING_DEPRECATED_FEATURE), errmsg("curl_easy_setopt_random_file deprecated")));
+#endif
+    return pg_curl_easy_setopt_char(fcinfo, CURLOPT_RANDOM_FILE);
+}
 EXTENSION(pg_curl_easy_setopt_range) {
 #if CURL_AT_LEAST_VERSION(7, 18, 0)
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_RANGE);
@@ -1270,6 +1280,9 @@ EXTENSION(pg_curl_easy_setopt_postredir) {
 }
 EXTENSION(pg_curl_easy_setopt_post) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_POST); }
 EXTENSION(pg_curl_easy_setopt_protocols) {
+#if CURL_AT_LEAST_VERSION(7, 85, 0)
+    ereport(WARNING, (errcode(ERRCODE_WARNING_DEPRECATED_FEATURE), errmsg("curl_easy_setopt_protocols deprecated")));
+#endif
 #if CURL_AT_LEAST_VERSION(7, 19, 4)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_PROTOCOLS);
 #else
@@ -1327,6 +1340,9 @@ EXTENSION(pg_curl_easy_setopt_put) {
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_PUT);
 }
 EXTENSION(pg_curl_easy_setopt_redir_protocols) {
+#if CURL_AT_LEAST_VERSION(7, 85, 0)
+    ereport(WARNING, (errcode(ERRCODE_WARNING_DEPRECATED_FEATURE), errmsg("curl_easy_setopt_redir_protocols deprecated")));
+#endif
 #if CURL_AT_LEAST_VERSION(7, 19, 4)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_REDIR_PROTOCOLS);
 #else
@@ -1405,6 +1421,9 @@ EXTENSION(pg_curl_easy_setopt_ssl_enable_alpn) {
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_ssl_enable_npn) {
+#if CURL_AT_LEAST_VERSION(7, 86, 0)
+    ereport(WARNING, (errcode(ERRCODE_WARNING_DEPRECATED_FEATURE), errmsg("curl_easy_setopt_ssl_enable_npn deprecated")));
+#endif
 #if CURL_AT_LEAST_VERSION(7, 36, 0)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_SSL_ENABLE_NPN);
 #else
@@ -1784,6 +1803,9 @@ EXTENSION(pg_curl_easy_getinfo_http_version) {
 #endif
 }
 EXTENSION(pg_curl_easy_getinfo_lastsocket) {
+#if CURL_AT_LEAST_VERSION(7, 45, 0)
+    ereport(WARNING, (errcode(ERRCODE_WARNING_DEPRECATED_FEATURE), errmsg("curl_easy_getinfo_lastsocket deprecated")));
+#endif
 #if CURL_AT_LEAST_VERSION(7, 15, 2)
     return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_LASTSOCKET);
 #else
@@ -1819,6 +1841,9 @@ EXTENSION(pg_curl_easy_getinfo_primary_port) {
 #endif
 }
 EXTENSION(pg_curl_easy_getinfo_protocol) {
+#if CURL_AT_LEAST_VERSION(7, 85, 0)
+    ereport(WARNING, (errcode(ERRCODE_WARNING_DEPRECATED_FEATURE), errmsg("curl_easy_getinfo_protocol deprecated")));
+#endif
 #if CURL_AT_LEAST_VERSION(7, 52, 0)
     return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_PROTOCOL);
 #else
