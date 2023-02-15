@@ -3,12 +3,14 @@
 #include <catalog/pg_type.h>
 #include <fmgr.h>
 #include <lib/stringinfo.h>
+#if PG_VERSION_NUM < 90300
+#include <libpq/pqsignal.h>
+#endif
 #include <signal.h>
 #include <utils/builtins.h>
 #include <utils/memutils.h>
-#if PG_VERSION_NUM >= 90300
-#else
-#include <libpq/pqsignal.h>
+#if PG_VERSION_NUM >= 160000
+#include <varatt.h>
 #endif
 
 #include <curl/curl.h>
