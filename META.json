@@ -2,13 +2,13 @@
     "name": "pg_curl",
     "abstract": "PostgreSQL cURL",
     "description": "PostgreSQL curl allows most curl actions, including data transfer with URL syntax via HTTP, HTTPS, FTP, FTPS, GOPHER, TFTP, SCP, SFTP, SMB, TELNET, DICT, LDAP, LDAPS, FILE, IMAP, SMTP, POP3, RTSP and RTMP",
-    "version": "1.0.27",
+    "version": "1.0.28",
     "maintainer": "RekGRpth <rekgrpth@gmail.com>",
     "license": "mit",
     "provides": {
         "pg_curl": {
             "file": "pg_curl--1.0.sql",
-            "version": "1.0.27"
+            "version": "1.0.28"
         }
     },
     "resources": {
