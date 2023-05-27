@@ -433,7 +433,7 @@ EXTENSION(pg_curl_easy_setopt_postfields) {
     bytea *parameter;
     pg_curl_init();
     if (PG_ARGISNULL(0)) ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("curl_easy_setopt_postfields requires argument parameter")));
-    parameter = PG_GETARG_TEXT_PP(0);
+    parameter = PG_GETARG_BYTEA_PP(0);
     resetStringInfo(&postfield);
     appendBinaryStringInfo(&postfield, VARDATA_ANY(parameter), VARSIZE_ANY_EXHDR(parameter));
     PG_FREE_IF_COPY(parameter, 0);
@@ -491,7 +491,7 @@ static Datum pg_curl_easy_setopt_blob(PG_FUNCTION_ARGS, CURLoption option) {
     struct curl_blob blob;
     pg_curl_init();
     if (PG_ARGISNULL(0)) ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("curl_easy_setopt_* requires argument parameter")));
-    parameter = PG_GETARG_TEXT_PP(0);
+    parameter = PG_GETARG_BYTEA_PP(0);
     blob.data = VARDATA_ANY(parameter);
     blob.flags = CURL_BLOB_COPY;
     blob.len = VARSIZE_ANY_EXHDR(parameter);
