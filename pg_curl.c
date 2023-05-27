@@ -28,7 +28,9 @@ static curl_mime *mime = NULL;
 #endif
 static bool pg_curl_transaction = true;
 static int pg_curl_interrupt_requested = 0;
+#if PG_VERSION_NUM >= 90500
 static MemoryContextCallback pg_curl_mcb = {0};
+#endif
 static MemoryContext pg_curl_context = NULL;
 static pqsigfunc pgsql_interrupt_handler = NULL;
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -138,7 +140,11 @@ static void pg_curl_fini(void *arg) {
 static void pg_curl_init(void) {
     MemoryContext oldMemoryContext;
     if (curl) return;
+#if PG_VERSION_NUM >= 90500
     pg_curl_context = pg_curl_transaction ? TopTransactionContext : TopMemoryContext;
+#else
+    pg_curl_context = TopMemoryContext;
+#endif
     oldMemoryContext = MemoryContextSwitchTo(pg_curl_context);
 #if CURL_AT_LEAST_VERSION(7, 12, 0)
     if (curl_global_init_mem(CURL_GLOBAL_ALL, pg_curl_malloc_callback, pg_curl_free_callback, pg_curl_realloc_callback, pg_curl_strdup_callback, pg_curl_calloc_callback)) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_global_init_mem")));
@@ -155,8 +161,10 @@ static void pg_curl_init(void) {
     initStringInfo(&url);
     pg_curl_interrupt_requested = 0;
     pgsql_interrupt_handler = pqsignal(SIGINT, pg_curl_interrupt_handler);
+#if PG_VERSION_NUM >= 90500
     pg_curl_mcb.func = pg_curl_fini;
     MemoryContextRegisterResetCallback(pg_curl_context, &pg_curl_mcb);
+#endif
     MemoryContextSwitchTo(oldMemoryContext);
 }
 
@@ -2742,6 +2750,8 @@ EXTENSION(pg_curl_max_write_size) {
 #endif
 }
 
+#if PG_VERSION_NUM >= 90500
 void _PG_init(void); void _PG_init(void) {
     DefineCustomBoolVariable("pg_curl.transaction", "pg_curl transaction", "Use transaction context?", &pg_curl_transaction, true, PGC_USERSET, 0, NULL, NULL, NULL);
 }
+#endif
