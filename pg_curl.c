@@ -1396,9 +1396,10 @@ EXTENSION(pg_curl_easy_setopt_proxy_transfer_mode) {
 EXTENSION(pg_curl_easy_setopt_proxytype) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_PROXYTYPE); }
 EXTENSION(pg_curl_easy_setopt_put) {
 #if CURL_AT_LEAST_VERSION(7, 12, 1)
-    ereport(WARNING, (errcode(ERRCODE_WARNING_DEPRECATED_FEATURE), errmsg("curl_easy_setopt_put deprecated")));
-#endif
+    ereport(ERROR, (errcode(ERRCODE_WARNING_DEPRECATED_FEATURE), errmsg("curl_easy_setopt_put deprecated: since 7.12.1. Use curl_easy_setopt_upload")));
+#else
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_PUT);
+#endif
 }
 EXTENSION(pg_curl_easy_setopt_redir_protocols) {
 #if CURL_AT_LEAST_VERSION(7, 85, 0)
@@ -1604,6 +1605,7 @@ EXTENSION(pg_curl_easy_setopt_upload_buffersize) {
     ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_upload_buffersize requires curl 7.62.0 or later")));
 #endif
 }
+EXTENSION(pg_curl_easy_setopt_upload) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_UPLOAD); }
 EXTENSION(pg_curl_easy_setopt_use_ssl) {
 #if CURL_AT_LEAST_VERSION(7, 16, 5)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_USE_SSL);

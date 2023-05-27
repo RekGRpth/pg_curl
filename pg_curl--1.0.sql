@@ -226,6 +226,7 @@ CREATE FUNCTION curl_easy_setopt_transfertext(parameter bigint) RETURNS boolean 
 CREATE FUNCTION curl_easy_setopt_unrestricted_auth(parameter bigint) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_unrestricted_auth' LANGUAGE 'c';
 CREATE FUNCTION curl_easy_setopt_upkeep_interval_ms(parameter bigint) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_upkeep_interval_ms' LANGUAGE 'c';
 CREATE FUNCTION curl_easy_setopt_upload_buffersize(parameter bigint) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_upload_buffersize' LANGUAGE 'c';
+CREATE FUNCTION curl_easy_setopt_upload(parameter bigint) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_upload' LANGUAGE 'c';
 CREATE FUNCTION curl_easy_setopt_use_ssl(parameter bigint) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_use_ssl' LANGUAGE 'c';
 CREATE FUNCTION curl_easy_setopt_verbose(parameter bigint) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_verbose' LANGUAGE 'c';
 CREATE FUNCTION curl_easy_setopt_wildcardmatch(parameter bigint) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_wildcardmatch' LANGUAGE 'c';
