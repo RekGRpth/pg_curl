@@ -1148,9 +1148,10 @@ EXTENSION(pg_curl_easy_setopt_dns_shuffle_addresses) {
 }
 EXTENSION(pg_curl_easy_setopt_dns_use_global_cache) {
 #if CURL_AT_LEAST_VERSION(7, 62, 0)
-    ereport(WARNING, (errcode(ERRCODE_WARNING_DEPRECATED_FEATURE), errmsg("curl_easy_setopt_dns_use_global_cache deprecated")));
-#endif
+    ereport(ERROR, (errcode(ERRCODE_WARNING_DEPRECATED_FEATURE), errmsg("curl_easy_setopt_dns_use_global_cache deprecated: since 7.11.1. Use curl_easy_setopt_share")));
+#else
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_DNS_USE_GLOBAL_CACHE);
+#endif
 }
 EXTENSION(pg_curl_easy_setopt_expect_100_timeout_ms) {
 #if CURL_AT_LEAST_VERSION(7, 36, 0)
