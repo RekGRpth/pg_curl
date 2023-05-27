@@ -60,6 +60,7 @@ CREATE FUNCTION curl_easy_setopt_noproxy(parameter text) RETURNS boolean AS 'MOD
 CREATE FUNCTION curl_easy_setopt_password(parameter text) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_password' LANGUAGE 'c';
 CREATE FUNCTION curl_easy_setopt_pinnedpublickey(parameter text) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_pinnedpublickey' LANGUAGE 'c';
 CREATE FUNCTION curl_easy_setopt_pre_proxy(parameter text) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_pre_proxy' LANGUAGE 'c';
+CREATE FUNCTION curl_easy_setopt_protocols_str(parameter text) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_protocols_str' LANGUAGE 'c';
 CREATE FUNCTION curl_easy_setopt_proxy_cainfo_blob(parameter bytea) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_proxy_cainfo_blob' LANGUAGE 'c';
 CREATE FUNCTION curl_easy_setopt_proxy_cainfo(parameter text) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_proxy_cainfo' LANGUAGE 'c';
 CREATE FUNCTION curl_easy_setopt_proxy_capath(parameter text) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_proxy_capath' LANGUAGE 'c';
@@ -86,6 +87,7 @@ CREATE FUNCTION curl_easy_setopt_proxyusername(parameter text) RETURNS boolean A
 CREATE FUNCTION curl_easy_setopt_proxyuserpwd(parameter text) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_proxyuserpwd' LANGUAGE 'c';
 CREATE FUNCTION curl_easy_setopt_random_file(parameter text) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_random_file' LANGUAGE 'c';
 CREATE FUNCTION curl_easy_setopt_range(parameter text) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_range' LANGUAGE 'c';
+CREATE FUNCTION curl_easy_setopt_redir_protocols_str(parameter text) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_redir_protocols_str' LANGUAGE 'c';
 CREATE FUNCTION curl_easy_setopt_referer(parameter text) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_referer' LANGUAGE 'c';
 CREATE FUNCTION curl_easy_setopt_request_target(parameter text) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_request_target' LANGUAGE 'c';
 CREATE FUNCTION curl_easy_setopt_rtsp_session_id(parameter text) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_rtsp_session_id' LANGUAGE 'c';
@@ -250,6 +252,7 @@ CREATE FUNCTION curl_easy_getinfo_redirect_url() RETURNS text AS 'MODULE_PATHNAM
 CREATE FUNCTION curl_easy_getinfo_rtsp_session_id() RETURNS text AS 'MODULE_PATHNAME', 'pg_curl_easy_getinfo_rtsp_session_id' LANGUAGE 'c';
 CREATE FUNCTION curl_easy_getinfo_scheme() RETURNS text AS 'MODULE_PATHNAME', 'pg_curl_easy_getinfo_scheme' LANGUAGE 'c';
 
+CREATE FUNCTION curl_easy_getinfo_activesocket() RETURNS bigint AS 'MODULE_PATHNAME', 'pg_curl_easy_getinfo_activesocket' LANGUAGE 'c';
 CREATE FUNCTION curl_easy_getinfo_condition_unmet() RETURNS bigint AS 'MODULE_PATHNAME', 'pg_curl_easy_getinfo_condition_unmet' LANGUAGE 'c';
 CREATE FUNCTION curl_easy_getinfo_filetime() RETURNS bigint AS 'MODULE_PATHNAME', 'pg_curl_easy_getinfo_filetime' LANGUAGE 'c';
 CREATE FUNCTION curl_easy_getinfo_header_size() RETURNS bigint AS 'MODULE_PATHNAME', 'pg_curl_easy_getinfo_header_size' LANGUAGE 'c';

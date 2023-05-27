@@ -728,6 +728,13 @@ EXTENSION(pg_curl_easy_setopt_pre_proxy) {
     ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_pre_proxy requires curl 7.52.0 or later")));
 #endif
 }
+EXTENSION(pg_curl_easy_setopt_protocols_str) {
+#if CURL_AT_LEAST_VERSION(7, 85, 0)
+    return pg_curl_easy_setopt_char(fcinfo, CURLOPT_PROTOCOLS_STR);
+#else
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_protocols_str requires curl 7.85.0 or later")));
+#endif
+}
 EXTENSION(pg_curl_easy_setopt_proxy_cainfo_blob) {
 #if CURL_AT_LEAST_VERSION(7, 77, 0)
     return pg_curl_easy_setopt_blob(fcinfo, CURLOPT_PROXY_CAINFO_BLOB);
@@ -901,6 +908,13 @@ EXTENSION(pg_curl_easy_setopt_range) {
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_RANGE);
 #else
     ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_range requires curl 7.18.0 or later")));
+#endif
+}
+EXTENSION(pg_curl_easy_setopt_redir_protocols_str) {
+#if CURL_AT_LEAST_VERSION(7, 85, 0)
+    return pg_curl_easy_setopt_char(fcinfo, CURLOPT_REDIR_PROTOCOLS_STR);
+#else
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_redir_protocols_str requires curl 7.85.0 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_referer) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_REFERER); }
@@ -1388,9 +1402,8 @@ EXTENSION(pg_curl_easy_setopt_put) {
 }
 EXTENSION(pg_curl_easy_setopt_redir_protocols) {
 #if CURL_AT_LEAST_VERSION(7, 85, 0)
-    ereport(WARNING, (errcode(ERRCODE_WARNING_DEPRECATED_FEATURE), errmsg("curl_easy_setopt_redir_protocols deprecated")));
-#endif
-#if CURL_AT_LEAST_VERSION(7, 19, 4)
+    ereport(ERROR, (errcode(ERRCODE_WARNING_DEPRECATED_FEATURE), errmsg("curl_easy_setopt_redir_protocols deprecated: since 7.85.0. Use curl_easy_setopt_redir_protocols_str")));
+#elif CURL_AT_LEAST_VERSION(7, 19, 4)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_REDIR_PROTOCOLS);
 #else
     ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_redir_protocols requires curl 7.19.4 or later")));
@@ -1469,9 +1482,8 @@ EXTENSION(pg_curl_easy_setopt_ssl_enable_alpn) {
 }
 EXTENSION(pg_curl_easy_setopt_ssl_enable_npn) {
 #if CURL_AT_LEAST_VERSION(7, 86, 0)
-    ereport(WARNING, (errcode(ERRCODE_WARNING_DEPRECATED_FEATURE), errmsg("curl_easy_setopt_ssl_enable_npn deprecated")));
-#endif
-#if CURL_AT_LEAST_VERSION(7, 36, 0)
+    ereport(ERROR, (errcode(ERRCODE_WARNING_DEPRECATED_FEATURE), errmsg("curl_easy_setopt_ssl_enable_npn deprecated: since 7.86.0. Has no function")));
+#elif CURL_AT_LEAST_VERSION(7, 36, 0)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_SSL_ENABLE_NPN);
 #else
     ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_ssl_enable_npn requires curl 7.36.0 or later")));
@@ -1817,6 +1829,13 @@ static Datum pg_curl_easy_getinfo_long(PG_FUNCTION_ARGS, CURLINFO info) {
 #endif
 }
 
+EXTENSION(pg_curl_easy_getinfo_activesocket) {
+#if CURL_AT_LEAST_VERSION(7, 45, 0)
+    return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_ACTIVESOCKET);
+#else
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_getinfo_activesocket requires curl 7.45.0 or later")));
+#endif
+}
 EXTENSION(pg_curl_easy_getinfo_condition_unmet) {
 #if CURL_AT_LEAST_VERSION(7, 19, 4)
     return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_CONDITION_UNMET);
@@ -1861,9 +1880,8 @@ EXTENSION(pg_curl_easy_getinfo_http_version) {
 }
 EXTENSION(pg_curl_easy_getinfo_lastsocket) {
 #if CURL_AT_LEAST_VERSION(7, 45, 0)
-    ereport(WARNING, (errcode(ERRCODE_WARNING_DEPRECATED_FEATURE), errmsg("curl_easy_getinfo_lastsocket deprecated")));
-#endif
-#if CURL_AT_LEAST_VERSION(7, 15, 2)
+    ereport(ERROR, (errcode(ERRCODE_WARNING_DEPRECATED_FEATURE), errmsg("curl_easy_getinfo_lastsocket deprecated: since 7.45.0. Use curl_easy_getinfo_activesocket")));
+#elif CURL_AT_LEAST_VERSION(7, 15, 2)
     return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_LASTSOCKET);
 #else
     ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_getinfo_lastsocket requires curl 7.15.2 or later")));
@@ -1899,9 +1917,8 @@ EXTENSION(pg_curl_easy_getinfo_primary_port) {
 }
 EXTENSION(pg_curl_easy_getinfo_protocol) {
 #if CURL_AT_LEAST_VERSION(7, 85, 0)
-    ereport(WARNING, (errcode(ERRCODE_WARNING_DEPRECATED_FEATURE), errmsg("curl_easy_getinfo_protocol deprecated")));
-#endif
-#if CURL_AT_LEAST_VERSION(7, 52, 0)
+    ereport(ERROR, (errcode(ERRCODE_WARNING_DEPRECATED_FEATURE), errmsg("curl_easy_getinfo_protocol deprecated: since 7.85.0. Use curl_easy_getinfo_scheme")));
+#elif CURL_AT_LEAST_VERSION(7, 52, 0)
     return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_PROTOCOL);
 #else
     ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_getinfo_protocol requires curl 7.52.0 or later")));
