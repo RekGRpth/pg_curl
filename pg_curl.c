@@ -51,7 +51,7 @@ static void *pg_curl_malloc_callback(size_t size) {
     void *res;
     pthread_mutex_lock(&mutex);
     PG_TRY(); {
-        res = size ? MemoryContextAlloc(TopMemoryContext, size) : NULL;
+        res = size ? MemoryContextAlloc(TopTransactionContext, size) : NULL;
     } PG_CATCH(); {
         pthread_mutex_unlock(&mutex);
         PG_RE_THROW();
@@ -75,7 +75,7 @@ static void *pg_curl_realloc_callback(void *ptr, size_t size) {
     void *res;
     pthread_mutex_lock(&mutex);
     PG_TRY(); {
-        res = (ptr && size) ? repalloc(ptr, size) : (size ? MemoryContextAlloc(TopMemoryContext, size) : ptr);
+        res = (ptr && size) ? repalloc(ptr, size) : (size ? MemoryContextAlloc(TopTransactionContext, size) : ptr);
     } PG_CATCH(); {
         pthread_mutex_unlock(&mutex);
         PG_RE_THROW();
@@ -88,7 +88,7 @@ static char *pg_curl_strdup_callback(const char *str) {
     char *res;
     pthread_mutex_lock(&mutex);
     PG_TRY(); {
-        res = MemoryContextStrdup(TopMemoryContext, str);
+        res = MemoryContextStrdup(TopTransactionContext, str);
     } PG_CATCH(); {
         pthread_mutex_unlock(&mutex);
         PG_RE_THROW();
@@ -101,7 +101,7 @@ static void *pg_curl_calloc_callback(size_t nmemb, size_t size) {
     void *res;
     pthread_mutex_lock(&mutex);
     PG_TRY(); {
-        res = MemoryContextAllocZero(TopMemoryContext, nmemb * size);
+        res = MemoryContextAllocZero(TopTransactionContext, nmemb * size);
     } PG_CATCH(); {
         pthread_mutex_unlock(&mutex);
         PG_RE_THROW();
@@ -134,7 +134,7 @@ static void pg_curl_fini(void *arg) {
 static void pg_curl_init(void) {
     MemoryContext oldMemoryContext;
     if (curl) return;
-    oldMemoryContext = MemoryContextSwitchTo(TopMemoryContext);
+    oldMemoryContext = MemoryContextSwitchTo(TopTransactionContext);
 #if CURL_AT_LEAST_VERSION(7, 12, 0)
     if (curl_global_init_mem(CURL_GLOBAL_ALL, pg_curl_malloc_callback, pg_curl_free_callback, pg_curl_realloc_callback, pg_curl_strdup_callback, pg_curl_calloc_callback)) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_global_init_mem")));
 #elif CURL_AT_LEAST_VERSION(7, 8, 0)
@@ -150,9 +150,9 @@ static void pg_curl_init(void) {
     initStringInfo(&url);
     pg_curl_interrupt_requested = 0;
     pgsql_interrupt_handler = pqsignal(SIGINT, pg_curl_interrupt_handler);
-    MemoryContextSwitchTo(oldMemoryContext);
     pg_curl_mcb.func = pg_curl_fini;
     MemoryContextRegisterResetCallback(TopTransactionContext, &pg_curl_mcb);
+    MemoryContextSwitchTo(oldMemoryContext);
 }
 
 EXTENSION(pg_curl_easy_header_reset) {
