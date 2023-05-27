@@ -1342,9 +1342,8 @@ EXTENSION(pg_curl_easy_setopt_postredir) {
 EXTENSION(pg_curl_easy_setopt_post) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_POST); }
 EXTENSION(pg_curl_easy_setopt_protocols) {
 #if CURL_AT_LEAST_VERSION(7, 85, 0)
-    ereport(WARNING, (errcode(ERRCODE_WARNING_DEPRECATED_FEATURE), errmsg("curl_easy_setopt_protocols deprecated")));
-#endif
-#if CURL_AT_LEAST_VERSION(7, 19, 4)
+    ereport(WARNING, (errcode(ERRCODE_WARNING_DEPRECATED_FEATURE), errmsg("curl_easy_setopt_protocols deprecated: since 7.85.0. Use curl_easy_setopt_protocols_str")));
+#elif CURL_AT_LEAST_VERSION(7, 19, 4)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_PROTOCOLS);
 #else
     ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_protocols requires curl 7.19.4 or later")));
