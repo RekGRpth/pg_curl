@@ -899,9 +899,10 @@ EXTENSION(pg_curl_easy_setopt_proxyusername) {
 EXTENSION(pg_curl_easy_setopt_proxyuserpwd) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_PROXYUSERPWD); }
 EXTENSION(pg_curl_easy_setopt_random_file) {
 #if CURL_AT_LEAST_VERSION(7, 84, 0)
-    ereport(WARNING, (errcode(ERRCODE_WARNING_DEPRECATED_FEATURE), errmsg("curl_easy_setopt_random_file deprecated")));
-#endif
+    ereport(ERROR, (errcode(ERRCODE_WARNING_DEPRECATED_FEATURE), errmsg("curl_easy_setopt_random_file deprecated: since 7.84.0. Serves no purpose anymore")));
+#else
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_RANDOM_FILE);
+#endif
 }
 EXTENSION(pg_curl_easy_setopt_range) {
 #if CURL_AT_LEAST_VERSION(7, 18, 0)
