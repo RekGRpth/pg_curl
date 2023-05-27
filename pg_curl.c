@@ -26,8 +26,9 @@ static CURL *curl = NULL;
 static curl_mime *mime = NULL;
 #endif
 static int pg_curl_interrupt_requested = 0;
-static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+static MemoryContextCallback pg_curl_mcb = {0};
 static pqsigfunc pgsql_interrupt_handler = NULL;
+static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 static StringInfoData data_in = {0};
 static StringInfoData data_out = {0};
 static StringInfoData debug = {0};
@@ -110,9 +111,8 @@ static void *pg_curl_calloc_callback(size_t nmemb, size_t size) {
 }
 #endif
 
-static void pg_curl_fini(ResourceReleasePhase phase, bool isCommit, bool isTopLevel, void *arg) {
-    if (!isTopLevel || phase != RESOURCE_RELEASE_AFTER_LOCKS || !curl) return;
-    UnregisterResourceReleaseCallback(pg_curl_fini, NULL);
+static void pg_curl_fini(void *arg) {
+    if (!curl) return;
     pqsignal(SIGINT, pgsql_interrupt_handler);
 #if CURL_AT_LEAST_VERSION(7, 56, 0)
     curl_mime_free(mime);
@@ -150,8 +150,9 @@ static void pg_curl_init(void) {
     initStringInfo(&url);
     pg_curl_interrupt_requested = 0;
     pgsql_interrupt_handler = pqsignal(SIGINT, pg_curl_interrupt_handler);
-    RegisterResourceReleaseCallback(pg_curl_fini, NULL);
     MemoryContextSwitchTo(oldMemoryContext);
+    pg_curl_mcb.func = pg_curl_fini;
+    MemoryContextRegisterResetCallback(TopTransactionContext, &pg_curl_mcb);
 }
 
 EXTENSION(pg_curl_easy_header_reset) {
