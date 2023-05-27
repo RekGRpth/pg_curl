@@ -954,8 +954,9 @@ EXTENSION(pg_curl_easy_setopt_service_name) {
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_socks5_gssapi_service) {
-#if CURL_AT_LEAST_VERSION(7, 19, 4)
-    ereport(WARNING, (errcode(ERRCODE_WARNING_DEPRECATED_FEATURE), errmsg("curl_easy_setopt_socks5_gssapi_service deprecated, use curl_easy_setopt_proxy_service_name instead")));
+#if CURL_AT_LEAST_VERSION(7, 49, 0)
+    ereport(ERROR, (errcode(ERRCODE_WARNING_DEPRECATED_FEATURE), errmsg("curl_easy_setopt_socks5_gssapi_service deprecated: since 7.49.0. Use curl_easy_setopt_proxy_service_name")));
+#elif CURL_AT_LEAST_VERSION(7, 19, 4)
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_SOCKS5_GSSAPI_SERVICE);
 #else
     ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_socks5_gssapi_service requires curl 7.19.4 or later")));
