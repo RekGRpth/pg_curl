@@ -8,6 +8,7 @@
 #endif
 #include <signal.h>
 #include <utils/builtins.h>
+#include <utils/guc.h>
 #include <utils/memutils.h>
 #include <utils/resowner.h>
 #if PG_VERSION_NUM >= 160000
@@ -25,6 +26,7 @@ static CURL *curl = NULL;
 #if CURL_AT_LEAST_VERSION(7, 56, 0)
 static curl_mime *mime = NULL;
 #endif
+static bool pg_curl_transaction = true;
 static int pg_curl_interrupt_requested = 0;
 static MemoryContextCallback pg_curl_mcb = {0};
 static MemoryContext pg_curl_context = NULL;
@@ -44,6 +46,10 @@ static struct curl_slist *quote = NULL;
 #if CURL_AT_LEAST_VERSION(7, 20, 0)
 static struct curl_slist *recipient = NULL;
 #endif
+
+void _PG_init(void); void _PG_init(void) {
+    DefineCustomBoolVariable("pg_curl.transaction", "pg_curl transaction", "Use transaction context?", &pg_curl_transaction, true, PGC_USERSET, 0, NULL, NULL, NULL);
+}
 
 static void pg_curl_interrupt_handler(int sig) { pg_curl_interrupt_requested = sig; }
 
@@ -136,7 +142,7 @@ static void pg_curl_fini(void *arg) {
 static void pg_curl_init(void) {
     MemoryContext oldMemoryContext;
     if (curl) return;
-    pg_curl_context = TopTransactionContext;
+    pg_curl_context = pg_curl_transaction ? TopTransactionContext : TopMemoryContext;
     oldMemoryContext = MemoryContextSwitchTo(pg_curl_context);
 #if CURL_AT_LEAST_VERSION(7, 12, 0)
     if (curl_global_init_mem(CURL_GLOBAL_ALL, pg_curl_malloc_callback, pg_curl_free_callback, pg_curl_realloc_callback, pg_curl_strdup_callback, pg_curl_calloc_callback)) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_global_init_mem")));
