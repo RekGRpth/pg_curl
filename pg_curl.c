@@ -625,9 +625,10 @@ EXTENSION(pg_curl_easy_setopt_doh_url) {
 }
 EXTENSION(pg_curl_easy_setopt_egdsocket) {
 #if CURL_AT_LEAST_VERSION(7, 84, 0)
-    ereport(WARNING, (errcode(ERRCODE_WARNING_DEPRECATED_FEATURE), errmsg("curl_easy_setopt_egdsocket deprecated")));
-#endif
+    ereport(ERROR, (errcode(ERRCODE_WARNING_DEPRECATED_FEATURE), errmsg("curl_easy_setopt_egdsocket deprecated: since 7.84.0. Serves no purpose anymore")));
+#else
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_EGDSOCKET);
+#endif
 }
 EXTENSION(pg_curl_easy_setopt_ftp_account) {
 #if CURL_AT_LEAST_VERSION(7, 13, 0)
