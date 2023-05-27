@@ -47,10 +47,6 @@ static struct curl_slist *quote = NULL;
 static struct curl_slist *recipient = NULL;
 #endif
 
-void _PG_init(void); void _PG_init(void) {
-    DefineCustomBoolVariable("pg_curl.transaction", "pg_curl transaction", "Use transaction context?", &pg_curl_transaction, true, PGC_USERSET, 0, NULL, NULL, NULL);
-}
-
 static void pg_curl_interrupt_handler(int sig) { pg_curl_interrupt_requested = sig; }
 
 #if CURL_AT_LEAST_VERSION(7, 12, 0)
@@ -2744,4 +2740,8 @@ EXTENSION(pg_curl_max_write_size) {
 #else
     ereport(ERROR, (errcode(ERRCODE_UNDEFINED_FUNCTION), errmsg("CURL_MAX_WRITE_SIZE undefined")));
 #endif
+}
+
+void _PG_init(void); void _PG_init(void) {
+    DefineCustomBoolVariable("pg_curl.transaction", "pg_curl transaction", "Use transaction context?", &pg_curl_transaction, true, PGC_USERSET, 0, NULL, NULL, NULL);
 }
