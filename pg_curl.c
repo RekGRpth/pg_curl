@@ -58,7 +58,7 @@ typedef struct {
 
 static bool pg_curl_transaction = true;
 static pg_curl_global_t pg_curl_global = {0};
-static pg_curl_t *pg_curl = NULL;
+static pg_curl_t pg_curl = {0};
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 static void pg_curl_interrupt_handler(int sig) { pg_curl_global.interrupt.requested = sig; }
@@ -138,20 +138,19 @@ static void pg_curl_global_cleanup(void *arg) {
 }
 
 static void pg_curl_easy_cleanup(void *arg) {
-    if (!pg_curl) return;
+    pg_curl_t *curl = arg;
+    if (!curl) return;
 #if CURL_AT_LEAST_VERSION(7, 56, 0)
-    curl_mime_free(pg_curl->mime);
+    curl_mime_free(curl->mime);
 #endif
-    curl_slist_free_all(pg_curl->header);
-    curl_slist_free_all(pg_curl->postquote);
-    curl_slist_free_all(pg_curl->prequote);
-    curl_slist_free_all(pg_curl->quote);
+    curl_slist_free_all(curl->header);
+    curl_slist_free_all(curl->postquote);
+    curl_slist_free_all(curl->prequote);
+    curl_slist_free_all(curl->quote);
 #if CURL_AT_LEAST_VERSION(7, 20, 0)
-    curl_slist_free_all(pg_curl->recipient);
+    curl_slist_free_all(curl->recipient);
 #endif
-    curl_easy_cleanup(pg_curl->curl);
-    pfree(pg_curl);
-    pg_curl = NULL;
+    curl_easy_cleanup(curl->curl);
 }
 
 static void pg_curl_global_init(void) {
@@ -177,40 +176,40 @@ static void pg_curl_global_init(void) {
     MemoryContextSwitchTo(oldMemoryContext);
 }
 
-static void pg_curl_easy_init(void) {
+static pg_curl_t *pg_curl_easy_init(pg_curl_t *curl) {
     MemoryContext oldMemoryContext;
-    if (pg_curl) return;
+    if (curl->curl) return curl;
     pg_curl_global_init();
     oldMemoryContext = MemoryContextSwitchTo(pg_curl_global.context);
-    pg_curl = MemoryContextAllocZero(pg_curl_global.context, sizeof(*pg_curl));
-    if (!(pg_curl->curl = curl_easy_init())) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_easy_init")));
-    initStringInfo(&pg_curl->data_in);
-    initStringInfo(&pg_curl->data_out);
-    initStringInfo(&pg_curl->debug);
-    initStringInfo(&pg_curl->header_in);
-    initStringInfo(&pg_curl->header_out);
-    initStringInfo(&pg_curl->postfield);
-    initStringInfo(&pg_curl->url);
+    if (!(curl->curl = curl_easy_init())) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_easy_init")));
+    initStringInfo(&curl->data_in);
+    initStringInfo(&curl->data_out);
+    initStringInfo(&curl->debug);
+    initStringInfo(&curl->header_in);
+    initStringInfo(&curl->header_out);
+    initStringInfo(&curl->postfield);
+    initStringInfo(&curl->url);
 #if PG_VERSION_NUM >= 90500
-    pg_curl->callback.arg = pg_curl;
-    pg_curl->callback.func = pg_curl_easy_cleanup;
-    MemoryContextRegisterResetCallback(pg_curl_global.context, &pg_curl->callback);
+    curl->callback.arg = curl;
+    curl->callback.func = pg_curl_easy_cleanup;
+    MemoryContextRegisterResetCallback(pg_curl_global.context, &curl->callback);
 #endif
     MemoryContextSwitchTo(oldMemoryContext);
+    return curl;
 }
 
 EXTENSION(pg_curl_easy_header_reset) {
-    pg_curl_easy_init();
-    curl_slist_free_all(pg_curl->header);
-    pg_curl->header = NULL;
+    pg_curl_t *curl = pg_curl_easy_init(&pg_curl);
+    curl_slist_free_all(curl->header);
+    curl->header = NULL;
     PG_RETURN_VOID();
 }
 
 EXTENSION(pg_curl_easy_mime_reset) {
 #if CURL_AT_LEAST_VERSION(7, 56, 0)
-    pg_curl_easy_init();
-    curl_mime_free(pg_curl->mime);
-    pg_curl->mime = NULL;
+    pg_curl_t *curl = pg_curl_easy_init(&pg_curl);
+    curl_mime_free(curl->mime);
+    curl->mime = NULL;
     PG_RETURN_VOID();
 #else
     ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_mime_reset requires curl 7.56.0 or later")));
@@ -218,31 +217,31 @@ EXTENSION(pg_curl_easy_mime_reset) {
 }
 
 EXTENSION(pg_curl_easy_postquote_reset) {
-    pg_curl_easy_init();
-    curl_slist_free_all(pg_curl->postquote);
-    pg_curl->postquote = NULL;
+    pg_curl_t *curl = pg_curl_easy_init(&pg_curl);
+    curl_slist_free_all(curl->postquote);
+    curl->postquote = NULL;
     PG_RETURN_VOID();
 }
 
 EXTENSION(pg_curl_easy_prequote_reset) {
-    pg_curl_easy_init();
-    curl_slist_free_all(pg_curl->prequote);
-    pg_curl->prequote = NULL;
+    pg_curl_t *curl = pg_curl_easy_init(&pg_curl);
+    curl_slist_free_all(curl->prequote);
+    curl->prequote = NULL;
     PG_RETURN_VOID();
 }
 
 EXTENSION(pg_curl_easy_quote_reset) {
-    pg_curl_easy_init();
-    curl_slist_free_all(pg_curl->quote);
-    pg_curl->quote = NULL;
+    pg_curl_t *curl = pg_curl_easy_init(&pg_curl);
+    curl_slist_free_all(curl->quote);
+    curl->quote = NULL;
     PG_RETURN_VOID();
 }
 
 EXTENSION(pg_curl_easy_recipient_reset) {
 #if CURL_AT_LEAST_VERSION(7, 20, 0)
-    pg_curl_easy_init();
-    curl_slist_free_all(pg_curl->recipient);
-    pg_curl->recipient = NULL;
+    pg_curl_t *curl = pg_curl_easy_init(&pg_curl);
+    curl_slist_free_all(curl->recipient);
+    curl->recipient = NULL;
     PG_RETURN_VOID();
 #else
     ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_recipient_reset requires curl 7.20.0 or later")));
@@ -250,7 +249,7 @@ EXTENSION(pg_curl_easy_recipient_reset) {
 }
 
 EXTENSION(pg_curl_easy_reset) {
-    pg_curl_easy_init();
+    pg_curl_t *curl = pg_curl_easy_init(&pg_curl);
     pg_curl_easy_header_reset(fcinfo);
     pg_curl_easy_postquote_reset(fcinfo);
     pg_curl_easy_prequote_reset(fcinfo);
@@ -262,15 +261,15 @@ EXTENSION(pg_curl_easy_reset) {
     pg_curl_easy_recipient_reset(fcinfo);
 #endif
 #if CURL_AT_LEAST_VERSION(7, 12, 1)
-    curl_easy_reset(pg_curl->curl);
+    curl_easy_reset(curl->curl);
 #endif
-    resetStringInfo(&pg_curl->data_in);
-    resetStringInfo(&pg_curl->data_out);
-    resetStringInfo(&pg_curl->debug);
-    resetStringInfo(&pg_curl->header_in);
-    resetStringInfo(&pg_curl->header_out);
-    resetStringInfo(&pg_curl->postfield);
-    resetStringInfo(&pg_curl->url);
+    resetStringInfo(&curl->data_in);
+    resetStringInfo(&curl->data_out);
+    resetStringInfo(&curl->debug);
+    resetStringInfo(&curl->header_in);
+    resetStringInfo(&curl->header_out);
+    resetStringInfo(&curl->postfield);
+    resetStringInfo(&curl->url);
     PG_RETURN_VOID();
 }
 
@@ -278,10 +277,10 @@ EXTENSION(pg_curl_easy_escape) {
 #if CURL_AT_LEAST_VERSION(7, 15, 4)
     text *string;
     char *escape;
-    pg_curl_easy_init();
+    pg_curl_t *curl = pg_curl_easy_init(&pg_curl);
     if (PG_ARGISNULL(0)) ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("curl_easy_escape requires argument string")));
     string = PG_GETARG_TEXT_PP(0);
-    if (!(escape = curl_easy_escape(pg_curl->curl, VARDATA_ANY(string), VARSIZE_ANY_EXHDR(string)))) PG_RETURN_NULL();
+    if (!(escape = curl_easy_escape(curl->curl, VARDATA_ANY(string), VARSIZE_ANY_EXHDR(string)))) PG_RETURN_NULL();
     PG_FREE_IF_COPY(string, 0);
     string = cstring_to_text(escape);
     curl_free(escape);
@@ -296,10 +295,10 @@ EXTENSION(pg_curl_easy_unescape) {
     text *url;
     char *unescape;
     int outlength;
-    pg_curl_easy_init();
+    pg_curl_t *curl = pg_curl_easy_init(&pg_curl);
     if (PG_ARGISNULL(0)) ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("curl_easy_unescape requires argument url")));
     url = PG_GETARG_TEXT_PP(0);
-    if (!(unescape = curl_easy_unescape(pg_curl->curl, VARDATA_ANY(url), VARSIZE_ANY_EXHDR(url), &outlength))) PG_RETURN_NULL();
+    if (!(unescape = curl_easy_unescape(curl->curl, VARDATA_ANY(url), VARSIZE_ANY_EXHDR(url), &outlength))) PG_RETURN_NULL();
     PG_FREE_IF_COPY(url, 0);
     url = cstring_to_text_with_len(unescape, outlength);
     curl_free(unescape);
@@ -312,15 +311,15 @@ EXTENSION(pg_curl_easy_unescape) {
 EXTENSION(pg_curl_header_append) {
     char *name, *value;
     StringInfoData buf;
-    struct curl_slist *temp = pg_curl->header;
-    pg_curl_easy_init();
+    pg_curl_t *curl = pg_curl_easy_init(&pg_curl);
+    struct curl_slist *temp = curl->header;
     if (PG_ARGISNULL(0)) ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("curl_header_append requires argument name")));
     name = TextDatumGetCString(PG_GETARG_DATUM(0));
     if (PG_ARGISNULL(1)) ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("curl_header_append requires argument value")));
     value = TextDatumGetCString(PG_GETARG_DATUM(1));
     initStringInfo(&buf);
     appendStringInfo(&buf, "%s: %s", name, value);
-    if ((temp = curl_slist_append(temp, buf.data))) pg_curl->header = temp; else ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_slist_append")));
+    if ((temp = curl_slist_append(temp, buf.data))) curl->header = temp; else ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_slist_append")));
     pfree(name);
     pfree(value);
     pfree(buf.data);
@@ -329,33 +328,33 @@ EXTENSION(pg_curl_header_append) {
 
 EXTENSION(pg_curl_postquote_append) {
     char *command;
-    struct curl_slist *temp = pg_curl->postquote;
-    pg_curl_easy_init();
+    pg_curl_t *curl = pg_curl_easy_init(&pg_curl);
+    struct curl_slist *temp = curl->postquote;
     if (PG_ARGISNULL(0)) ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("curl_postquote_append requires argument command")));
     command = TextDatumGetCString(PG_GETARG_DATUM(0));
-    if ((temp = curl_slist_append(temp, command))) pg_curl->postquote = temp; else ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_slist_append")));
+    if ((temp = curl_slist_append(temp, command))) curl->postquote = temp; else ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_slist_append")));
     pfree(command);
     PG_RETURN_BOOL(temp != NULL);
 }
 
 EXTENSION(pg_curl_prequote_append) {
     char *command;
-    struct curl_slist *temp = pg_curl->prequote;
-    pg_curl_easy_init();
+    pg_curl_t *curl = pg_curl_easy_init(&pg_curl);
+    struct curl_slist *temp = curl->prequote;
     if (PG_ARGISNULL(0)) ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("curl_prequote_append requires argument command")));
     command = TextDatumGetCString(PG_GETARG_DATUM(0));
-    if ((temp = curl_slist_append(temp, command))) pg_curl->prequote = temp; else ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_slist_append")));
+    if ((temp = curl_slist_append(temp, command))) curl->prequote = temp; else ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_slist_append")));
     pfree(command);
     PG_RETURN_BOOL(temp != NULL);
 }
 
 EXTENSION(pg_curl_quote_append) {
     char *command;
-    struct curl_slist *temp = pg_curl->quote;
-    pg_curl_easy_init();
+    pg_curl_t *curl = pg_curl_easy_init(&pg_curl);
+    struct curl_slist *temp = curl->quote;
     if (PG_ARGISNULL(0)) ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("curl_quote_append requires argument command")));
     command = TextDatumGetCString(PG_GETARG_DATUM(0));
-    if ((temp = curl_slist_append(temp, command))) pg_curl->quote = temp; else ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_slist_append")));
+    if ((temp = curl_slist_append(temp, command))) curl->quote = temp; else ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_slist_append")));
     pfree(command);
     PG_RETURN_BOOL(temp != NULL);
 }
@@ -363,11 +362,11 @@ EXTENSION(pg_curl_quote_append) {
 EXTENSION(pg_curl_recipient_append) {
 #if CURL_AT_LEAST_VERSION(7, 20, 0)
     char *email;
-    struct curl_slist *temp = pg_curl->recipient;
-    pg_curl_easy_init();
+    pg_curl_t *curl = pg_curl_easy_init(&pg_curl);
+    struct curl_slist *temp = curl->recipient;
     if (PG_ARGISNULL(0)) ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("curl_recipient_append requires argument email")));
     email = TextDatumGetCString(PG_GETARG_DATUM(0));
-    if ((temp = curl_slist_append(temp, email))) pg_curl->recipient = temp; else ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_slist_append")));
+    if ((temp = curl_slist_append(temp, email))) curl->recipient = temp; else ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_slist_append")));
     pfree(email);
     PG_RETURN_BOOL(temp != NULL);
 #else
@@ -379,7 +378,6 @@ static Datum pg_curl_mime_data_or_file(PG_FUNCTION_ARGS, curl_mimepart *part) {
 #if CURL_AT_LEAST_VERSION(7, 56, 0)
     char *name = NULL, *file = NULL, *type = NULL, *code = NULL, *head = NULL;
     CURLcode res = CURL_LAST;
-    pg_curl_easy_init();
     if (!PG_ARGISNULL(1)) name = TextDatumGetCString(PG_GETARG_DATUM(1));
     if (!PG_ARGISNULL(2)) file = TextDatumGetCString(PG_GETARG_DATUM(2));
     if (!PG_ARGISNULL(3)) type = TextDatumGetCString(PG_GETARG_DATUM(3));
@@ -409,9 +407,9 @@ EXTENSION(pg_curl_mime_data_text) {
 #if CURL_AT_LEAST_VERSION(7, 56, 0)
     CURLcode res = CURL_LAST;
     curl_mimepart *part;
-    pg_curl_easy_init();
-    if (!pg_curl->mime && !(pg_curl->mime = curl_mime_init(pg_curl->curl))) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_mime_init")));
-    if (!(part = curl_mime_addpart(pg_curl->mime))) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_mime_addpart")));
+    pg_curl_t *curl = pg_curl_easy_init(&pg_curl);
+    if (!curl->mime && !(curl->mime = curl_mime_init(curl->curl))) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_mime_init")));
+    if (!(part = curl_mime_addpart(curl->mime))) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_mime_addpart")));
     if (!PG_ARGISNULL(0)) {
         text *data = PG_GETARG_TEXT_PP(0);
         if ((res = curl_mime_data(part, VARDATA_ANY(data), VARSIZE_ANY_EXHDR(data))) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_mime_data failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("%*.*s", (int)VARSIZE_ANY_EXHDR(data), (int)VARSIZE_ANY_EXHDR(data), VARDATA_ANY(data))));
@@ -427,9 +425,9 @@ EXTENSION(pg_curl_mime_data_bytea) {
 #if CURL_AT_LEAST_VERSION(7, 56, 0)
     CURLcode res = CURL_LAST;
     curl_mimepart *part;
-    pg_curl_easy_init();
-    if (!pg_curl->mime && !(pg_curl->mime = curl_mime_init(pg_curl->curl))) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_mime_init")));
-    if (!(part = curl_mime_addpart(pg_curl->mime))) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_mime_addpart")));
+    pg_curl_t *curl = pg_curl_easy_init(&pg_curl);
+    if (!curl->mime && !(curl->mime = curl_mime_init(curl->curl))) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_mime_init")));
+    if (!(part = curl_mime_addpart(curl->mime))) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_mime_addpart")));
     if (!PG_ARGISNULL(0)) {
         bytea *data = PG_GETARG_BYTEA_PP(0);
         if ((res = curl_mime_data(part, VARDATA_ANY(data), VARSIZE_ANY_EXHDR(data))) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_mime_data failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("%*.*s", (int)VARSIZE_ANY_EXHDR(data), (int)VARSIZE_ANY_EXHDR(data), VARDATA_ANY(data))));
@@ -445,10 +443,10 @@ EXTENSION(pg_curl_mime_file) {
 #if CURL_AT_LEAST_VERSION(7, 56, 0)
     CURLcode res = CURL_LAST;
     curl_mimepart *part;
-    pg_curl_easy_init();
+    pg_curl_t *curl = pg_curl_easy_init(&pg_curl);
     if (PG_ARGISNULL(0)) ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("curl_mime_file requires argument data")));
-    if (!pg_curl->mime && !(pg_curl->mime = curl_mime_init(pg_curl->curl))) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_mime_init")));
-    if (!(part = curl_mime_addpart(pg_curl->mime))) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_mime_addpart")));
+    if (!curl->mime && !(curl->mime = curl_mime_init(curl->curl))) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_mime_init")));
+    if (!(part = curl_mime_addpart(curl->mime))) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_mime_addpart")));
     if (!PG_ARGISNULL(0)) {
         char *data = TextDatumGetCString(PG_GETARG_DATUM(0));
         if ((res = curl_mime_filedata(part, data)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_mime_name failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("%s", data)));
@@ -463,11 +461,11 @@ EXTENSION(pg_curl_mime_file) {
 EXTENSION(pg_curl_easy_setopt_postfields) {
     CURLcode res = CURLE_OK;
     bytea *parameter;
-    pg_curl_easy_init();
+    pg_curl_t *curl = pg_curl_easy_init(&pg_curl);
     if (PG_ARGISNULL(0)) ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("curl_easy_setopt_postfields requires argument parameter")));
     parameter = PG_GETARG_BYTEA_PP(0);
-    resetStringInfo(&pg_curl->postfield);
-    appendBinaryStringInfo(&pg_curl->postfield, VARDATA_ANY(parameter), VARSIZE_ANY_EXHDR(parameter));
+    resetStringInfo(&curl->postfield);
+    appendBinaryStringInfo(&curl->postfield, VARDATA_ANY(parameter), VARSIZE_ANY_EXHDR(parameter));
     PG_FREE_IF_COPY(parameter, 0);
     PG_RETURN_BOOL(res == CURLE_OK);
 }
@@ -475,29 +473,28 @@ EXTENSION(pg_curl_easy_setopt_postfields) {
 EXTENSION(pg_curl_easy_setopt_url) {
     CURLcode res = CURLE_OK;
     text *parameter;
-    pg_curl_easy_init();
+    pg_curl_t *curl = pg_curl_easy_init(&pg_curl);
     if (PG_ARGISNULL(0)) ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("curl_easy_setopt_url requires argument parameter")));
     parameter = PG_GETARG_TEXT_PP(0);
-    resetStringInfo(&pg_curl->url);
-    appendBinaryStringInfo(&pg_curl->url, VARDATA_ANY(parameter), VARSIZE_ANY_EXHDR(parameter));
+    resetStringInfo(&curl->url);
+    appendBinaryStringInfo(&curl->url, VARDATA_ANY(parameter), VARSIZE_ANY_EXHDR(parameter));
     PG_FREE_IF_COPY(parameter, 0);
     PG_RETURN_BOOL(res == CURLE_OK);
 }
 
-static Datum pg_curl_postfield_or_url_append(PG_FUNCTION_ARGS, StringInfoData *buf) {
+static Datum pg_curl_postfield_or_url_append(PG_FUNCTION_ARGS, pg_curl_t *curl, StringInfoData *buf) {
     char *escape;
     CURLcode res = CURLE_OK;
     text *name = PG_GETARG_TEXT_PP(0);
-    pg_curl_easy_init();
     if (buf->len && buf->data[buf->len - 1] != '?') appendStringInfoChar(buf, '&');
-    if (!(escape = curl_easy_escape(pg_curl->curl, VARDATA_ANY(name), VARSIZE_ANY_EXHDR(name)))) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_escape failed")));
+    if (!(escape = curl_easy_escape(curl->curl, VARDATA_ANY(name), VARSIZE_ANY_EXHDR(name)))) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_escape failed")));
     appendStringInfoString(buf, escape);
     PG_FREE_IF_COPY(name, 0);
     if (!PG_ARGISNULL(1)) {
         text *value = PG_GETARG_TEXT_PP(1);
         appendStringInfoChar(buf, '=');
         if (VARSIZE_ANY_EXHDR(value)) {
-            if (!(escape = curl_easy_escape(pg_curl->curl, VARDATA_ANY(value), VARSIZE_ANY_EXHDR(value)))) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_escape failed")));
+            if (!(escape = curl_easy_escape(curl->curl, VARDATA_ANY(value), VARSIZE_ANY_EXHDR(value)))) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_escape failed")));
             appendStringInfoString(buf, escape);
         }
         PG_FREE_IF_COPY(value, 1);
@@ -506,14 +503,15 @@ static Datum pg_curl_postfield_or_url_append(PG_FUNCTION_ARGS, StringInfoData *b
 }
 
 EXTENSION(pg_curl_postfield_append) {
-    pg_curl_easy_init();
+    pg_curl_t *curl = pg_curl_easy_init(&pg_curl);
     if (PG_ARGISNULL(0)) ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("pg_curl_postfield_append requires argument name")));
-    return pg_curl_postfield_or_url_append(fcinfo, &pg_curl->postfield);
+    return pg_curl_postfield_or_url_append(fcinfo, curl, &curl->postfield);
 }
 
 EXTENSION(pg_curl_url_append) {
+    pg_curl_t *curl = pg_curl_easy_init(&pg_curl);
     if (PG_ARGISNULL(0)) ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("pg_curl_url_append requires argument name")));
-    return pg_curl_postfield_or_url_append(fcinfo, &pg_curl->url);
+    return pg_curl_postfield_or_url_append(fcinfo, curl, &curl->url);
 }
 
 #if CURL_AT_LEAST_VERSION(7, 71, 0)
@@ -521,13 +519,13 @@ static Datum pg_curl_easy_setopt_blob(PG_FUNCTION_ARGS, CURLoption option) {
     CURLcode res = CURLE_OK;
     bytea *parameter;
     struct curl_blob blob;
-    pg_curl_easy_init();
+    pg_curl_t *curl = pg_curl_easy_init(&pg_curl);
     if (PG_ARGISNULL(0)) ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("curl_easy_setopt_* requires argument parameter")));
     parameter = PG_GETARG_BYTEA_PP(0);
     blob.data = VARDATA_ANY(parameter);
     blob.flags = CURL_BLOB_COPY;
     blob.len = VARSIZE_ANY_EXHDR(parameter);
-    if ((res = curl_easy_setopt(pg_curl->curl, option, &blob)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("%i", option)));
+    if ((res = curl_easy_setopt(curl->curl, option, &blob)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("%i", option)));
     PG_FREE_IF_COPY(parameter, 0);
     PG_RETURN_BOOL(res == CURLE_OK);
 }
@@ -536,10 +534,10 @@ static Datum pg_curl_easy_setopt_blob(PG_FUNCTION_ARGS, CURLoption option) {
 static Datum pg_curl_easy_setopt_char(PG_FUNCTION_ARGS, CURLoption option) {
     CURLcode res = CURL_LAST;
     char *parameter;
-    pg_curl_easy_init();
+    pg_curl_t *curl = pg_curl_easy_init(&pg_curl);
     if (PG_ARGISNULL(0)) ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("curl_easy_setopt_* requires argument parameter")));
     parameter = TextDatumGetCString(PG_GETARG_DATUM(0));
-    if ((res = curl_easy_setopt(pg_curl->curl, option, parameter)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("%i and %s", option, parameter)));
+    if ((res = curl_easy_setopt(curl->curl, option, parameter)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("%i and %s", option, parameter)));
     pfree(parameter);
     PG_RETURN_BOOL(res == CURLE_OK);
 }
@@ -1106,10 +1104,10 @@ EXTENSION(pg_curl_easy_setopt_xoauth2_bearer) {
 static Datum pg_curl_easy_setopt_long(PG_FUNCTION_ARGS, CURLoption option) {
     CURLcode res = CURL_LAST;
     long parameter;
-    pg_curl_easy_init();
+    pg_curl_t *curl = pg_curl_easy_init(&pg_curl);
     if (PG_ARGISNULL(0)) ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("curl_easy_setopt_* requires argument parameter")));
     parameter = PG_GETARG_INT64(0);
-    if ((res = curl_easy_setopt(pg_curl->curl, option, parameter)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("%i and %li", option, parameter)));
+    if ((res = curl_easy_setopt(curl->curl, option, parameter)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("%i and %li", option, parameter)));
     PG_RETURN_BOOL(res == CURLE_OK);
 }
 
@@ -1651,8 +1649,9 @@ EXTENSION(pg_curl_easy_setopt_use_ssl) {
 }
 EXTENSION(pg_curl_easy_setopt_verbose) {
     CURLcode res = CURL_LAST;
-    if ((res = curl_easy_setopt(pg_curl->curl, CURLOPT_DEBUGDATA, pg_curl)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_DEBUGDATA")));
-    if ((res = curl_easy_setopt(pg_curl->curl, CURLOPT_DEBUGFUNCTION, pg_debug_callback)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_DEBUGFUNCTION")));
+    pg_curl_t *curl = pg_curl_easy_init(&pg_curl);
+    if ((res = curl_easy_setopt(curl->curl, CURLOPT_DEBUGDATA, curl)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_DEBUGDATA")));
+    if ((res = curl_easy_setopt(curl->curl, CURLOPT_DEBUGFUNCTION, pg_debug_callback)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_DEBUGFUNCTION")));
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_VERBOSE);
 }
 EXTENSION(pg_curl_easy_setopt_wildcardmatch) {
@@ -1686,40 +1685,40 @@ EXTENSION(pg_curl_easy_perform) {
     CURLcode res = CURL_LAST;
     int try = PG_ARGISNULL(0) ? 1 : PG_GETARG_INT32(0);
     long sleep = PG_ARGISNULL(1) ? 1000000 : PG_GETARG_INT64(1);
-    pg_curl_easy_init();
+    pg_curl_t *curl = pg_curl_easy_init(&pg_curl);
     if (try <= 0) ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("curl_easy_perform invalid argument try %i", try), errhint("Argument try must be positive!")));
     if (sleep < 0) ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("curl_easy_perform invalid argument sleep %li", sleep), errhint("Argument sleep must be non-negative!")));
-    resetStringInfo(&pg_curl->data_in);
-    resetStringInfo(&pg_curl->data_out);
-    resetStringInfo(&pg_curl->debug);
-    resetStringInfo(&pg_curl->header_in);
-    resetStringInfo(&pg_curl->header_out);
-    if ((res = curl_easy_setopt(pg_curl->curl, CURLOPT_ERRORBUFFER, errbuf)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_ERRORBUFFER")));
-    if ((res = curl_easy_setopt(pg_curl->curl, CURLOPT_HEADERDATA, pg_curl)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_HEADERDATA")));
-    if ((res = curl_easy_setopt(pg_curl->curl, CURLOPT_HEADERFUNCTION, pg_header_callback)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_HEADERFUNCTION")));
-    if (pg_curl->header && ((res = curl_easy_setopt(pg_curl->curl, CURLOPT_HTTPHEADER, pg_curl->header)) != CURLE_OK)) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_HTTPHEADER")));
-    if (pg_curl->postquote && ((res = curl_easy_setopt(pg_curl->curl, CURLOPT_POSTQUOTE, pg_curl->postquote)) != CURLE_OK)) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_POSTQUOTE")));
-    if (pg_curl->prequote && ((res = curl_easy_setopt(pg_curl->curl, CURLOPT_PREQUOTE, pg_curl->prequote)) != CURLE_OK)) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_PREQUOTE")));
-    if (pg_curl->quote && ((res = curl_easy_setopt(pg_curl->curl, CURLOPT_QUOTE, pg_curl->quote)) != CURLE_OK)) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_QUOTE")));
+    resetStringInfo(&curl->data_in);
+    resetStringInfo(&curl->data_out);
+    resetStringInfo(&curl->debug);
+    resetStringInfo(&curl->header_in);
+    resetStringInfo(&curl->header_out);
+    if ((res = curl_easy_setopt(curl->curl, CURLOPT_ERRORBUFFER, errbuf)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_ERRORBUFFER")));
+    if ((res = curl_easy_setopt(curl->curl, CURLOPT_HEADERDATA, curl)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_HEADERDATA")));
+    if ((res = curl_easy_setopt(curl->curl, CURLOPT_HEADERFUNCTION, pg_header_callback)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_HEADERFUNCTION")));
+    if (curl->header && ((res = curl_easy_setopt(curl->curl, CURLOPT_HTTPHEADER, curl->header)) != CURLE_OK)) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_HTTPHEADER")));
+    if (curl->postquote && ((res = curl_easy_setopt(curl->curl, CURLOPT_POSTQUOTE, curl->postquote)) != CURLE_OK)) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_POSTQUOTE")));
+    if (curl->prequote && ((res = curl_easy_setopt(curl->curl, CURLOPT_PREQUOTE, curl->prequote)) != CURLE_OK)) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_PREQUOTE")));
+    if (curl->quote && ((res = curl_easy_setopt(curl->curl, CURLOPT_QUOTE, curl->quote)) != CURLE_OK)) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_QUOTE")));
 #if CURL_AT_LEAST_VERSION(7, 32, 0)
-    if (pg_curl->recipient && ((res = curl_easy_setopt(pg_curl->curl, CURLOPT_MAIL_RCPT, pg_curl->recipient)) != CURLE_OK)) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_MAIL_RCPT")));
+    if (curl->recipient && ((res = curl_easy_setopt(curl->curl, CURLOPT_MAIL_RCPT, curl->recipient)) != CURLE_OK)) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_MAIL_RCPT")));
 #endif
 #if CURL_AT_LEAST_VERSION(7, 56, 0)
-    if (pg_curl->mime && ((res = curl_easy_setopt(pg_curl->curl, CURLOPT_MIMEPOST, pg_curl->mime)) != CURLE_OK)) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_MIMEPOST")));
+    if (curl->mime && ((res = curl_easy_setopt(curl->curl, CURLOPT_MIMEPOST, curl->mime)) != CURLE_OK)) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_MIMEPOST")));
 #endif
-    if ((res = curl_easy_setopt(pg_curl->curl, CURLOPT_NOPROGRESS, 0L)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_NOPROGRESS and 0")));
-    if ((res = curl_easy_setopt(pg_curl->curl, CURLOPT_NOSIGNAL, 1L)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_NOSIGNAL and 1")));
-    if (pg_curl->postfield.len && (res = curl_easy_setopt(pg_curl->curl, CURLOPT_POSTFIELDSIZE, pg_curl->postfield.len)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_POSTFIELDSIZE")));
-    if (pg_curl->postfield.len && (res = curl_easy_setopt(pg_curl->curl, CURLOPT_POSTFIELDS, pg_curl->postfield.data)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_POSTFIELDS")));
-    if ((res = curl_easy_setopt(pg_curl->curl, CURLOPT_URL, pg_curl->url.data)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_URL")));
-    if ((res = curl_easy_setopt(pg_curl->curl, CURLOPT_WRITEDATA, pg_curl)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_WRITEDATA")));
-    if ((res = curl_easy_setopt(pg_curl->curl, CURLOPT_WRITEFUNCTION, pg_write_callback)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_WRITEFUNCTION")));
+    if ((res = curl_easy_setopt(curl->curl, CURLOPT_NOPROGRESS, 0L)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_NOPROGRESS and 0")));
+    if ((res = curl_easy_setopt(curl->curl, CURLOPT_NOSIGNAL, 1L)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_NOSIGNAL and 1")));
+    if (curl->postfield.len && (res = curl_easy_setopt(curl->curl, CURLOPT_POSTFIELDSIZE, curl->postfield.len)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_POSTFIELDSIZE")));
+    if (curl->postfield.len && (res = curl_easy_setopt(curl->curl, CURLOPT_POSTFIELDS, curl->postfield.data)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_POSTFIELDS")));
+    if ((res = curl_easy_setopt(curl->curl, CURLOPT_URL, curl->url.data)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_URL")));
+    if ((res = curl_easy_setopt(curl->curl, CURLOPT_WRITEDATA, curl)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_WRITEDATA")));
+    if ((res = curl_easy_setopt(curl->curl, CURLOPT_WRITEFUNCTION, pg_write_callback)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_WRITEFUNCTION")));
 #if CURL_AT_LEAST_VERSION(7, 32, 0)
-    if ((res = curl_easy_setopt(pg_curl->curl, CURLOPT_XFERINFODATA, pg_curl)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_XFERINFODATA")));
-    if ((res = curl_easy_setopt(pg_curl->curl, CURLOPT_XFERINFOFUNCTION, pg_progress_callback)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_XFERINFOFUNCTION")));
+    if ((res = curl_easy_setopt(curl->curl, CURLOPT_XFERINFODATA, curl)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_XFERINFODATA")));
+    if ((res = curl_easy_setopt(curl->curl, CURLOPT_XFERINFOFUNCTION, pg_progress_callback)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_XFERINFOFUNCTION")));
 #endif
     pg_curl_global.interrupt.requested = 0;
-    while (try--) switch (res = curl_easy_perform(pg_curl->curl)) {
+    while (try--) switch (res = curl_easy_perform(curl->curl)) {
         case CURLE_OK: try = 0; break;
         case CURLE_UNSUPPORTED_PROTOCOL:
         case CURLE_FAILED_INIT:
@@ -1743,43 +1742,41 @@ EXTENSION(pg_curl_easy_perform) {
 }
 
 EXTENSION(pg_curl_easy_getinfo_debug) {
-    pg_curl_easy_init();
-    if (!pg_curl->debug.len) PG_RETURN_NULL();
-    PG_RETURN_TEXT_P(cstring_to_text_with_len(pg_curl->debug.data, pg_curl->debug.len));
+    pg_curl_t *curl = pg_curl_easy_init(&pg_curl);
+    if (!curl->debug.len) PG_RETURN_NULL();
+    PG_RETURN_TEXT_P(cstring_to_text_with_len(curl->debug.data, curl->debug.len));
 }
 
 EXTENSION(pg_curl_easy_getinfo_header_in) {
-    pg_curl_easy_init();
-    if (!pg_curl->header_in.len) PG_RETURN_NULL();
-    PG_RETURN_TEXT_P(cstring_to_text_with_len(pg_curl->header_in.data, pg_curl->header_in.len));
+    pg_curl_t *curl = pg_curl_easy_init(&pg_curl);
+    if (!curl->header_in.len) PG_RETURN_NULL();
+    PG_RETURN_TEXT_P(cstring_to_text_with_len(curl->header_in.data, curl->header_in.len));
 }
 
 EXTENSION(pg_curl_easy_getinfo_header_out) {
-    pg_curl_easy_init();
-    if (!pg_curl->header_out.len) PG_RETURN_NULL();
-    PG_RETURN_TEXT_P(cstring_to_text_with_len(pg_curl->header_out.data, pg_curl->header_out.len));
+    pg_curl_t *curl = pg_curl_easy_init(&pg_curl);
+    if (!curl->header_out.len) PG_RETURN_NULL();
+    PG_RETURN_TEXT_P(cstring_to_text_with_len(curl->header_out.data, curl->header_out.len));
 }
 
 EXTENSION(pg_curl_easy_getinfo_data_in) {
-    pg_curl_easy_init();
-    if (!pg_curl->data_in.len) PG_RETURN_NULL();
-    PG_RETURN_BYTEA_P(cstring_to_text_with_len(pg_curl->data_in.data, pg_curl->data_in.len));
+    pg_curl_t *curl = pg_curl_easy_init(&pg_curl);
+    if (!curl->data_in.len) PG_RETURN_NULL();
+    PG_RETURN_BYTEA_P(cstring_to_text_with_len(curl->data_in.data, curl->data_in.len));
 }
 
 EXTENSION(pg_curl_easy_getinfo_data_out) {
-    pg_curl_easy_init();
-    if (!pg_curl->data_out.len) PG_RETURN_NULL();
-    PG_RETURN_BYTEA_P(cstring_to_text_with_len(pg_curl->data_out.data, pg_curl->data_out.len));
+    pg_curl_t *curl = pg_curl_easy_init(&pg_curl);
+    if (!curl->data_out.len) PG_RETURN_NULL();
+    PG_RETURN_BYTEA_P(cstring_to_text_with_len(curl->data_out.data, curl->data_out.len));
 }
 
 EXTENSION(pg_curl_easy_getinfo_headers) {
-    pg_curl_easy_init();
     ereport(WARNING, (errcode(ERRCODE_WARNING_DEPRECATED_FEATURE), errmsg("curl_easy_getinfo_headers deprecated, use curl_easy_getinfo_header_in instead")));
     return pg_curl_easy_getinfo_header_in(fcinfo);
 }
 
 EXTENSION(pg_curl_easy_getinfo_response) {
-    pg_curl_easy_init();
     ereport(WARNING, (errcode(ERRCODE_WARNING_DEPRECATED_FEATURE), errmsg("curl_easy_getinfo_response deprecated, use curl_easy_getinfo_data_in instead")));
     return pg_curl_easy_getinfo_data_in(fcinfo);
 }
@@ -1788,8 +1785,8 @@ static Datum pg_curl_easy_getinfo_char(PG_FUNCTION_ARGS, CURLINFO info) {
 #if CURL_AT_LEAST_VERSION(7, 4, 1)
     CURLcode res = CURL_LAST;
     char *value = NULL;
-    pg_curl_easy_init();
-    if ((res = curl_easy_getinfo(pg_curl->curl, info, &value)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_getinfo failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("%i", info)));
+    pg_curl_t *curl = pg_curl_easy_init(&pg_curl);
+    if ((res = curl_easy_getinfo(curl->curl, info, &value)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_getinfo failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("%i", info)));
     if (!value) PG_RETURN_NULL();
     PG_RETURN_TEXT_P(cstring_to_text(value));
 #else
@@ -1865,8 +1862,8 @@ static Datum pg_curl_easy_getinfo_long(PG_FUNCTION_ARGS, CURLINFO info) {
 #if CURL_AT_LEAST_VERSION(7, 4, 1)
     CURLcode res = CURL_LAST;
     long value;
-    pg_curl_easy_init();
-    if ((res = curl_easy_getinfo(pg_curl->curl, info, &value)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_getinfo failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("%i", info)));
+    pg_curl_t *curl = pg_curl_easy_init(&pg_curl);
+    if ((res = curl_easy_getinfo(curl->curl, info, &value)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_getinfo failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("%i", info)));
     PG_RETURN_INT64(value);
 #else
     ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_getinfo_* requires curl 7.4.1 or later")));
