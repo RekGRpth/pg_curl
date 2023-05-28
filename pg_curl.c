@@ -533,10 +533,11 @@ static Datum pg_curl_easy_setopt_char(PG_FUNCTION_ARGS, CURLoption option) {
 }
 
 static int pg_debug_callback(CURL *handle, curl_infotype type, char *data, size_t size, void *userptr) {
+    pg_curl_t *curl = userptr;
     if (size) switch (type) {
-        case CURLINFO_DATA_OUT: appendBinaryStringInfo(&pg_curl->data_out, data, size); break;
-        case CURLINFO_HEADER_OUT: appendBinaryStringInfo(&pg_curl->header_out, data, size); break;
-        case CURLINFO_TEXT: appendBinaryStringInfo(&pg_curl->debug, data, size); break;
+        case CURLINFO_DATA_OUT: appendBinaryStringInfo(&curl->data_out, data, size); break;
+        case CURLINFO_HEADER_OUT: appendBinaryStringInfo(&curl->header_out, data, size); break;
+        case CURLINFO_TEXT: appendBinaryStringInfo(&curl->debug, data, size); break;
         default: break;
     }
     return 0;
@@ -1655,14 +1656,16 @@ static int pg_progress_callback(void *clientp, curl_off_t dltotal, curl_off_t dl
 #endif
 
 static size_t pg_header_callback(char *buffer, size_t size, size_t nitems, void *userdata) {
+    pg_curl_t *curl = userdata;
     size *= nitems;
-    if (size) appendBinaryStringInfo(&pg_curl->header_in, buffer, size);
+    if (size) appendBinaryStringInfo(&curl->header_in, buffer, size);
     return size;
 }
 
 static size_t pg_write_callback(char *ptr, size_t size, size_t nmemb, void *userdata) {
+    pg_curl_t *curl = userdata;
     size *= nmemb;
-    if (size) appendBinaryStringInfo(&pg_curl->data_in, ptr, size);
+    if (size) appendBinaryStringInfo(&curl->data_in, ptr, size);
     return size;
 }
 
