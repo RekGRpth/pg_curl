@@ -1638,6 +1638,7 @@ EXTENSION(pg_curl_easy_setopt_use_ssl) {
 }
 EXTENSION(pg_curl_easy_setopt_verbose) {
     CURLcode res = CURL_LAST;
+    if ((res = curl_easy_setopt(pg_curl->curl, CURLOPT_DEBUGDATA, pg_curl)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_DEBUGDATA")));
     if ((res = curl_easy_setopt(pg_curl->curl, CURLOPT_DEBUGFUNCTION, pg_debug_callback)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_DEBUGFUNCTION")));
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_VERBOSE);
 }
