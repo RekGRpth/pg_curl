@@ -128,7 +128,7 @@ static void *pg_curl_calloc_callback(size_t nmemb, size_t size) {
 }
 #endif
 
-static void pg_curl_global_cleanup(void) {
+static void pg_curl_global_cleanup(void *arg) {
     if (!pg_curl_global.context) return;
     pqsignal(SIGINT, pg_curl_global.interrupt.handler);
 #if CURL_AT_LEAST_VERSION(7, 8, 0)
@@ -152,7 +152,6 @@ static void pg_curl_easy_cleanup(void *arg) {
     curl_easy_cleanup(pg_curl->curl);
     pfree(pg_curl);
     pg_curl = NULL;
-    pg_curl_global_cleanup();
 }
 
 static void pg_curl_global_init(void) {
@@ -171,6 +170,10 @@ static void pg_curl_global_init(void) {
 #endif
     pg_curl_global.interrupt.requested = 0;
     pg_curl_global.interrupt.handler = pqsignal(SIGINT, pg_curl_interrupt_handler);
+#if PG_VERSION_NUM >= 90500
+    pg_curl_global.callback.func = pg_curl_global_cleanup;
+    MemoryContextRegisterResetCallback(pg_curl_global.context, &pg_curl_global.callback);
+#endif
     MemoryContextSwitchTo(oldMemoryContext);
 }
 
