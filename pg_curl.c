@@ -27,7 +27,7 @@ typedef struct {
     curl_mime *mime;
 #endif
 #if PG_VERSION_NUM >= 90500
-    MemoryContextCallback pg_curl_mcb;
+    MemoryContextCallback callback;
 #endif
     StringInfoData data_in;
     StringInfoData data_out;
@@ -45,21 +45,30 @@ typedef struct {
 #endif
 } pg_curl_t;
 
+typedef struct {
+    MemoryContext context;
+#if PG_VERSION_NUM >= 90500
+    MemoryContextCallback callback;
+#endif
+    struct {
+        int requested;
+        pqsigfunc handler;
+    } interrupt;
+} pg_curl_global_t;
+
 static bool pg_curl_transaction = true;
-static int pg_curl_interrupt_requested = 0;
-static MemoryContext pg_curl_context = NULL;
+static pg_curl_global_t pg_curl_global = {0};
 static pg_curl_t *pg_curl = NULL;
-static pqsigfunc pgsql_interrupt_handler = NULL;
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
-static void pg_curl_interrupt_handler(int sig) { pg_curl_interrupt_requested = sig; }
+static void pg_curl_interrupt_handler(int sig) { pg_curl_global.interrupt.requested = sig; }
 
 #if CURL_AT_LEAST_VERSION(7, 12, 0)
 static void *pg_curl_malloc_callback(size_t size) {
     void *res;
     pthread_mutex_lock(&mutex);
     PG_TRY(); {
-        res = size ? MemoryContextAlloc(pg_curl_context, size) : NULL;
+        res = size ? MemoryContextAlloc(pg_curl_global.context, size) : NULL;
     } PG_CATCH(); {
         pthread_mutex_unlock(&mutex);
         PG_RE_THROW();
@@ -83,7 +92,7 @@ static void *pg_curl_realloc_callback(void *ptr, size_t size) {
     void *res;
     pthread_mutex_lock(&mutex);
     PG_TRY(); {
-        res = (ptr && size) ? repalloc(ptr, size) : (size ? MemoryContextAlloc(pg_curl_context, size) : ptr);
+        res = (ptr && size) ? repalloc(ptr, size) : (size ? MemoryContextAlloc(pg_curl_global.context, size) : ptr);
     } PG_CATCH(); {
         pthread_mutex_unlock(&mutex);
         PG_RE_THROW();
@@ -96,7 +105,7 @@ static char *pg_curl_strdup_callback(const char *str) {
     char *res;
     pthread_mutex_lock(&mutex);
     PG_TRY(); {
-        res = MemoryContextStrdup(pg_curl_context, str);
+        res = MemoryContextStrdup(pg_curl_global.context, str);
     } PG_CATCH(); {
         pthread_mutex_unlock(&mutex);
         PG_RE_THROW();
@@ -109,7 +118,7 @@ static void *pg_curl_calloc_callback(size_t nmemb, size_t size) {
     void *res;
     pthread_mutex_lock(&mutex);
     PG_TRY(); {
-        res = MemoryContextAllocZero(pg_curl_context, nmemb * size);
+        res = MemoryContextAllocZero(pg_curl_global.context, nmemb * size);
     } PG_CATCH(); {
         pthread_mutex_unlock(&mutex);
         PG_RE_THROW();
@@ -120,12 +129,12 @@ static void *pg_curl_calloc_callback(size_t nmemb, size_t size) {
 #endif
 
 static void pg_curl_global_cleanup(void) {
-    if (!pg_curl_context) return;
-    pqsignal(SIGINT, pgsql_interrupt_handler);
+    if (!pg_curl_global.context) return;
+    pqsignal(SIGINT, pg_curl_global.interrupt.handler);
 #if CURL_AT_LEAST_VERSION(7, 8, 0)
     curl_global_cleanup();
 #endif
-    pg_curl_context = NULL;
+    pg_curl_global.context = NULL;
 }
 
 static void pg_curl_easy_cleanup(void *arg) {
@@ -148,20 +157,20 @@ static void pg_curl_easy_cleanup(void *arg) {
 
 static void pg_curl_global_init(void) {
     MemoryContext oldMemoryContext;
-    if (pg_curl_context) return;
+    if (pg_curl_global.context) return;
 #if PG_VERSION_NUM >= 90500
-    pg_curl_context = pg_curl_transaction ? TopTransactionContext : TopMemoryContext;
+    pg_curl_global.context = pg_curl_transaction ? TopTransactionContext : TopMemoryContext;
 #else
-    pg_curl_context = TopMemoryContext;
+    pg_curl_global.context = TopMemoryContext;
 #endif
-    oldMemoryContext = MemoryContextSwitchTo(pg_curl_context);
+    oldMemoryContext = MemoryContextSwitchTo(pg_curl_global.context);
 #if CURL_AT_LEAST_VERSION(7, 12, 0)
     if (curl_global_init_mem(CURL_GLOBAL_ALL, pg_curl_malloc_callback, pg_curl_free_callback, pg_curl_realloc_callback, pg_curl_strdup_callback, pg_curl_calloc_callback)) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_global_init_mem")));
 #elif CURL_AT_LEAST_VERSION(7, 8, 0)
     if (curl_global_init(CURL_GLOBAL_ALL)) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_global_init")));
 #endif
-    pg_curl_interrupt_requested = 0;
-    pgsql_interrupt_handler = pqsignal(SIGINT, pg_curl_interrupt_handler);
+    pg_curl_global.interrupt.requested = 0;
+    pg_curl_global.interrupt.handler = pqsignal(SIGINT, pg_curl_interrupt_handler);
     MemoryContextSwitchTo(oldMemoryContext);
 }
 
@@ -169,8 +178,8 @@ static void pg_curl_easy_init(void) {
     MemoryContext oldMemoryContext;
     if (pg_curl) return;
     pg_curl_global_init();
-    oldMemoryContext = MemoryContextSwitchTo(pg_curl_context);
-    pg_curl = MemoryContextAllocZero(pg_curl_context, sizeof(*pg_curl));
+    oldMemoryContext = MemoryContextSwitchTo(pg_curl_global.context);
+    pg_curl = MemoryContextAllocZero(pg_curl_global.context, sizeof(*pg_curl));
     if (!(pg_curl->curl = curl_easy_init())) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_easy_init")));
     initStringInfo(&pg_curl->data_in);
     initStringInfo(&pg_curl->data_out);
@@ -180,9 +189,9 @@ static void pg_curl_easy_init(void) {
     initStringInfo(&pg_curl->postfield);
     initStringInfo(&pg_curl->url);
 #if PG_VERSION_NUM >= 90500
-    pg_curl->pg_curl_mcb.arg = pg_curl;
-    pg_curl->pg_curl_mcb.func = pg_curl_easy_cleanup;
-    MemoryContextRegisterResetCallback(pg_curl_context, &pg_curl->pg_curl_mcb);
+    pg_curl->callback.arg = pg_curl;
+    pg_curl->callback.func = pg_curl_easy_cleanup;
+    MemoryContextRegisterResetCallback(pg_curl_global.context, &pg_curl->callback);
 #endif
     MemoryContextSwitchTo(oldMemoryContext);
 }
@@ -1652,7 +1661,7 @@ EXTENSION(pg_curl_easy_setopt_wildcardmatch) {
 }
 
 #if CURL_AT_LEAST_VERSION(7, 32, 0)
-static int pg_progress_callback(void *clientp, curl_off_t dltotal, curl_off_t dlnow, curl_off_t ultotal, curl_off_t ulnow) { return pg_curl_interrupt_requested; }
+static int pg_progress_callback(void *clientp, curl_off_t dltotal, curl_off_t dlnow, curl_off_t ultotal, curl_off_t ulnow) { return pg_curl_global.interrupt.requested; }
 #endif
 
 static size_t pg_header_callback(char *buffer, size_t size, size_t nitems, void *userdata) {
@@ -1706,7 +1715,7 @@ EXTENSION(pg_curl_easy_perform) {
     if ((res = curl_easy_setopt(pg_curl->curl, CURLOPT_XFERINFODATA, pg_curl)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_XFERINFODATA")));
     if ((res = curl_easy_setopt(pg_curl->curl, CURLOPT_XFERINFOFUNCTION, pg_progress_callback)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_XFERINFOFUNCTION")));
 #endif
-    pg_curl_interrupt_requested = 0;
+    pg_curl_global.interrupt.requested = 0;
     while (try--) switch (res = curl_easy_perform(pg_curl->curl)) {
         case CURLE_OK: try = 0; break;
         case CURLE_UNSUPPORTED_PROTOCOL:
@@ -1717,7 +1726,7 @@ EXTENSION(pg_curl_easy_perform) {
         case CURLE_BAD_FUNCTION_ARGUMENT:
         case CURLE_UNKNOWN_OPTION:
         case CURLE_LDAP_INVALID_URL:
-        case CURLE_ABORTED_BY_CALLBACK: try = 0; if (pgsql_interrupt_handler && pg_curl_interrupt_requested) { (*pgsql_interrupt_handler)(pg_curl_interrupt_requested); pg_curl_interrupt_requested = 0; } // fall through
+        case CURLE_ABORTED_BY_CALLBACK: try = 0; if (pg_curl_global.interrupt.handler && pg_curl_global.interrupt.requested) { (*pg_curl_global.interrupt.handler)(pg_curl_global.interrupt.requested); pg_curl_global.interrupt.requested = 0; } // fall through
         default: if (try) {
             if (strlen(errbuf)) ereport(WARNING, (errmsg("curl_easy_perform failed"), errdetail("%s and %s", curl_easy_strerror(res), errbuf), errcontext("try %i", try)));
             else ereport(WARNING, (errmsg("curl_easy_perform failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("try %i", try)));
