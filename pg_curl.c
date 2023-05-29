@@ -59,10 +59,6 @@ typedef struct {
     } interrupt;
 } pg_curl_global_t;
 
-typedef struct {
-    pg_curl_t curl;
-} pg_curl_hash_t;
-
 static bool pg_curl_transaction = true;
 static HTAB *pg_curl_hash = NULL;
 static pg_curl_global_t pg_curl_global = {0};
@@ -139,8 +135,8 @@ static void *pg_curl_calloc_callback(size_t nmemb, size_t size) {
 static void pg_curl_hash_init(void) {
     if (!pg_curl_hash) {
         HASHCTL ctl = {
-            .keysize = NAMEDATALEN,
-            .entrysize = sizeof(pg_curl_hash_t),
+            .keysize = sizeof(NameData),
+            .entrysize = sizeof(pg_curl_t),
         };
         pg_curl_hash = hash_create("Connection name hash", NUMCONN, &ctl, HASH_ELEM | HASH_STRINGS);
     }
@@ -207,10 +203,8 @@ static pg_curl_t *pg_curl_easy_init(Name conname) {
     oldMemoryContext = MemoryContextSwitchTo(pg_curl_global.context);
     if (!conname) curl = &pg_curl; else {
         bool found;
-        pg_curl_hash_t *curl_hash;
         pg_curl_hash_init();
-        curl_hash = hash_search(pg_curl_hash, NameStr(*conname), HASH_ENTER, &found);
-        curl = &curl_hash->curl;
+        curl = hash_search(pg_curl_hash, NameStr(*conname), HASH_ENTER, &found);
         if (!found) curl->name = *conname;
     }
     if (curl->curl) return curl;
