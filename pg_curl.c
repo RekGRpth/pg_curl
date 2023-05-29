@@ -201,7 +201,10 @@ static pg_curl_t *pg_curl_easy_init(NameData *conname) {
         bool found;
         pg_curl_hash_init();
         curl = hash_search(pg_curl_hash, NameStr(*conname), HASH_ENTER, &found);
-        if (!found) curl->conname = *conname;
+        if (!found) {
+            MemSet(curl, 0, sizeof(*curl));
+            curl->conname = *conname;
+        }
     }
     if (curl->curl) return curl;
     if (!(curl->curl = curl_easy_init())) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_easy_init")));
