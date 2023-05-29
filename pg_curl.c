@@ -24,6 +24,7 @@
 PG_MODULE_MAGIC;
 
 typedef struct {
+    NameData conname; // !!! always first !!! //
     CURL *curl;
 #if CURL_AT_LEAST_VERSION(7, 56, 0)
     curl_mime *mime;
@@ -31,7 +32,6 @@ typedef struct {
 #if PG_VERSION_NUM >= 90500
     MemoryContextCallback callback;
 #endif
-    NameData conname;
     StringInfoData data_in;
     StringInfoData data_out;
     StringInfoData debug;
