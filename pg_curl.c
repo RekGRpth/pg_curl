@@ -31,7 +31,7 @@ typedef struct {
 #if PG_VERSION_NUM >= 90500
     MemoryContextCallback callback;
 #endif
-    NameData name;
+    NameData conname;
     StringInfoData data_in;
     StringInfoData data_out;
     StringInfoData debug;
@@ -166,10 +166,10 @@ static void pg_curl_easy_cleanup(void *arg) {
 #endif
     curl_easy_cleanup(curl->curl);
     curl->curl = NULL;
-    if (NameStr(curl->name)[0]) {
+    if (NameStr(curl->conname)[0]) {
         bool found;
         pg_curl_hash_init();
-        if (!hash_search(pg_curl_hash, NameStr(curl->name), HASH_REMOVE, &found)) ereport(ERROR, (errcode(ERRCODE_UNDEFINED_OBJECT), errmsg("undefined connection name")));
+        if (!hash_search(pg_curl_hash, NameStr(curl->conname), HASH_REMOVE, &found)) ereport(ERROR, (errcode(ERRCODE_UNDEFINED_OBJECT), errmsg("undefined connection name")));
     }
 }
 
@@ -205,7 +205,7 @@ static pg_curl_t *pg_curl_easy_init(NameData *conname) {
         bool found;
         pg_curl_hash_init();
         curl = hash_search(pg_curl_hash, NameStr(*conname), HASH_ENTER, &found);
-        if (!found) curl->name = *conname;
+        if (!found) curl->conname = *conname;
     }
     if (curl->curl) return curl;
     if (!(curl->curl = curl_easy_init())) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_easy_init")));
