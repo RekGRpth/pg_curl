@@ -166,10 +166,7 @@ static void pg_curl_easy_cleanup(void *arg) {
 #endif
     curl_easy_cleanup(curl->curl);
     curl->curl = NULL;
-    if (NameStr(curl->conname)[0]) {
-        bool found;
-        if (!hash_search(pg_curl_hash, NameStr(curl->conname), HASH_REMOVE, &found)) ereport(ERROR, (errcode(ERRCODE_UNDEFINED_OBJECT), errmsg("undefined connection name")));
-    }
+    if (NameStr(curl->conname)[0] && !hash_search(pg_curl_hash, NameStr(curl->conname), HASH_REMOVE, NULL)) ereport(ERROR, (errcode(ERRCODE_UNDEFINED_OBJECT), errmsg("undefined connection name")));
 }
 
 static void pg_curl_global_init(void) {
