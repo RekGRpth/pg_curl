@@ -18,6 +18,7 @@ select curl_header_append('Authorization', 'Bearer token', conname:='3');
 select curl_easy_perform(conname:='1');
 select curl_easy_perform(conname:='2');
 select curl_easy_perform(conname:='3');
+select curl_multi_perform();
 with s as (
     select regexp_matches(curl_easy_getinfo_header_in(conname:='1'), E'([^ \t\r\n\f]+): ?([^\t\r\n\f]+)', 'g') as s
 ) select s[1] as key, s[2] as value from s where s[1] not in ('date', 'server', 'content-length');
