@@ -1775,7 +1775,7 @@ EXTENSION(pg_curl_multi_perform) {
         if ((mc = curl_multi_poll(multi, NULL, 0, 1000, &numfds)) != CURLM_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_multi_poll failed"), errdetail("%s", curl_multi_strerror(mc))));
         if ((mc = curl_multi_perform(multi, &still_running)) != CURLM_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_multi_perform failed"), errdetail("%s", curl_multi_strerror(mc))));
         while ((msg = curl_multi_info_read(multi, &msgs_in_queue))) {
-            if (msg->data.result != CURLE_OK) {
+            if ((ec = msg->data.result) != CURLE_OK) {
 #if CURL_AT_LEAST_VERSION(7, 10, 3)
                 pg_curl_t *curl;
                 if ((ec = curl_easy_getinfo(msg->easy_handle, CURLINFO_PRIVATE, &curl)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_multi_perform failed"), errdetail("%s", curl_easy_strerror(ec)), errcontext("CURLINFO_PRIVATE")));
@@ -1784,6 +1784,7 @@ EXTENSION(pg_curl_multi_perform) {
 #endif
                     ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("curl_multi_perform failed"), errdetail("%s", curl_easy_strerror(ec = msg->data.result))));
             }
+            if ((mc = curl_multi_remove_handle(multi, msg->easy_handle)) != CURLM_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_multi_remove_handle failed"), errdetail("%s", curl_multi_strerror(mc))));
         }
     } while (still_running);
     PG_RETURN_BOOL(ec == CURLE_OK);
