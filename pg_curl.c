@@ -293,9 +293,32 @@ EXTENSION(pg_curl_easy_recipient_reset) {
 #endif
 }
 
+static void pg_curl_multi_cleanup(void *arg) {
+    CURLMcode mc;
+    CURLM *multi = arg;
+    if (!multi) return;
+    if ((mc = curl_multi_cleanup(multi)) != CURLM_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_multi_cleanup failed"), errdetail("%s", curl_multi_strerror(mc))));
+}
+
+static void pg_curl_multi_init(void) {
+    MemoryContext oldMemoryContext;
+    if (multi) return;
+    oldMemoryContext = MemoryContextSwitchTo(pg_curl_global.context);
+    if (!(multi = curl_multi_init())) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_multi_init")));
+#if PG_VERSION_NUM >= 90500
+    multi_cleanup.arg = multi;
+    multi_cleanup.func = pg_curl_multi_cleanup;
+    MemoryContextRegisterResetCallback(pg_curl_global.context, &multi_cleanup);
+#endif
+    MemoryContextSwitchTo(oldMemoryContext);
+}
+
 EXTENSION(pg_curl_easy_reset) {
+    CURLMcode mc;
     NameData *conname = PG_ARGISNULL(0) ? NULL : PG_GETARG_NAME(0);
     pg_curl_t *curl = pg_curl_easy_init(conname);
+    pg_curl_multi_init();
+    if ((mc = curl_multi_remove_handle(multi, curl->easy)) != CURLM_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_multi_remove_handle failed"), errdetail("%s", curl_multi_strerror(mc))));
     pg_curl_easy_header_reset(fcinfo);
     pg_curl_easy_postquote_reset(fcinfo);
     pg_curl_easy_prequote_reset(fcinfo);
@@ -309,7 +332,6 @@ EXTENSION(pg_curl_easy_reset) {
 #if CURL_AT_LEAST_VERSION(7, 12, 1)
     curl_easy_reset(curl->easy);
 #endif
-    curl->easy = NULL;
     resetStringInfo(&curl->data_in);
     resetStringInfo(&curl->data_out);
     resetStringInfo(&curl->debug);
@@ -1745,26 +1767,6 @@ static size_t pg_write_callback(char *ptr, size_t size, size_t nmemb, void *user
     return size;
 }
 
-static void pg_curl_multi_cleanup(void *arg) {
-    CURLMcode mc;
-    CURLM *multi = arg;
-    if (!multi) return;
-    if ((mc = curl_multi_cleanup(multi)) != CURLM_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_multi_cleanup failed"), errdetail("%s", curl_multi_strerror(mc))));
-}
-
-static void pg_curl_multi_init(void) {
-    MemoryContext oldMemoryContext;
-    if (multi) return;
-    oldMemoryContext = MemoryContextSwitchTo(pg_curl_global.context);
-    if (!(multi = curl_multi_init())) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_multi_init")));
-#if PG_VERSION_NUM >= 90500
-    multi_cleanup.arg = multi;
-    multi_cleanup.func = pg_curl_multi_cleanup;
-    MemoryContextRegisterResetCallback(pg_curl_global.context, &multi_cleanup);
-#endif
-    MemoryContextSwitchTo(oldMemoryContext);
-}
-
 EXTENSION(pg_curl_multi_perform) {
     CURLcode ec = CURL_LAST;
     CURLMcode mc;
@@ -1785,7 +1787,6 @@ EXTENSION(pg_curl_multi_perform) {
 #endif
                     ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("curl_multi_perform failed"), errdetail("%s", curl_easy_strerror(ec = msg->data.result))));
             }
-            //if ((mc = curl_multi_remove_handle(multi, msg->easy_handle)) != CURLM_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_multi_remove_handle failed"), errdetail("%s", curl_multi_strerror(mc))));
         }
     } while (still_running);
     PG_RETURN_BOOL(ec == CURLE_OK);
