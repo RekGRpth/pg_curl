@@ -309,6 +309,7 @@ EXTENSION(pg_curl_easy_reset) {
 #if CURL_AT_LEAST_VERSION(7, 12, 1)
     curl_easy_reset(curl->easy);
 #endif
+    curl->easy = NULL;
     resetStringInfo(&curl->data_in);
     resetStringInfo(&curl->data_out);
     resetStringInfo(&curl->debug);
@@ -1784,7 +1785,7 @@ EXTENSION(pg_curl_multi_perform) {
 #endif
                     ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("curl_multi_perform failed"), errdetail("%s", curl_easy_strerror(ec = msg->data.result))));
             }
-            if ((mc = curl_multi_remove_handle(multi, msg->easy_handle)) != CURLM_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_multi_remove_handle failed"), errdetail("%s", curl_multi_strerror(mc))));
+            //if ((mc = curl_multi_remove_handle(multi, msg->easy_handle)) != CURLM_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_multi_remove_handle failed"), errdetail("%s", curl_multi_strerror(mc))));
         }
     } while (still_running);
     PG_RETURN_BOOL(ec == CURLE_OK);
