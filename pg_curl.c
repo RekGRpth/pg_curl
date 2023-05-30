@@ -35,7 +35,6 @@ typedef struct {
     long sleep;
 #if PG_VERSION_NUM >= 90500
     MemoryContextCallback easy_cleanup;
-//    MemoryContextCallback multi_remove_handle;
 #endif
     StringInfoData data_in;
     StringInfoData data_out;
@@ -151,8 +150,6 @@ static void pg_curl_hash_init(void) {
 
 static void pg_curl_global_cleanup(void *arg) {
     if (!pg_curl_global.context) return;
-    elog(WARNING, "pg_curl_global_cleanup");
-//    return;
     pqsignal(SIGINT, pg_curl_global.interrupt.handler);
 #if CURL_AT_LEAST_VERSION(7, 8, 0)
     curl_global_cleanup();
@@ -164,10 +161,8 @@ static void pg_curl_easy_cleanup(void *arg) {
     CURLMcode mc;
     pg_curl_t *curl = arg;
     if (!curl || !curl->easy) return;
-    elog(WARNING, "pg_curl_easy_cleanup");
     if (curl->multi && (mc = curl_multi_remove_handle(curl->multi, curl->easy)) != CURLM_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_multi_remove_handle failed"), errdetail("%s", curl_multi_strerror(mc))));
     curl->multi = NULL;
-//    return;
 #if CURL_AT_LEAST_VERSION(7, 56, 0)
     curl_mime_free(curl->mime);
 #endif
@@ -182,16 +177,6 @@ static void pg_curl_easy_cleanup(void *arg) {
     curl->easy = NULL;
     if (NameStr(curl->conname)[0] && !hash_search(pg_curl_hash, NameStr(curl->conname), HASH_REMOVE, NULL)) ereport(ERROR, (errcode(ERRCODE_UNDEFINED_OBJECT), errmsg("undefined connection name")));
 }
-
-/*static void pg_curl_multi_remove_handle(void *arg) {
-    CURLMcode mc;
-    pg_curl_t *curl = arg;
-    elog(WARNING, "pg_curl_multi_remove_handle");
-    if (!curl || !curl->easy || !curl->multi) return;
-//    return;
-    if ((mc = curl_multi_remove_handle(curl->multi, curl->easy)) != CURLM_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_multi_remove_handle failed"), errdetail("%s", curl_multi_strerror(mc))));
-    curl->multi = NULL;
-}*/
 
 static void pg_curl_global_init(void) {
     MemoryContext oldMemoryContext;
@@ -220,8 +205,6 @@ static void pg_curl_multi_cleanup(void *arg) {
     CURLMcode mc;
     CURLM *multi = arg;
     if (!multi) return;
-    elog(WARNING, "pg_curl_multi_cleanup");
-//    return;
     if ((mc = curl_multi_cleanup(multi)) != CURLM_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_multi_cleanup failed"), errdetail("%s", curl_multi_strerror(mc))));
 }
 
@@ -1843,14 +1826,8 @@ EXTENSION(pg_curl_easy_perform) {
     if ((ec = curl_easy_setopt(curl->easy, CURLOPT_PRIVATE, curl)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(ec)), errcontext("CURLOPT_PRIVATE")));
 #endif
     pg_curl_global.interrupt.requested = 0;
-//    pg_curl_multi_init();
     curl->multi = multi;
     if ((mc = curl_multi_add_handle(curl->multi, curl->easy)) != CURLM_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_multi_add_handle failed"), errdetail("%s", curl_multi_strerror(mc))));
-/*#if PG_VERSION_NUM >= 90500
-    curl->multi_remove_handle.arg = curl;
-    curl->multi_remove_handle.func = pg_curl_multi_remove_handle;
-    MemoryContextRegisterResetCallback(pg_curl_global.context, &curl->multi_remove_handle);
-#endif*/
     if (NameStr(curl->conname)[0]) {
     
     } else {
