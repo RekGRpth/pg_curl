@@ -75,16 +75,16 @@ static void pg_curl_interrupt_handler(int sig) { pg_curl_global.interrupt.reques
 
 #if CURL_AT_LEAST_VERSION(7, 12, 0)
 static void *pg_curl_malloc_callback(size_t size) {
-    void *res;
+    void *result;
     pthread_mutex_lock(&mutex);
     PG_TRY(); {
-        res = size ? MemoryContextAlloc(pg_curl_global.context, size) : NULL;
+        result = size ? MemoryContextAlloc(pg_curl_global.context, size) : NULL;
     } PG_CATCH(); {
         pthread_mutex_unlock(&mutex);
         PG_RE_THROW();
     } PG_END_TRY();
     pthread_mutex_unlock(&mutex);
-    return res;
+    return result;
 }
 
 static void pg_curl_free_callback(void *ptr) {
@@ -99,42 +99,42 @@ static void pg_curl_free_callback(void *ptr) {
 }
 
 static void *pg_curl_realloc_callback(void *ptr, size_t size) {
-    void *res;
+    void *result;
     pthread_mutex_lock(&mutex);
     PG_TRY(); {
-        res = (ptr && size) ? repalloc(ptr, size) : (size ? MemoryContextAlloc(pg_curl_global.context, size) : ptr);
+        result = (ptr && size) ? repalloc(ptr, size) : (size ? MemoryContextAlloc(pg_curl_global.context, size) : ptr);
     } PG_CATCH(); {
         pthread_mutex_unlock(&mutex);
         PG_RE_THROW();
     } PG_END_TRY();
     pthread_mutex_unlock(&mutex);
-    return res;
+    return result;
 }
 
 static char *pg_curl_strdup_callback(const char *str) {
-    char *res;
+    char *result;
     pthread_mutex_lock(&mutex);
     PG_TRY(); {
-        res = MemoryContextStrdup(pg_curl_global.context, str);
+        result = MemoryContextStrdup(pg_curl_global.context, str);
     } PG_CATCH(); {
         pthread_mutex_unlock(&mutex);
         PG_RE_THROW();
     } PG_END_TRY();
     pthread_mutex_unlock(&mutex);
-    return res;
+    return result;
 }
 
 static void *pg_curl_calloc_callback(size_t nmemb, size_t size) {
-    void *res;
+    void *result;
     pthread_mutex_lock(&mutex);
     PG_TRY(); {
-        res = MemoryContextAllocZero(pg_curl_global.context, nmemb * size);
+        result = MemoryContextAllocZero(pg_curl_global.context, nmemb * size);
     } PG_CATCH(); {
         pthread_mutex_unlock(&mutex);
         PG_RE_THROW();
     } PG_END_TRY();
     pthread_mutex_unlock(&mutex);
-    return res;
+    return result;
 }
 #endif
 
