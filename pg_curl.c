@@ -1768,13 +1768,13 @@ EXTENSION(pg_curl_multi_perform) {
     CURLcode res = CURL_LAST;
     CURLMcode mcode;
     CURLMsg *msg;
-    int rc;
+    int msgs_in_queue;
     int still_running;
     do {
         int numfds;
         if ((mcode = curl_multi_poll(multi, NULL, 0, 1000, &numfds)) != CURLM_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_multi_poll failed"), errdetail("%s", curl_multi_strerror(mcode))));
         if ((mcode = curl_multi_perform(multi, &still_running)) != CURLM_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_multi_perform failed"), errdetail("%s", curl_multi_strerror(mcode))));
-        while ((msg = curl_multi_info_read(multi, &rc))) {
+        while ((msg = curl_multi_info_read(multi, &msgs_in_queue))) {
             pg_curl_t *curl;
             if ((res = curl_easy_getinfo(msg->easy_handle, CURLINFO_PRIVATE, &curl)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_getinfo failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLINFO_PRIVATE")));
             res = msg->data.result;
