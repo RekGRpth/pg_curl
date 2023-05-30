@@ -232,6 +232,7 @@ CREATE FUNCTION curl_easy_setopt_verbose(parameter bigint, conname NAME DEFAULT 
 CREATE FUNCTION curl_easy_setopt_wildcardmatch(parameter bigint, conname NAME DEFAULT NULL) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_wildcardmatch' LANGUAGE 'c';
 
 CREATE FUNCTION curl_easy_perform(try int default 1, sleep bigint default 1000000, conname NAME DEFAULT NULL) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_perform' LANGUAGE 'c';
+CREATE FUNCTION curl_multi_perform() RETURNS boolean AS 'MODULE_PATHNAME', 'curl_multi_perform' LANGUAGE 'c';
 
 CREATE FUNCTION curl_easy_getinfo_headers(conname NAME DEFAULT NULL) RETURNS text AS 'MODULE_PATHNAME', 'pg_curl_easy_getinfo_headers' LANGUAGE 'c';
 CREATE FUNCTION curl_easy_getinfo_response(conname NAME DEFAULT NULL) RETURNS bytea AS 'MODULE_PATHNAME', 'pg_curl_easy_getinfo_response' LANGUAGE 'c';

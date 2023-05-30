@@ -25,6 +25,7 @@ PG_MODULE_MAGIC;
 
 typedef struct {
     NameData conname; // !!! always first !!! //
+    char errbuf[CURL_ERROR_SIZE];
     CURL *curl;
 #if CURL_AT_LEAST_VERSION(7, 56, 0)
     curl_mime *mime;
@@ -32,7 +33,8 @@ typedef struct {
     int try;
     long sleep;
 #if PG_VERSION_NUM >= 90500
-    MemoryContextCallback callback;
+    MemoryContextCallback easy_cleanup;
+    MemoryContextCallback multi_remove;
 #endif
     StringInfoData data_in;
     StringInfoData data_out;
@@ -62,7 +64,9 @@ typedef struct {
 } pg_curl_global_t;
 
 static bool pg_curl_transaction = true;
+static CURLM *multi = NULL;
 static HTAB *pg_curl_hash = NULL;
+static MemoryContextCallback callback = {0};
 static pg_curl_global_t pg_curl_global = {0};
 static pg_curl_t pg_curl = {0};
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -171,6 +175,13 @@ static void pg_curl_easy_cleanup(void *arg) {
     if (NameStr(curl->conname)[0] && !hash_search(pg_curl_hash, NameStr(curl->conname), HASH_REMOVE, NULL)) ereport(ERROR, (errcode(ERRCODE_UNDEFINED_OBJECT), errmsg("undefined connection name")));
 }
 
+static void pg_curl_multi_remove_handle(void *arg) {
+    CURLMcode mres;
+    pg_curl_t *curl = arg;
+    if (!curl) return;
+    if ((mres = curl_multi_remove_handle(multi, curl->curl)) != CURLM_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_multi_remove_handle failed"), errdetail("%s", curl_multi_strerror(mres))));
+}
+
 static void pg_curl_global_init(void) {
     MemoryContext oldMemoryContext;
     if (pg_curl_global.context) return;
@@ -218,9 +229,9 @@ static pg_curl_t *pg_curl_easy_init(NameData *conname) {
     initStringInfo(&curl->postfield);
     initStringInfo(&curl->url);
 #if PG_VERSION_NUM >= 90500
-    curl->callback.arg = curl;
-    curl->callback.func = pg_curl_easy_cleanup;
-    MemoryContextRegisterResetCallback(pg_curl_global.context, &curl->callback);
+    curl->easy_cleanup.arg = curl;
+    curl->easy_cleanup.func = pg_curl_easy_cleanup;
+    MemoryContextRegisterResetCallback(pg_curl_global.context, &curl->easy_cleanup);
 #endif
     MemoryContextSwitchTo(oldMemoryContext);
     return curl;
@@ -1733,9 +1744,51 @@ static size_t pg_write_callback(char *ptr, size_t size, size_t nmemb, void *user
     return size;
 }
 
-EXTENSION(pg_curl_easy_perform) {
-    char errbuf[CURL_ERROR_SIZE] = {0};
+static void pg_curl_multi_cleanup(void *arg) {
+    CURLMcode mres;
+    CURLM *multi = arg;
+    if (!multi) return;
+    if ((mres = curl_multi_cleanup(multi)) != CURLM_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_multi_cleanup failed"), errdetail("%s", curl_multi_strerror(mres))));
+}
+
+static void pg_curl_multi_init(void) {
+    MemoryContext oldMemoryContext;
+    if (multi) return;
+    oldMemoryContext = MemoryContextSwitchTo(pg_curl_global.context);
+    if (!(multi = curl_multi_init())) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_multi_init")));
+#if PG_VERSION_NUM >= 90500
+    callback.arg = multi;
+    callback.func = pg_curl_multi_cleanup;
+    MemoryContextRegisterResetCallback(pg_curl_global.context, &callback);
+#endif
+    MemoryContextSwitchTo(oldMemoryContext);
+}
+
+EXTENSION(pg_curl_multi_perform) {
     CURLcode res = CURL_LAST;
+    CURLMcode mres;
+    CURLMsg *msg;
+    int rc;
+    int still_running;
+    do {
+        int numfds;
+        if ((mres = curl_multi_poll(multi, NULL, 0, 1000, &numfds)) != CURLM_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_multi_poll failed"), errdetail("%s", curl_multi_strerror(mres))));
+        if ((mres = curl_multi_perform(multi, &still_running)) != CURLM_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_multi_perform failed"), errdetail("%s", curl_multi_strerror(mres))));
+        while ((msg = curl_multi_info_read(multi, &rc))) {
+            pg_curl_t *curl;
+            if ((res = curl_easy_getinfo(msg->easy_handle, CURLINFO_PRIVATE, &curl)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_getinfo failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLINFO_PRIVATE")));
+            res = msg->data.result;
+            //msg->msg == CURLMSG_DONE
+            if (strlen(curl->errbuf)) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("curl_easy_perform failed"), errdetail("%s and %s", curl_easy_strerror(res), curl->errbuf)));
+            else ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("curl_easy_perform failed"), errdetail("%s", curl_easy_strerror(res))));
+        }
+    } while (still_running);
+    PG_RETURN_BOOL(res == CURLE_OK);
+}
+
+EXTENSION(pg_curl_easy_perform) {
+    CURLcode res = CURL_LAST;
+    CURLMcode mres;
     NameData *conname = PG_ARGISNULL(2) ? NULL : PG_GETARG_NAME(2);
     pg_curl_t *curl = pg_curl_easy_init(conname);
     if ((curl->try = PG_ARGISNULL(0) ? 1 : PG_GETARG_INT32(0)) <= 0) ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("curl_easy_perform invalid argument try %i", curl->try), errhint("Argument try must be positive!")));
@@ -1745,7 +1798,7 @@ EXTENSION(pg_curl_easy_perform) {
     resetStringInfo(&curl->debug);
     resetStringInfo(&curl->header_in);
     resetStringInfo(&curl->header_out);
-    if ((res = curl_easy_setopt(curl->curl, CURLOPT_ERRORBUFFER, errbuf)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_ERRORBUFFER")));
+    if ((res = curl_easy_setopt(curl->curl, CURLOPT_ERRORBUFFER, curl->errbuf)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_ERRORBUFFER")));
     if ((res = curl_easy_setopt(curl->curl, CURLOPT_HEADERDATA, curl)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_HEADERDATA")));
     if ((res = curl_easy_setopt(curl->curl, CURLOPT_HEADERFUNCTION, pg_header_callback)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_HEADERFUNCTION")));
     if (curl->header && ((res = curl_easy_setopt(curl->curl, CURLOPT_HTTPHEADER, curl->header)) != CURLE_OK)) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_HTTPHEADER")));
@@ -1769,8 +1822,23 @@ EXTENSION(pg_curl_easy_perform) {
     if ((res = curl_easy_setopt(curl->curl, CURLOPT_XFERINFODATA, curl)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_XFERINFODATA")));
     if ((res = curl_easy_setopt(curl->curl, CURLOPT_XFERINFOFUNCTION, pg_progress_callback)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_XFERINFOFUNCTION")));
 #endif
+//#if CURL_AT_LEAST_VERSION(7, 10, 3)
+    if ((res = curl_easy_setopt(curl->curl, CURLOPT_PRIVATE, curl)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(res)), errcontext("CURLOPT_PRIVATE")));
+//#endif
     pg_curl_global.interrupt.requested = 0;
-    while (curl->try--) switch (res = curl_easy_perform(curl->curl)) {
+    pg_curl_multi_init();
+    if ((mres = curl_multi_add_handle(multi, curl->curl)) != CURLM_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_multi_add_handle failed"), errdetail("%s", curl_multi_strerror(mres))));
+#if PG_VERSION_NUM >= 90500
+    curl->multi_remove.arg = curl;
+    curl->multi_remove.func = pg_curl_multi_remove_handle;
+    MemoryContextRegisterResetCallback(pg_curl_global.context, &curl->multi_remove);
+#endif
+    if (NameStr(curl->conname)[0]) {
+    
+    } else {
+        return pg_curl_multi_perform(fcinfo);
+    }
+    /*while (curl->try--) switch (res = curl_easy_perform(curl->curl)) {
         case CURLE_OK: curl->try = 0; break;
         case CURLE_UNSUPPORTED_PROTOCOL:
         case CURLE_FAILED_INIT:
@@ -1789,7 +1857,7 @@ EXTENSION(pg_curl_easy_perform) {
             if (strlen(errbuf)) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("curl_easy_perform failed"), errdetail("%s and %s", curl_easy_strerror(res), errbuf)));
             else ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("curl_easy_perform failed"), errdetail("%s", curl_easy_strerror(res))));
         }
-    }
+    }*/
     PG_RETURN_BOOL(res == CURLE_OK);
 }
 
