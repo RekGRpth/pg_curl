@@ -66,7 +66,7 @@ typedef struct {
 static bool pg_curl_transaction = true;
 static CURLM *multi = NULL;
 static HTAB *pg_curl_hash = NULL;
-static MemoryContextCallback callback = {0};
+static MemoryContextCallback multi_cleanup = {0};
 static pg_curl_global_t pg_curl_global = {0};
 static pg_curl_t pg_curl = {0};
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -1757,9 +1757,9 @@ static void pg_curl_multi_init(void) {
     oldMemoryContext = MemoryContextSwitchTo(pg_curl_global.context);
     if (!(multi = curl_multi_init())) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_multi_init")));
 #if PG_VERSION_NUM >= 90500
-    callback.arg = multi;
-    callback.func = pg_curl_multi_cleanup;
-    MemoryContextRegisterResetCallback(pg_curl_global.context, &callback);
+    multi_cleanup.arg = multi;
+    multi_cleanup.func = pg_curl_multi_cleanup;
+    MemoryContextRegisterResetCallback(pg_curl_global.context, &multi_cleanup);
 #endif
     MemoryContextSwitchTo(oldMemoryContext);
 }
