@@ -34,7 +34,7 @@ typedef struct {
     long sleep;
 #if PG_VERSION_NUM >= 90500
     MemoryContextCallback easy_cleanup;
-    MemoryContextCallback multi_remove;
+    MemoryContextCallback multi_remove_handle;
 #endif
     StringInfoData data_in;
     StringInfoData data_out;
@@ -1829,9 +1829,9 @@ EXTENSION(pg_curl_easy_perform) {
     pg_curl_multi_init();
     if ((mc = curl_multi_add_handle(multi, curl->easy)) != CURLM_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_multi_add_handle failed"), errdetail("%s", curl_multi_strerror(mc))));
 #if PG_VERSION_NUM >= 90500
-    curl->multi_remove.arg = curl;
-    curl->multi_remove.func = pg_curl_multi_remove_handle;
-    MemoryContextRegisterResetCallback(pg_curl_global.context, &curl->multi_remove);
+    curl->multi_remove_handle.arg = curl;
+    curl->multi_remove_handle.func = pg_curl_multi_remove_handle;
+    MemoryContextRegisterResetCallback(pg_curl_global.context, &curl->multi_remove_handle);
 #endif
     if (NameStr(curl->conname)[0]) {
     
