@@ -55,7 +55,7 @@ typedef struct {
 typedef struct {
     MemoryContext context;
 #if PG_VERSION_NUM >= 90500
-    MemoryContextCallback callback;
+    MemoryContextCallback cleanup;
 #endif
     struct {
         int requested;
@@ -199,8 +199,8 @@ static void pg_curl_global_init(void) {
     pg_curl_global.interrupt.requested = 0;
     pg_curl_global.interrupt.handler = pqsignal(SIGINT, pg_curl_interrupt_handler);
 #if PG_VERSION_NUM >= 90500
-    pg_curl_global.callback.func = pg_curl_global_cleanup;
-    MemoryContextRegisterResetCallback(pg_curl_global.context, &pg_curl_global.callback);
+    pg_curl_global.cleanup.func = pg_curl_global_cleanup;
+    MemoryContextRegisterResetCallback(pg_curl_global.context, &pg_curl_global.cleanup);
 #endif
     MemoryContextSwitchTo(oldMemoryContext);
 }
