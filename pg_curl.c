@@ -216,11 +216,31 @@ static void pg_curl_global_init(void) {
     MemoryContextSwitchTo(oldMemoryContext);
 }
 
+static void pg_curl_multi_cleanup(void *arg) {
+    CURLMcode mc;
+    CURLM *multi = arg;
+    if (!multi) return;
+    elog(WARNING, "pg_curl_multi_cleanup");
+//    return;
+    if ((mc = curl_multi_cleanup(multi)) != CURLM_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_multi_cleanup failed"), errdetail("%s", curl_multi_strerror(mc))));
+}
+
+static void pg_curl_multi_init(void) {
+    if (multi) return;
+    if (!(multi = curl_multi_init())) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_multi_init")));
+#if PG_VERSION_NUM >= 90500
+    multi_cleanup.arg = multi;
+    multi_cleanup.func = pg_curl_multi_cleanup;
+    MemoryContextRegisterResetCallback(pg_curl_global.context, &multi_cleanup);
+#endif
+}
+
 static pg_curl_t *pg_curl_easy_init(NameData *conname) {
     MemoryContext oldMemoryContext;
     pg_curl_t *curl;
     pg_curl_global_init();
     oldMemoryContext = MemoryContextSwitchTo(pg_curl_global.context);
+    pg_curl_multi_init();
     if (!conname) curl = &pg_curl; else {
         bool found;
         pg_curl_hash_init();
@@ -302,28 +322,6 @@ EXTENSION(pg_curl_easy_recipient_reset) {
 #else
     ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_recipient_reset requires curl 7.20.0 or later")));
 #endif
-}
-
-static void pg_curl_multi_cleanup(void *arg) {
-    CURLMcode mc;
-    CURLM *multi = arg;
-    if (!multi) return;
-    elog(WARNING, "pg_curl_multi_cleanup");
-//    return;
-    if ((mc = curl_multi_cleanup(multi)) != CURLM_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_multi_cleanup failed"), errdetail("%s", curl_multi_strerror(mc))));
-}
-
-static void pg_curl_multi_init(void) {
-    MemoryContext oldMemoryContext;
-    if (multi) return;
-    oldMemoryContext = MemoryContextSwitchTo(pg_curl_global.context);
-    if (!(multi = curl_multi_init())) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_multi_init")));
-#if PG_VERSION_NUM >= 90500
-    multi_cleanup.arg = multi;
-    multi_cleanup.func = pg_curl_multi_cleanup;
-    MemoryContextRegisterResetCallback(pg_curl_global.context, &multi_cleanup);
-#endif
-    MemoryContextSwitchTo(oldMemoryContext);
 }
 
 EXTENSION(pg_curl_easy_reset) {
@@ -1845,7 +1843,7 @@ EXTENSION(pg_curl_easy_perform) {
     if ((ec = curl_easy_setopt(curl->easy, CURLOPT_PRIVATE, curl)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(ec)), errcontext("CURLOPT_PRIVATE")));
 #endif
     pg_curl_global.interrupt.requested = 0;
-    pg_curl_multi_init();
+//    pg_curl_multi_init();
     curl->multi = multi;
     if ((mc = curl_multi_add_handle(curl->multi, curl->easy)) != CURLM_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_multi_add_handle failed"), errdetail("%s", curl_multi_strerror(mc))));
 /*#if PG_VERSION_NUM >= 90500
