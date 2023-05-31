@@ -10,23 +10,24 @@ t
 t
 t
 t
+t
 www-authenticate|Basic realm="Fake Realm"
 access-control-allow-origin|*
 access-control-allow-credentials|true
 content-type|application/json
 access-control-allow-origin|*
 access-control-allow-credentials|true
-content-type|text/html
+content-type|application/json
+access-control-allow-origin|*
+access-control-allow-credentials|true
 
 {
   "authenticated": true, 
   "user": "username"
 }
 
-<html>
-<head><title>504 Gateway Time-out</title></head>
-<body>
-<center><h1>504 Gateway Time-out</h1></center>
-</body>
-</html>
+{
+  "authenticated": true, 
+  "token": "token"
+}
 
