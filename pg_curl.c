@@ -158,12 +158,16 @@ static void pg_curl_global_cleanup(void *arg) {
     pg_curl_global.context = NULL;
 }
 
-static void pg_curl_easy_cleanup(void *arg) {
+static void pg_curl_multi_remove_handle(pg_curl_t *curl) {
     CURLMcode mc;
+    if (!curl || !curl->easy || !curl->multi) return;
+    if ((mc = curl_multi_remove_handle(curl->multi, curl->easy)) != CURLM_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_multi_remove_handle failed"), errdetail("%s", curl_multi_strerror(mc))));
+    curl->multi = NULL;
+}
+
+static void pg_curl_easy_cleanup(void *arg) {
     pg_curl_t *curl = arg;
     if (!curl || !curl->easy) return;
-    if (curl->multi && (mc = curl_multi_remove_handle(curl->multi, curl->easy)) != CURLM_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_multi_remove_handle failed"), errdetail("%s", curl_multi_strerror(mc))));
-    curl->multi = NULL;
 #if CURL_AT_LEAST_VERSION(7, 56, 0)
     curl_mime_free(curl->mime);
 #endif
@@ -174,6 +178,7 @@ static void pg_curl_easy_cleanup(void *arg) {
 #if CURL_AT_LEAST_VERSION(7, 20, 0)
     curl_slist_free_all(curl->recipient);
 #endif
+    pg_curl_multi_remove_handle(curl);
     curl_easy_cleanup(curl->easy);
     curl->easy = NULL;
     if (NameStr(curl->conname)[0] && !hash_search(pg_curl_hash, NameStr(curl->conname), HASH_REMOVE, NULL)) ereport(ERROR, (errcode(ERRCODE_UNDEFINED_OBJECT), errmsg("undefined connection name")));
@@ -309,11 +314,8 @@ EXTENSION(pg_curl_easy_recipient_reset) {
 }
 
 EXTENSION(pg_curl_easy_reset) {
-    CURLMcode mc;
     NameData *conname = PG_ARGISNULL(0) ? NULL : PG_GETARG_NAME(0);
     pg_curl_t *curl = pg_curl_easy_init(conname);
-    if (curl->multi && (mc = curl_multi_remove_handle(curl->multi, curl->easy)) != CURLM_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_multi_remove_handle failed"), errdetail("%s", curl_multi_strerror(mc))));
-    curl->multi = NULL;
     MemSet(curl->errbuf, 0, sizeof(*curl->errbuf));
     curl->ec = CURLE_OK;
     pg_curl_easy_header_reset(fcinfo);
@@ -336,6 +338,7 @@ EXTENSION(pg_curl_easy_reset) {
     resetStringInfo(&curl->header_out);
     resetStringInfo(&curl->postfield);
     resetStringInfo(&curl->url);
+    pg_curl_multi_remove_handle(curl);
     PG_RETURN_VOID();
 }
 
