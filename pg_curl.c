@@ -1783,7 +1783,7 @@ EXTENSION(pg_curl_multi_perform) {
                 pg_curl_t *curl;
                 if ((ec = curl_easy_getinfo(msg->easy_handle, CURLINFO_PRIVATE, &curl)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_multi_perform failed"), errdetail("%s", curl_easy_strerror(ec)), errcontext("CURLINFO_PRIVATE")));
                 curl->errcode = msg->data.result;
-                if (strlen(curl->errbuf)) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("curl_multi_perform failed"), errdetail("%s and %s", curl_easy_strerror(ec = msg->data.result), curl->errbuf)));
+                if (curl->errbuf[0]) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("curl_multi_perform failed"), errdetail("%s and %s", curl_easy_strerror(ec = msg->data.result), curl->errbuf)));
                 else
 #endif
                     ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("curl_multi_perform failed"), errdetail("%s", curl_easy_strerror(ec = msg->data.result))));
