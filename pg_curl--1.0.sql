@@ -246,6 +246,7 @@ CREATE FUNCTION curl_easy_getinfo_data_out(conname NAME DEFAULT NULL) RETURNS by
 
 CREATE FUNCTION curl_easy_getinfo_content_type(conname NAME DEFAULT NULL) RETURNS text AS 'MODULE_PATHNAME', 'pg_curl_easy_getinfo_content_type' LANGUAGE 'c';
 CREATE FUNCTION curl_easy_getinfo_effective_url(conname NAME DEFAULT NULL) RETURNS text AS 'MODULE_PATHNAME', 'pg_curl_easy_getinfo_effective_url' LANGUAGE 'c';
+CREATE FUNCTION curl_easy_getinfo_errbuf(conname NAME DEFAULT NULL) RETURNS text AS 'MODULE_PATHNAME', 'pg_curl_easy_getinfo_errbuf' LANGUAGE 'c';
 CREATE FUNCTION curl_easy_getinfo_ftp_entry_path(conname NAME DEFAULT NULL) RETURNS text AS 'MODULE_PATHNAME', 'pg_curl_easy_getinfo_ftp_entry_path' LANGUAGE 'c';
 CREATE FUNCTION curl_easy_getinfo_local_ip(conname NAME DEFAULT NULL) RETURNS text AS 'MODULE_PATHNAME', 'pg_curl_easy_getinfo_local_ip' LANGUAGE 'c';
 CREATE FUNCTION curl_easy_getinfo_primary_ip(conname NAME DEFAULT NULL) RETURNS text AS 'MODULE_PATHNAME', 'pg_curl_easy_getinfo_primary_ip' LANGUAGE 'c';
@@ -256,6 +257,7 @@ CREATE FUNCTION curl_easy_getinfo_scheme(conname NAME DEFAULT NULL) RETURNS text
 
 CREATE FUNCTION curl_easy_getinfo_activesocket(conname NAME DEFAULT NULL) RETURNS bigint AS 'MODULE_PATHNAME', 'pg_curl_easy_getinfo_activesocket' LANGUAGE 'c';
 CREATE FUNCTION curl_easy_getinfo_condition_unmet(conname NAME DEFAULT NULL) RETURNS bigint AS 'MODULE_PATHNAME', 'pg_curl_easy_getinfo_condition_unmet' LANGUAGE 'c';
+CREATE FUNCTION curl_easy_getinfo_errcode(conname NAME DEFAULT NULL) RETURNS bigint AS 'MODULE_PATHNAME', 'pg_curl_easy_getinfo_errcode' LANGUAGE 'c';
 CREATE FUNCTION curl_easy_getinfo_filetime(conname NAME DEFAULT NULL) RETURNS bigint AS 'MODULE_PATHNAME', 'pg_curl_easy_getinfo_filetime' LANGUAGE 'c';
 CREATE FUNCTION curl_easy_getinfo_header_size(conname NAME DEFAULT NULL) RETURNS bigint AS 'MODULE_PATHNAME', 'pg_curl_easy_getinfo_header_size' LANGUAGE 'c';
 CREATE FUNCTION curl_easy_getinfo_httpauth_avail(conname NAME DEFAULT NULL) RETURNS bigint AS 'MODULE_PATHNAME', 'pg_curl_easy_getinfo_httpauth_avail' LANGUAGE 'c';

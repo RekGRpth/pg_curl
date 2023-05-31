@@ -26,7 +26,7 @@ PG_MODULE_MAGIC;
 typedef struct {
     NameData conname; // !!! always first !!! //
     char errbuf[CURL_ERROR_SIZE];
-    CURLcode ec;
+    CURLcode errcode;
     CURL *easy;
     CURLM *multi;
 #if CURL_AT_LEAST_VERSION(7, 56, 0)
@@ -317,7 +317,7 @@ EXTENSION(pg_curl_easy_reset) {
     NameData *conname = PG_ARGISNULL(0) ? NULL : PG_GETARG_NAME(0);
     pg_curl_t *curl = pg_curl_easy_init(conname);
     MemSet(curl->errbuf, 0, sizeof(*curl->errbuf));
-    curl->ec = CURLE_OK;
+    curl->errcode = CURLE_OK;
     pg_curl_easy_header_reset(fcinfo);
     pg_curl_easy_postquote_reset(fcinfo);
     pg_curl_easy_prequote_reset(fcinfo);
@@ -1782,7 +1782,7 @@ EXTENSION(pg_curl_multi_perform) {
 #if CURL_AT_LEAST_VERSION(7, 10, 3)
                 pg_curl_t *curl;
                 if ((ec = curl_easy_getinfo(msg->easy_handle, CURLINFO_PRIVATE, &curl)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_multi_perform failed"), errdetail("%s", curl_easy_strerror(ec)), errcontext("CURLINFO_PRIVATE")));
-                curl->ec = msg->data.result;
+                curl->errcode = msg->data.result;
                 if (strlen(curl->errbuf)) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("curl_multi_perform failed"), errdetail("%s and %s", curl_easy_strerror(ec = msg->data.result), curl->errbuf)));
                 else
 #endif
@@ -1906,6 +1906,19 @@ EXTENSION(pg_curl_easy_getinfo_headers) {
 EXTENSION(pg_curl_easy_getinfo_response) {
     ereport(WARNING, (errcode(ERRCODE_WARNING_DEPRECATED_FEATURE), errmsg("curl_easy_getinfo_response deprecated, use curl_easy_getinfo_data_in instead")));
     return pg_curl_easy_getinfo_data_in(fcinfo);
+}
+
+EXTENSION(pg_curl_easy_getinfo_errbuf) {
+    NameData *conname = PG_ARGISNULL(0) ? NULL : PG_GETARG_NAME(0);
+    pg_curl_t *curl = pg_curl_easy_init(conname);
+    if (!curl->errbuf[0]) PG_RETURN_NULL();
+    PG_RETURN_TEXT_P(cstring_to_text(curl->errbuf));
+}
+
+EXTENSION(pg_curl_easy_getinfo_errcode) {
+    NameData *conname = PG_ARGISNULL(0) ? NULL : PG_GETARG_NAME(0);
+    pg_curl_t *curl = pg_curl_easy_init(conname);
+    PG_RETURN_INT64(curl->errcode);
 }
 
 static Datum pg_curl_easy_getinfo_char(PG_FUNCTION_ARGS, CURLINFO info) {
