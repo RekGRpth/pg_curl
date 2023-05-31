@@ -314,6 +314,8 @@ EXTENSION(pg_curl_easy_reset) {
     pg_curl_t *curl = pg_curl_easy_init(conname);
     if (curl->multi && (mc = curl_multi_remove_handle(curl->multi, curl->easy)) != CURLM_OK) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_multi_remove_handle failed"), errdetail("%s", curl_multi_strerror(mc))));
     curl->multi = NULL;
+    MemSet(curl->errbuf, 0, sizeof(*curl->errbuf));
+    curl->ec = CURLE_OK;
     pg_curl_easy_header_reset(fcinfo);
     pg_curl_easy_postquote_reset(fcinfo);
     pg_curl_easy_prequote_reset(fcinfo);
