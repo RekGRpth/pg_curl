@@ -8,7 +8,7 @@ www-authenticate|Basic realm="Fake Realm"
 access-control-allow-origin|*
 access-control-allow-credentials|true
 
-0|
+0|No error|
 
 t
 t
@@ -22,7 +22,7 @@ access-control-allow-credentials|true
   "user": "username"
 }
 
-0|
+0|No error|
 
 t
 t
@@ -35,4 +35,4 @@ access-control-allow-credentials|true
   "token": "token"
 }
 
-0|
+0|No error|

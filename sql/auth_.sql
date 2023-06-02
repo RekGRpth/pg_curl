@@ -31,7 +31,7 @@ with s as (
 select convert_from(curl_easy_getinfo_data_in(conname:='1'), 'utf-8');
 select convert_from(curl_easy_getinfo_data_in(conname:='2'), 'utf-8');
 select convert_from(curl_easy_getinfo_data_in(conname:='3'), 'utf-8');
-select curl_easy_getinfo_errcode(conname:='1'), curl_easy_getinfo_errbuf(conname:='1');
-select curl_easy_getinfo_errcode(conname:='2'), curl_easy_getinfo_errbuf(conname:='2');
-select curl_easy_getinfo_errcode(conname:='3'), curl_easy_getinfo_errbuf(conname:='3');
+select curl_easy_getinfo_errcode(conname:='1'), curl_easy_getinfo_errdesc(conname:='1'), curl_easy_getinfo_errbuf(conname:='1');
+select curl_easy_getinfo_errcode(conname:='2'), curl_easy_getinfo_errdesc(conname:='2'), curl_easy_getinfo_errbuf(conname:='2');
+select curl_easy_getinfo_errcode(conname:='3'), curl_easy_getinfo_errdesc(conname:='3'), curl_easy_getinfo_errbuf(conname:='3');
 ROLLBACK;
