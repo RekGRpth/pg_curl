@@ -1928,6 +1928,12 @@ EXTENSION(pg_curl_easy_getinfo_errbuf) {
     PG_RETURN_TEXT_P(cstring_to_text(curl->errbuf));
 }
 
+EXTENSION(pg_curl_easy_getinfo_errdesc) {
+    NameData *conname = PG_ARGISNULL(0) ? NULL : PG_GETARG_NAME(0);
+    pg_curl_t *curl = pg_curl_easy_init(conname);
+    PG_RETURN_TEXT_P(curl_easy_strerror(curl->errcode));
+}
+
 EXTENSION(pg_curl_easy_getinfo_errcode) {
     NameData *conname = PG_ARGISNULL(0) ? NULL : PG_GETARG_NAME(0);
     pg_curl_t *curl = pg_curl_easy_init(conname);
