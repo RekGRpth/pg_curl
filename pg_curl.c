@@ -1800,13 +1800,8 @@ EXTENSION(pg_curl_multi_perform) {
                         else ereport(WARNING, (errmsg("%s", curl_easy_strerror(ec)), errdetail("try %i", curl->try)));
                         if (curl->sleep) pg_usleep(curl->sleep);
                     } else if (NameStr(curl->conname)[0]) {
-                        PG_TRY();
-                            if (curl->errbuf[0]) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("%s", curl_easy_strerror(ec)), errdetail("%s", curl->errbuf)));
-                            else ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("%s", curl_easy_strerror(ec))));
-                        PG_CATCH();
-                            EmitErrorReport();
-                            FlushErrorState();
-                        PG_END_TRY();
+                        if (curl->errbuf[0]) ereport(WARNING, (errmsg("%s", curl_easy_strerror(ec)), errdetail("%s", curl->errbuf)));
+                        else ereport(WARNING, (errmsg("%s", curl_easy_strerror(ec))));
                     } else {
                         if (curl->errbuf[0]) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("%s", curl_easy_strerror(ec)), errdetail("%s", curl->errbuf)));
                         else ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("%s", curl_easy_strerror(ec))));
