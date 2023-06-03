@@ -1774,8 +1774,7 @@ EXTENSION(pg_curl_multi_perform) {
     int msgs_in_queue;
     int still_running;
     do {
-        int numfds;
-        if ((mc = curl_multi_poll(multi, NULL, 0, 1000, &numfds)) != CURLM_OK) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("curl_multi_poll failed"), errdetail("%s", curl_multi_strerror(mc))));
+        if ((mc = curl_multi_poll(multi, NULL, 0, 1000, NULL)) != CURLM_OK) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("curl_multi_poll failed"), errdetail("%s", curl_multi_strerror(mc))));
         if ((mc = curl_multi_perform(multi, &still_running)) != CURLM_OK) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("curl_multi_perform failed"), errdetail("%s", curl_multi_strerror(mc))));
         while ((msg = curl_multi_info_read(multi, &msgs_in_queue))) {
             if ((ec = msg->data.result) != CURLE_OK) {
