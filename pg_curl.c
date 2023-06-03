@@ -1801,15 +1801,15 @@ EXTENSION(pg_curl_multi_perform) {
                         if (curl->sleep) pg_usleep(curl->sleep);
                     } else if (NameStr(curl->conname)[0]) {
                         PG_TRY();
-                            if (curl->errbuf[0]) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("curl_multi_perform failed"), errdetail("%s", curl_easy_strerror(ec)), errcontext("%s", curl->errbuf)));
-                            else ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("curl_easy_perform failed"), errdetail("%s", curl_easy_strerror(ec))));
+                            if (curl->errbuf[0]) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("%s", curl_easy_strerror(ec)), errdetail("%s", curl->errbuf)));
+                            else ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("%s", curl_easy_strerror(ec))));
                         PG_CATCH();
                             EmitErrorReport();
                             FlushErrorState();
                         PG_END_TRY();
                     } else {
-                        if (curl->errbuf[0]) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("curl_multi_perform failed"), errdetail("%s", curl_easy_strerror(ec)), errcontext("%s", curl->errbuf)));
-                        else ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("curl_easy_perform failed"), errdetail("%s", curl_easy_strerror(ec))));
+                        if (curl->errbuf[0]) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("%s", curl_easy_strerror(ec)), errdetail("%s", curl->errbuf)));
+                        else ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("%s", curl_easy_strerror(ec))));
                     }
                 } break;
             }
