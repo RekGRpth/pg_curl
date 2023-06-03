@@ -509,7 +509,7 @@ EXTENSION(pg_curl_mime_data_bytea) {
     if (!(part = curl_mime_addpart(curl->mime))) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_mime_addpart")));
     if (!PG_ARGISNULL(0)) {
         bytea *data = PG_GETARG_BYTEA_PP(0);
-        if ((ec = curl_mime_data(part, VARDATA_ANY(data), VARSIZE_ANY_EXHDR(data))) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("curl_mime_data failed"), errdetail("%s", curl_easy_strerror(ec)), errcontext("%*.*s", (int)VARSIZE_ANY_EXHDR(data), (int)VARSIZE_ANY_EXHDR(data), VARDATA_ANY(data))));
+        if ((ec = curl_mime_data(part, VARDATA_ANY(data), VARSIZE_ANY_EXHDR(data))) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("%s", curl_easy_strerror(ec)), errdetail("%*.*s", (int)VARSIZE_ANY_EXHDR(data), (int)VARSIZE_ANY_EXHDR(data), VARDATA_ANY(data))));
         PG_FREE_IF_COPY(data, 0);
     }
     return pg_curl_mime_data_or_file(fcinfo, part);
@@ -529,7 +529,7 @@ EXTENSION(pg_curl_mime_file) {
     if (!(part = curl_mime_addpart(curl->mime))) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_mime_addpart")));
     if (!PG_ARGISNULL(0)) {
         char *data = TextDatumGetCString(PG_GETARG_DATUM(0));
-        if ((ec = curl_mime_filedata(part, data)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("curl_mime_name failed"), errdetail("%s", curl_easy_strerror(ec)), errcontext("%s", data)));
+        if ((ec = curl_mime_filedata(part, data)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("%s", curl_easy_strerror(ec)), errdetail("%s", data)));
         pfree(data);
     }
     return pg_curl_mime_data_or_file(fcinfo, part);
@@ -610,7 +610,7 @@ static Datum pg_curl_easy_setopt_blob(PG_FUNCTION_ARGS, CURLoption option) {
     blob.data = VARDATA_ANY(parameter);
     blob.flags = CURL_BLOB_COPY;
     blob.len = VARSIZE_ANY_EXHDR(parameter);
-    if ((ec = curl_easy_setopt(curl->easy, option, &blob)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(ec)), errcontext("%i", option)));
+    if ((ec = curl_easy_setopt(curl->easy, option, &blob)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("%s", curl_easy_strerror(ec)), errdetail("%i", option)));
     PG_FREE_IF_COPY(parameter, 0);
     PG_RETURN_BOOL(ec == CURLE_OK);
 }
@@ -623,7 +623,7 @@ static Datum pg_curl_easy_setopt_char(PG_FUNCTION_ARGS, CURLoption option) {
     pg_curl_t *curl = pg_curl_easy_init(conname);
     if (PG_ARGISNULL(0)) ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("curl_easy_setopt_* requires argument parameter")));
     parameter = TextDatumGetCString(PG_GETARG_DATUM(0));
-    if ((ec = curl_easy_setopt(curl->easy, option, parameter)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(ec)), errcontext("%i and %s", option, parameter)));
+    if ((ec = curl_easy_setopt(curl->easy, option, parameter)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("%s", curl_easy_strerror(ec)), errdetail("%i and %s", option, parameter)));
     pfree(parameter);
     PG_RETURN_BOOL(ec == CURLE_OK);
 }
