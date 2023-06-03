@@ -1808,7 +1808,11 @@ EXTENSION(pg_curl_multi_perform) {
                     }
                 } break;
             }
-            if (!curl->try) pg_curl_multi_remove_handle(curl);
+            pg_curl_multi_remove_handle(curl);
+            if (curl->try) {
+                if ((mc = curl_multi_add_handle(curl->multi = multi, curl->easy)) != CURLM_OK) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("%s", curl_multi_strerror(mc))));
+                running_handles++;
+            }
         }
     } while (running_handles);
     PG_RETURN_BOOL(ec == CURLE_OK);
@@ -1852,8 +1856,7 @@ EXTENSION(pg_curl_easy_perform) {
 #endif
     if ((ec = curl_easy_setopt(curl->easy, CURLOPT_PRIVATE, curl)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("%s", curl_easy_strerror(ec))));
     pg_curl_global.interrupt.requested = 0;
-    curl->multi = multi;
-    if ((mc = curl_multi_add_handle(curl->multi, curl->easy)) != CURLM_OK) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("%s", curl_multi_strerror(mc))));
+    if ((mc = curl_multi_add_handle(curl->multi = multi, curl->easy)) != CURLM_OK) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("%s", curl_multi_strerror(mc))));
     if (!NameStr(curl->conname)[0]) return pg_curl_multi_perform(fcinfo);
     PG_RETURN_BOOL(ec == CURLE_OK);
 }
