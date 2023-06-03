@@ -1796,8 +1796,8 @@ EXTENSION(pg_curl_multi_perform) {
                 } // fall through
                 default: {
                     if (curl->try) {
-                        if (curl->errbuf[0]) ereport(WARNING, (errmsg("curl_multi_perform failed"), errdetail("%s", curl_easy_strerror(ec)), errcontext("%s and try %i", curl->errbuf, curl->try)));
-                        else ereport(WARNING, (errmsg("curl_easy_perform failed"), errdetail("%s", curl_easy_strerror(ec)), errcontext("try %i", curl->try)));
+                        if (curl->errbuf[0]) ereport(WARNING, (errmsg("%s", curl_easy_strerror(ec)), errdetail("%s", curl->errbuf), errcontext("try %i", curl->try)));
+                        else ereport(WARNING, (errmsg("%s", curl_easy_strerror(ec)), errdetail("try %i", curl->try)));
                         if (curl->sleep) pg_usleep(curl->sleep);
                     } else if (NameStr(curl->conname)[0]) {
                         PG_TRY();
@@ -1831,7 +1831,7 @@ EXTENSION(pg_curl_easy_perform) {
     resetStringInfo(&curl->debug);
     resetStringInfo(&curl->header_in);
     resetStringInfo(&curl->header_out);
-    if ((ec = curl_easy_setopt(curl->easy, CURLOPT_ERRORBUFFER, curl->errbuf)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(ec)), errcontext("CURLOPT_ERRORBUFFER")));
+    if ((ec = curl_easy_setopt(curl->easy, CURLOPT_ERRORBUFFER, curl->errbuf)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("%s", curl_easy_strerror(ec)), errdetail("CURLOPT_ERRORBUFFER")));
     if ((ec = curl_easy_setopt(curl->easy, CURLOPT_HEADERDATA, curl)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(ec)), errcontext("CURLOPT_HEADERDATA")));
     if ((ec = curl_easy_setopt(curl->easy, CURLOPT_HEADERFUNCTION, pg_header_callback)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(ec)), errcontext("CURLOPT_HEADERFUNCTION")));
     if (curl->header && ((ec = curl_easy_setopt(curl->easy, CURLOPT_HTTPHEADER, curl->header)) != CURLE_OK)) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(ec)), errcontext("CURLOPT_HTTPHEADER")));
