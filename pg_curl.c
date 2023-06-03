@@ -1194,7 +1194,7 @@ static Datum pg_curl_easy_setopt_long(PG_FUNCTION_ARGS, CURLoption option) {
     pg_curl_t *curl = pg_curl_easy_init(conname);
     if (PG_ARGISNULL(0)) ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("curl_easy_setopt_* requires argument parameter")));
     parameter = PG_GETARG_INT64(0);
-    if ((ec = curl_easy_setopt(curl->easy, option, parameter)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(ec)), errcontext("%i and %li", option, parameter)));
+    if ((ec = curl_easy_setopt(curl->easy, option, parameter)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("%s", curl_easy_strerror(ec)), errdetail("%i and %li", option, parameter)));
     PG_RETURN_BOOL(ec == CURLE_OK);
 }
 
@@ -1738,8 +1738,8 @@ EXTENSION(pg_curl_easy_setopt_verbose) {
     CURLcode ec = CURL_LAST;
     NameData *conname = PG_ARGISNULL(0) ? NULL : PG_GETARG_NAME(0);
     pg_curl_t *curl = pg_curl_easy_init(conname);
-    if ((ec = curl_easy_setopt(curl->easy, CURLOPT_DEBUGDATA, curl)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(ec)), errcontext("CURLOPT_DEBUGDATA")));
-    if ((ec = curl_easy_setopt(curl->easy, CURLOPT_DEBUGFUNCTION, pg_debug_callback)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(ec)), errcontext("CURLOPT_DEBUGFUNCTION")));
+    if ((ec = curl_easy_setopt(curl->easy, CURLOPT_DEBUGDATA, curl)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("%s", curl_easy_strerror(ec)), errdetail("CURLOPT_DEBUGDATA")));
+    if ((ec = curl_easy_setopt(curl->easy, CURLOPT_DEBUGFUNCTION, pg_debug_callback)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("%s", curl_easy_strerror(ec)), errdetail("CURLOPT_DEBUGFUNCTION")));
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_VERBOSE);
 }
 EXTENSION(pg_curl_easy_setopt_wildcardmatch) {
@@ -1776,11 +1776,11 @@ EXTENSION(pg_curl_multi_perform) {
     int running_handles;
     do {
         CHECK_FOR_INTERRUPTS();
-        if ((mc = curl_multi_poll(multi, NULL, 0, 1000, NULL)) != CURLM_OK) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("curl_multi_poll failed"), errdetail("%s", curl_multi_strerror(mc))));
-        if ((mc = curl_multi_perform(multi, &running_handles)) != CURLM_OK) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("curl_multi_perform failed"), errdetail("%s", curl_multi_strerror(mc))));
+        if ((mc = curl_multi_poll(multi, NULL, 0, 1000, NULL)) != CURLM_OK) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("%s", curl_multi_strerror(mc))));
+        if ((mc = curl_multi_perform(multi, &running_handles)) != CURLM_OK) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("%s", curl_multi_strerror(mc))));
         while ((msg = curl_multi_info_read(multi, &msgs_in_queue))) if (msg->msg == CURLMSG_DONE) {
             pg_curl_t *curl;
-            if ((ec = curl_easy_getinfo(msg->easy_handle, CURLINFO_PRIVATE, &curl)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("curl_multi_perform failed"), errdetail("%s", curl_easy_strerror(ec)), errcontext("CURLINFO_PRIVATE")));
+            if ((ec = curl_easy_getinfo(msg->easy_handle, CURLINFO_PRIVATE, &curl)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("%s", curl_easy_strerror(ec)), errdetail("CURLINFO_PRIVATE")));
             curl->errcode = msg->data.result;
             curl->try--;
             switch ((ec = msg->data.result)) {
