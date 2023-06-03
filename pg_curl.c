@@ -6,6 +6,7 @@
 #if PG_VERSION_NUM < 90300
 #include <libpq/pqsignal.h>
 #endif
+#include <miscadmin.h>
 #include <signal.h>
 #include <utils/builtins.h>
 #include <utils/guc.h>
@@ -1772,36 +1773,49 @@ EXTENSION(pg_curl_multi_perform) {
     CURLMcode mc;
     CURLMsg *msg;
     int msgs_in_queue;
-    int still_running;
+    int running_handles;
     do {
+        CHECK_FOR_INTERRUPTS();
         if ((mc = curl_multi_poll(multi, NULL, 0, 1000, NULL)) != CURLM_OK) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("curl_multi_poll failed"), errdetail("%s", curl_multi_strerror(mc))));
-        if ((mc = curl_multi_perform(multi, &still_running)) != CURLM_OK) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("curl_multi_perform failed"), errdetail("%s", curl_multi_strerror(mc))));
-        while ((msg = curl_multi_info_read(multi, &msgs_in_queue))) {
-            if ((ec = msg->data.result) != CURLE_OK) {
-#if CURL_AT_LEAST_VERSION(7, 10, 3)
-                pg_curl_t *curl;
-                if ((ec = curl_easy_getinfo(msg->easy_handle, CURLINFO_PRIVATE, &curl)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("curl_multi_perform failed"), errdetail("%s", curl_easy_strerror(ec)), errcontext("CURLINFO_PRIVATE")));
-                curl->errcode = msg->data.result;
-                if (curl->errbuf[0]) {
-                    PG_TRY();
-                        ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("curl_multi_perform failed"), errdetail("%s and %s", curl_easy_strerror(ec = msg->data.result), curl->errbuf)));
-                    PG_CATCH();
-                        EmitErrorReport();
-                        FlushErrorState();
-                    PG_END_TRY();
-                } else
-#endif
-                {
-                    PG_TRY();
-                        ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("curl_multi_perform failed"), errdetail("%s", curl_easy_strerror(ec = msg->data.result))));
-                    PG_CATCH();
-                        EmitErrorReport();
-                        FlushErrorState();
-                    PG_END_TRY();
-                }
+        if ((mc = curl_multi_perform(multi, &running_handles)) != CURLM_OK) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("curl_multi_perform failed"), errdetail("%s", curl_multi_strerror(mc))));
+        while ((msg = curl_multi_info_read(multi, &msgs_in_queue))) if (msg->msg == CURLMSG_DONE) {
+            pg_curl_t *curl;
+            if ((ec = curl_easy_getinfo(msg->easy_handle, CURLINFO_PRIVATE, &curl)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("curl_multi_perform failed"), errdetail("%s", curl_easy_strerror(ec)), errcontext("CURLINFO_PRIVATE")));
+            curl->errcode = msg->data.result;
+            curl->try--;
+            switch ((ec = msg->data.result)) {
+                case CURLE_OK: {
+                    curl->try = 0;
+                } break;
+                case CURLE_UNSUPPORTED_PROTOCOL: case CURLE_FAILED_INIT: case CURLE_URL_MALFORMAT: case CURLE_NOT_BUILT_IN: case CURLE_FUNCTION_NOT_FOUND: case CURLE_BAD_FUNCTION_ARGUMENT: case CURLE_UNKNOWN_OPTION: case CURLE_LDAP_INVALID_URL: case CURLE_ABORTED_BY_CALLBACK: {
+                    curl->try = 0;
+                    if (pg_curl_global.interrupt.handler && pg_curl_global.interrupt.requested) {
+                        pg_curl_global.interrupt.handler(pg_curl_global.interrupt.requested);
+                        pg_curl_global.interrupt.requested = 0;
+                    }
+                } // fall through
+                default: {
+                    if (curl->try) {
+                        if (curl->errbuf[0]) ereport(WARNING, (errmsg("curl_multi_perform failed"), errdetail("%s", curl_easy_strerror(ec)), errcontext("%s and try %i", curl->errbuf, curl->try)));
+                        else ereport(WARNING, (errmsg("curl_easy_perform failed"), errdetail("%s", curl_easy_strerror(ec)), errcontext("try %i", curl->try)));
+                        if (curl->sleep) pg_usleep(curl->sleep);
+                    } else if (NameStr(curl->conname)[0]) {
+                        PG_TRY();
+                            if (curl->errbuf[0]) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("curl_multi_perform failed"), errdetail("%s", curl_easy_strerror(ec)), errcontext("%s", curl->errbuf)));
+                            else ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("curl_easy_perform failed"), errdetail("%s", curl_easy_strerror(ec))));
+                        PG_CATCH();
+                            EmitErrorReport();
+                            FlushErrorState();
+                        PG_END_TRY();
+                    } else {
+                        if (curl->errbuf[0]) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("curl_multi_perform failed"), errdetail("%s", curl_easy_strerror(ec)), errcontext("%s", curl->errbuf)));
+                        else ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("curl_easy_perform failed"), errdetail("%s", curl_easy_strerror(ec))));
+                    }
+                } break;
             }
+            if (!curl->try) pg_curl_multi_remove_handle(curl);
         }
-    } while (still_running);
+    } while (running_handles);
     PG_RETURN_BOOL(ec == CURLE_OK);
 }
 
@@ -1841,9 +1855,7 @@ EXTENSION(pg_curl_easy_perform) {
     if ((ec = curl_easy_setopt(curl->easy, CURLOPT_XFERINFODATA, curl)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(ec)), errcontext("CURLOPT_XFERINFODATA")));
     if ((ec = curl_easy_setopt(curl->easy, CURLOPT_XFERINFOFUNCTION, pg_progress_callback)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(ec)), errcontext("CURLOPT_XFERINFOFUNCTION")));
 #endif
-#if CURL_AT_LEAST_VERSION(7, 10, 3)
     if ((ec = curl_easy_setopt(curl->easy, CURLOPT_PRIVATE, curl)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("curl_easy_setopt failed"), errdetail("%s", curl_easy_strerror(ec)), errcontext("CURLOPT_PRIVATE")));
-#endif
     pg_curl_global.interrupt.requested = 0;
     curl->multi = multi;
     if ((mc = curl_multi_add_handle(curl->multi, curl->easy)) != CURLM_OK) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("curl_multi_add_handle failed"), errdetail("%s", curl_multi_strerror(mc))));
@@ -1986,13 +1998,6 @@ EXTENSION(pg_curl_easy_getinfo_primary_ip) {
     return pg_curl_easy_getinfo_char(fcinfo, CURLINFO_PRIMARY_IP);
 #else
     ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_getinfo_primary_ip requires curl 7.19.0 or later")));
-#endif
-}
-EXTENSION(pg_curl_easy_getinfo_private) {
-#if CURL_AT_LEAST_VERSION(7, 10, 3)
-    return pg_curl_easy_getinfo_char(fcinfo, CURLINFO_PRIVATE);
-#else
-    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_getinfo_private requires curl 7.10.3 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_getinfo_redirect_url) {

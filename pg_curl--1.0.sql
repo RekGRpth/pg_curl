@@ -251,7 +251,6 @@ CREATE FUNCTION curl_easy_getinfo_errdesc(conname NAME DEFAULT NULL) RETURNS tex
 CREATE FUNCTION curl_easy_getinfo_ftp_entry_path(conname NAME DEFAULT NULL) RETURNS text AS 'MODULE_PATHNAME', 'pg_curl_easy_getinfo_ftp_entry_path' LANGUAGE 'c';
 CREATE FUNCTION curl_easy_getinfo_local_ip(conname NAME DEFAULT NULL) RETURNS text AS 'MODULE_PATHNAME', 'pg_curl_easy_getinfo_local_ip' LANGUAGE 'c';
 CREATE FUNCTION curl_easy_getinfo_primary_ip(conname NAME DEFAULT NULL) RETURNS text AS 'MODULE_PATHNAME', 'pg_curl_easy_getinfo_primary_ip' LANGUAGE 'c';
-CREATE FUNCTION curl_easy_getinfo_private(conname NAME DEFAULT NULL) RETURNS text AS 'MODULE_PATHNAME', 'pg_curl_easy_getinfo_private' LANGUAGE 'c';
 CREATE FUNCTION curl_easy_getinfo_redirect_url(conname NAME DEFAULT NULL) RETURNS text AS 'MODULE_PATHNAME', 'pg_curl_easy_getinfo_redirect_url' LANGUAGE 'c';
 CREATE FUNCTION curl_easy_getinfo_rtsp_session_id(conname NAME DEFAULT NULL) RETURNS text AS 'MODULE_PATHNAME', 'pg_curl_easy_getinfo_rtsp_session_id' LANGUAGE 'c';
 CREATE FUNCTION curl_easy_getinfo_scheme(conname NAME DEFAULT NULL) RETURNS text AS 'MODULE_PATHNAME', 'pg_curl_easy_getinfo_scheme' LANGUAGE 'c';
