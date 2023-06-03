@@ -1859,31 +1859,7 @@ EXTENSION(pg_curl_easy_perform) {
     pg_curl_global.interrupt.requested = 0;
     curl->multi = multi;
     if ((mc = curl_multi_add_handle(curl->multi, curl->easy)) != CURLM_OK) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("curl_multi_add_handle failed"), errdetail("%s", curl_multi_strerror(mc))));
-    if (NameStr(curl->conname)[0]) {
-    
-    } else {
-        return pg_curl_multi_perform(fcinfo);
-    }
-    /*while (curl->try--) switch (ec = curl_easy_perform(curl->easy)) {
-        case CURLE_OK: curl->try = 0; break;
-        case CURLE_UNSUPPORTED_PROTOCOL:
-        case CURLE_FAILED_INIT:
-        case CURLE_URL_MALFORMAT:
-        case CURLE_NOT_BUILT_IN:
-        case CURLE_FUNCTION_NOT_FOUND:
-        case CURLE_BAD_FUNCTION_ARGUMENT:
-        case CURLE_UNKNOWN_OPTION:
-        case CURLE_LDAP_INVALID_URL:
-        case CURLE_ABORTED_BY_CALLBACK: curl->try = 0; if (pg_curl_global.interrupt.handler && pg_curl_global.interrupt.requested) { (*pg_curl_global.interrupt.handler)(pg_curl_global.interrupt.requested); pg_curl_global.interrupt.requested = 0; } // fall through
-        default: if (curl->try) {
-            if (strlen(errbuf)) ereport(WARNING, (errmsg("curl_easy_perform failed"), errdetail("%s and %s", curl_easy_strerror(ec), errbuf), errcontext("try %i", curl->try)));
-            else ereport(WARNING, (errmsg("curl_easy_perform failed"), errdetail("%s", curl_easy_strerror(ec)), errcontext("try %i", curl->try)));
-            if (curl->sleep) pg_usleep(curl->sleep);
-        } else {
-            if (strlen(errbuf)) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("curl_easy_perform failed"), errdetail("%s and %s", curl_easy_strerror(ec), errbuf)));
-            else ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("curl_easy_perform failed"), errdetail("%s", curl_easy_strerror(ec))));
-        }
-    }*/
+    if (!NameStr(curl->conname)[0]) return pg_curl_multi_perform(fcinfo);
     PG_RETURN_BOOL(ec == CURLE_OK);
 }
 
