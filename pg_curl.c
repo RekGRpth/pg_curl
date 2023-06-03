@@ -162,7 +162,7 @@ static void pg_curl_global_cleanup(void *arg) {
 static void pg_curl_multi_remove_handle(pg_curl_t *curl) {
     CURLMcode mc;
     if (!curl || !curl->easy || !curl->multi) return;
-    if ((mc = curl_multi_remove_handle(curl->multi, curl->easy)) != CURLM_OK) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("curl_multi_remove_handle failed"), errdetail("%s", curl_multi_strerror(mc))));
+    if ((mc = curl_multi_remove_handle(curl->multi, curl->easy)) != CURLM_OK) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("%s", curl_multi_strerror(mc))));
     curl->multi = NULL;
 }
 
@@ -212,7 +212,7 @@ static void pg_curl_multi_cleanup(void *arg) {
     CURLMcode mc;
     CURLM *multi = arg;
     if (!multi) return;
-    if ((mc = curl_multi_cleanup(multi)) != CURLM_OK) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("curl_multi_cleanup failed"), errdetail("%s", curl_multi_strerror(mc))));
+    if ((mc = curl_multi_cleanup(multi)) != CURLM_OK) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("%s", curl_multi_strerror(mc))));
 }
 
 static void pg_curl_multi_init(void) {
@@ -460,14 +460,14 @@ static Datum pg_curl_mime_data_or_file(PG_FUNCTION_ARGS, curl_mimepart *part) {
     if (!PG_ARGISNULL(3)) type = TextDatumGetCString(PG_GETARG_DATUM(3));
     if (!PG_ARGISNULL(4)) code = TextDatumGetCString(PG_GETARG_DATUM(4));
     if (!PG_ARGISNULL(5)) head = TextDatumGetCString(PG_GETARG_DATUM(5));
-    if (name && ((ec = curl_mime_name(part, name)) != CURLE_OK)) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("curl_mime_name failed"), errdetail("%s", curl_easy_strerror(ec)), errcontext("%s", name)));
-    if (file && ((ec = curl_mime_filename(part, file)) != CURLE_OK)) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("curl_mime_filename failed"), errdetail("%s", curl_easy_strerror(ec)), errcontext("%s", file)));
-    if (type && ((ec = curl_mime_type(part, type)) != CURLE_OK)) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("curl_mime_type failed"), errdetail("%s", curl_easy_strerror(ec)), errcontext("%s", type)));
-    if (code && ((ec = curl_mime_encoder(part, code)) != CURLE_OK)) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("curl_mime_encoder failed"), errdetail("%s", curl_easy_strerror(ec)), errcontext("%s", code)));
+    if (name && ((ec = curl_mime_name(part, name)) != CURLE_OK)) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("%s", curl_easy_strerror(ec)), errdetail("%s", name)));
+    if (file && ((ec = curl_mime_filename(part, file)) != CURLE_OK)) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("%s", curl_easy_strerror(ec)), errdetail("%s", file)));
+    if (type && ((ec = curl_mime_type(part, type)) != CURLE_OK)) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("%s", curl_easy_strerror(ec)), errdetail("%s", type)));
+    if (code && ((ec = curl_mime_encoder(part, code)) != CURLE_OK)) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("%s", curl_easy_strerror(ec)), errdetail("%s", code)));
     if (head) {
         struct curl_slist *headers = NULL;
         if (!(headers = curl_slist_append(headers, head))) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_slist_append")));
-        if ((ec = curl_mime_headers(part, headers, true)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("curl_mime_headers failed"), errdetail("%s", curl_easy_strerror(ec)), errcontext("%s", head)));
+        if ((ec = curl_mime_headers(part, headers, true)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("%s", curl_easy_strerror(ec)), errdetail("%s", head)));
     }
     if (name) pfree(name);
     if (file) pfree(file);
@@ -490,7 +490,7 @@ EXTENSION(pg_curl_mime_data_text) {
     if (!(part = curl_mime_addpart(curl->mime))) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_mime_addpart")));
     if (!PG_ARGISNULL(0)) {
         text *data = PG_GETARG_TEXT_PP(0);
-        if ((ec = curl_mime_data(part, VARDATA_ANY(data), VARSIZE_ANY_EXHDR(data))) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("curl_mime_data failed"), errdetail("%s", curl_easy_strerror(ec)), errcontext("%*.*s", (int)VARSIZE_ANY_EXHDR(data), (int)VARSIZE_ANY_EXHDR(data), VARDATA_ANY(data))));
+        if ((ec = curl_mime_data(part, VARDATA_ANY(data), VARSIZE_ANY_EXHDR(data))) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("%s", curl_easy_strerror(ec)), errdetail("%*.*s", (int)VARSIZE_ANY_EXHDR(data), (int)VARSIZE_ANY_EXHDR(data), VARDATA_ANY(data))));
         PG_FREE_IF_COPY(data, 0);
     }
     return pg_curl_mime_data_or_file(fcinfo, part);
