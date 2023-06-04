@@ -1,5 +1,5 @@
 $(OBJS): Makefile
-DATA = pg_curl--1.0.sql
+DATA = pg_curl--1.0--2.0.sql
 EXTENSION = pg_curl
 MODULE_big = $(EXTENSION)
 OBJS = $(EXTENSION).o
