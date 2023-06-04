@@ -75,17 +75,17 @@ static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 static void pg_curl_interrupt_handler(int sig) { pg_curl_global.interrupt.requested = sig; }
 
 static int pg_curl_ec(CURLcode ec) {
-    if (ec < 10) return MAKE_SQLSTATE('X','E','0','0','0'+ec);
-    if (ec < 100) return MAKE_SQLSTATE('X','E','0','0'+ec/10,'0'+ec%10);
-    if (ec < 1000) return MAKE_SQLSTATE('X','E','0'+ec/100,'0'+(ec%100)/10,'0'+(ec%100)%10);
-    return MAKE_SQLSTATE('X','E','0','0','0');
+    if (ec < 10) return errcode(MAKE_SQLSTATE('X','E','0','0','0'+ec));
+    if (ec < 100) return errcode(MAKE_SQLSTATE('X','E','0','0'+ec/10,'0'+ec%10));
+    if (ec < 1000) return errcode(MAKE_SQLSTATE('X','E','0'+ec/100,'0'+(ec%100)/10,'0'+(ec%100)%10));
+    return errcode(MAKE_SQLSTATE('X','E','0','0','0'));
 }
 
 static int pg_curl_mc(CURLMcode mc) {
-    if (mc < 10) return MAKE_SQLSTATE('X','E','0','0','0'+mc);
-    if (mc < 100) return MAKE_SQLSTATE('X','E','0','0'+mc/10,'0'+mc%10);
-    if (mc < 1000) return MAKE_SQLSTATE('X','E','0'+mc/100,'0'+(mc%100)/10,'0'+(mc%100)%10);
-    return MAKE_SQLSTATE('X','M','0','0','0');
+    if (mc < 10) return errcode(MAKE_SQLSTATE('X','E','0','0','0'+mc));
+    if (mc < 100) return errcode(MAKE_SQLSTATE('X','E','0','0'+mc/10,'0'+mc%10));
+    if (mc < 1000) return errcode(MAKE_SQLSTATE('X','E','0'+mc/100,'0'+(mc%100)/10,'0'+(mc%100)%10));
+    return errcode(MAKE_SQLSTATE('X','M','0','0','0'));
 }
 
 #if CURL_AT_LEAST_VERSION(7, 12, 0)
