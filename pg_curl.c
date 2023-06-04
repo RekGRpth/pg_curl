@@ -34,7 +34,6 @@ typedef struct {
     curl_mime *mime;
 #endif
     int try;
-    long sleep;
 #if PG_VERSION_NUM >= 90500
     MemoryContextCallback easy_cleanup;
 #endif
@@ -1774,7 +1773,12 @@ EXTENSION(pg_curl_multi_perform) {
     CURLMsg *msg;
     int msgs_in_queue;
     int running_handles;
+    int try;
+    long sleep;
+    if ((try = PG_ARGISNULL(0) ? 1 : PG_GETARG_INT32(0)) <= 0) ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("curl_easy_perform invalid argument try %i", try), errhint("Argument try must be positive!")));
+    if ((sleep = PG_ARGISNULL(1) ? 1000000 : PG_GETARG_INT64(1)) < 0) ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("curl_easy_perform invalid argument sleep %li", sleep), errhint("Argument sleep must be non-negative!")));
     do {
+        bool sleep_need = false;
         CHECK_FOR_INTERRUPTS();
         if ((mc = curl_multi_poll(multi, NULL, 0, 1000, NULL)) != CURLM_OK) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("%s", curl_multi_strerror(mc))));
         if ((mc = curl_multi_perform(multi, &running_handles)) != CURLM_OK) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("%s", curl_multi_strerror(mc))));
@@ -1782,49 +1786,47 @@ EXTENSION(pg_curl_multi_perform) {
             pg_curl_t *curl;
             if ((ec = curl_easy_getinfo(msg->easy_handle, CURLINFO_PRIVATE, &curl)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("%s", curl_easy_strerror(ec))));
             curl->errcode = msg->data.result;
-            curl->try--;
+            ++curl->try;
             switch ((ec = msg->data.result)) {
                 case CURLE_OK: {
-                    curl->try = 0;
+                    curl->try = try;
                 } break;
                 case CURLE_UNSUPPORTED_PROTOCOL: case CURLE_FAILED_INIT: case CURLE_URL_MALFORMAT: case CURLE_NOT_BUILT_IN: case CURLE_FUNCTION_NOT_FOUND: case CURLE_BAD_FUNCTION_ARGUMENT: case CURLE_UNKNOWN_OPTION: case CURLE_LDAP_INVALID_URL: case CURLE_ABORTED_BY_CALLBACK: {
-                    curl->try = 0;
+                    curl->try = try;
                     if (pg_curl_global.interrupt.handler && pg_curl_global.interrupt.requested) {
                         pg_curl_global.interrupt.handler(pg_curl_global.interrupt.requested);
                         pg_curl_global.interrupt.requested = 0;
                     }
                 } // fall through
                 default: {
-                    if (curl->try) {
+                    if (curl->try < try) {
                         if (curl->errbuf[0]) ereport(WARNING, (errmsg("%s", curl_easy_strerror(ec)), errdetail("%s", curl->errbuf), errcontext("try %i", curl->try)));
                         else ereport(WARNING, (errmsg("%s", curl_easy_strerror(ec)), errdetail("try %i", curl->try)));
-                        if (curl->sleep) pg_usleep(curl->sleep);
-                    } else if (NameStr(curl->conname)[0]) {
+                        sleep_need = true;
+                    } else {
                         if (curl->errbuf[0]) ereport(WARNING, (errmsg("%s", curl_easy_strerror(ec)), errdetail("%s", curl->errbuf)));
                         else ereport(WARNING, (errmsg("%s", curl_easy_strerror(ec))));
-                    } else {
-                        if (curl->errbuf[0]) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("%s", curl_easy_strerror(ec)), errdetail("%s", curl->errbuf)));
-                        else ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("%s", curl_easy_strerror(ec))));
                     }
                 } break;
             }
             pg_curl_multi_remove_handle(curl);
-            if (curl->try) {
+            if (curl->try < try) {
                 if ((mc = curl_multi_add_handle(curl->multi = multi, curl->easy)) != CURLM_OK) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("%s", curl_multi_strerror(mc))));
                 running_handles++;
             }
         }
+        if (sleep_need && sleep) pg_usleep(sleep);
     } while (running_handles);
-    PG_RETURN_BOOL(ec == CURLE_OK);
+    PG_RETURN_VOID();
 }
 
 EXTENSION(pg_curl_easy_perform) {
     CURLcode ec = CURL_LAST;
     CURLMcode mc;
+    int try;
+    long sleep;
     NameData *conname = PG_ARGISNULL(2) ? NULL : PG_GETARG_NAME(2);
     pg_curl_t *curl = pg_curl_easy_init(conname);
-    if ((curl->try = PG_ARGISNULL(0) ? 1 : PG_GETARG_INT32(0)) <= 0) ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("curl_easy_perform invalid argument try %i", curl->try), errhint("Argument try must be positive!")));
-    if ((curl->sleep = PG_ARGISNULL(1) ? 1000000 : PG_GETARG_INT64(1)) < 0) ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("curl_easy_perform invalid argument sleep %li", curl->sleep), errhint("Argument sleep must be non-negative!")));
     resetStringInfo(&curl->data_in);
     resetStringInfo(&curl->data_out);
     resetStringInfo(&curl->debug);
@@ -1856,8 +1858,37 @@ EXTENSION(pg_curl_easy_perform) {
 #endif
     if ((ec = curl_easy_setopt(curl->easy, CURLOPT_PRIVATE, curl)) != CURLE_OK) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("%s", curl_easy_strerror(ec))));
     pg_curl_global.interrupt.requested = 0;
-    if ((mc = curl_multi_add_handle(curl->multi = multi, curl->easy)) != CURLM_OK) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("%s", curl_multi_strerror(mc))));
-    if (!NameStr(curl->conname)[0]) return pg_curl_multi_perform(fcinfo);
+    curl->try = 0;
+    if (NameStr(curl->conname)[0]) {
+        if ((mc = curl_multi_add_handle(curl->multi = multi, curl->easy)) != CURLM_OK) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("%s", curl_multi_strerror(mc))));
+        PG_RETURN_BOOL(ec == CURLE_OK);
+    }
+    if ((try = PG_ARGISNULL(0) ? 1 : PG_GETARG_INT32(0)) <= 0) ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("curl_easy_perform invalid argument try %i", try), errhint("Argument try must be positive!")));
+    if ((sleep = PG_ARGISNULL(1) ? 1000000 : PG_GETARG_INT64(1)) < 0) ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("curl_easy_perform invalid argument sleep %li", sleep), errhint("Argument sleep must be non-negative!")));
+    while (++curl->try < try) {
+        switch (ec = curl_easy_perform(curl->easy)) {
+            case CURLE_OK: {
+                curl->try = try;
+            } break;
+            case CURLE_UNSUPPORTED_PROTOCOL: case CURLE_FAILED_INIT: case CURLE_URL_MALFORMAT: case CURLE_NOT_BUILT_IN: case CURLE_FUNCTION_NOT_FOUND: case CURLE_BAD_FUNCTION_ARGUMENT: case CURLE_UNKNOWN_OPTION: case CURLE_LDAP_INVALID_URL: case CURLE_ABORTED_BY_CALLBACK: {
+                curl->try = try;
+                if (pg_curl_global.interrupt.handler && pg_curl_global.interrupt.requested) {
+                    pg_curl_global.interrupt.handler(pg_curl_global.interrupt.requested);
+                    pg_curl_global.interrupt.requested = 0;
+                }
+            } // fall through
+            default: {
+                if (curl->try < try) {
+                    if (curl->errbuf[0]) ereport(WARNING, (errmsg("%s", curl_easy_strerror(ec)), errdetail("%s", curl->errbuf), errcontext("try %i", curl->try)));
+                    else ereport(WARNING, (errmsg("%s", curl_easy_strerror(ec)), errdetail("try %i", curl->try)));
+                } else {
+                    if (curl->errbuf[0]) ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("%s", curl_easy_strerror(ec)), errdetail("%s", curl->errbuf)));
+                    else ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("%s", curl_easy_strerror(ec))));
+                }
+            } break;
+        }
+        if (curl->try < try && sleep) pg_usleep(sleep);
+    }
     PG_RETURN_BOOL(ec == CURLE_OK);
 }
 
