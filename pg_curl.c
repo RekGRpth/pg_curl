@@ -271,8 +271,10 @@ static pg_curl_t *pg_curl_easy_init(NameData *conname) {
     return curl;
 }
 
+#define PG_CONNAME(arg) (PG_NARGS() < arg + 1 || PG_ARGISNULL(arg)) ? NULL : PG_GETARG_NAME(arg)
+
 EXTENSION(pg_curl_easy_header_reset) {
-    NameData *conname = PG_ARGISNULL(0) ? NULL : PG_GETARG_NAME(0);
+    NameData *conname = PG_CONNAME(0);
     pg_curl_t *curl = pg_curl_easy_init(conname);
     curl_slist_free_all(curl->header);
     curl->header = NULL;
@@ -281,7 +283,7 @@ EXTENSION(pg_curl_easy_header_reset) {
 
 EXTENSION(pg_curl_easy_mime_reset) {
 #if CURL_AT_LEAST_VERSION(7, 56, 0)
-    NameData *conname = PG_ARGISNULL(0) ? NULL : PG_GETARG_NAME(0);
+    NameData *conname = PG_CONNAME(0);
     pg_curl_t *curl = pg_curl_easy_init(conname);
     curl_mime_free(curl->mime);
     curl->mime = NULL;
@@ -292,7 +294,7 @@ EXTENSION(pg_curl_easy_mime_reset) {
 }
 
 EXTENSION(pg_curl_easy_postquote_reset) {
-    NameData *conname = PG_ARGISNULL(0) ? NULL : PG_GETARG_NAME(0);
+    NameData *conname = PG_CONNAME(0);
     pg_curl_t *curl = pg_curl_easy_init(conname);
     curl_slist_free_all(curl->postquote);
     curl->postquote = NULL;
@@ -300,7 +302,7 @@ EXTENSION(pg_curl_easy_postquote_reset) {
 }
 
 EXTENSION(pg_curl_easy_prequote_reset) {
-    NameData *conname = PG_ARGISNULL(0) ? NULL : PG_GETARG_NAME(0);
+    NameData *conname = PG_CONNAME(0);
     pg_curl_t *curl = pg_curl_easy_init(conname);
     curl_slist_free_all(curl->prequote);
     curl->prequote = NULL;
@@ -308,7 +310,7 @@ EXTENSION(pg_curl_easy_prequote_reset) {
 }
 
 EXTENSION(pg_curl_easy_quote_reset) {
-    NameData *conname = PG_ARGISNULL(0) ? NULL : PG_GETARG_NAME(0);
+    NameData *conname = PG_CONNAME(0);
     pg_curl_t *curl = pg_curl_easy_init(conname);
     curl_slist_free_all(curl->quote);
     curl->quote = NULL;
@@ -317,7 +319,7 @@ EXTENSION(pg_curl_easy_quote_reset) {
 
 EXTENSION(pg_curl_easy_recipient_reset) {
 #if CURL_AT_LEAST_VERSION(7, 20, 0)
-    NameData *conname = PG_ARGISNULL(0) ? NULL : PG_GETARG_NAME(0);
+    NameData *conname = PG_CONNAME(0);
     pg_curl_t *curl = pg_curl_easy_init(conname);
     curl_slist_free_all(curl->recipient);
     curl->recipient = NULL;
@@ -328,7 +330,7 @@ EXTENSION(pg_curl_easy_recipient_reset) {
 }
 
 EXTENSION(pg_curl_easy_reset) {
-    NameData *conname = PG_ARGISNULL(0) ? NULL : PG_GETARG_NAME(0);
+    NameData *conname = PG_CONNAME(0);
     pg_curl_t *curl = pg_curl_easy_init(conname);
     MemSet(curl->errbuf, 0, sizeof(*curl->errbuf));
     curl->errcode = CURLE_OK;
@@ -360,7 +362,7 @@ EXTENSION(pg_curl_easy_escape) {
 #if CURL_AT_LEAST_VERSION(7, 15, 4)
     text *string;
     char *escape;
-    NameData *conname = PG_ARGISNULL(1) ? NULL : PG_GETARG_NAME(1);
+    NameData *conname = PG_CONNAME(1);
     pg_curl_t *curl = pg_curl_easy_init(conname);
     if (PG_ARGISNULL(0)) ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("curl_easy_escape requires argument string")));
     string = PG_GETARG_TEXT_PP(0);
@@ -379,7 +381,7 @@ EXTENSION(pg_curl_easy_unescape) {
     text *url;
     char *unescape;
     int outlength;
-    NameData *conname = PG_ARGISNULL(1) ? NULL : PG_GETARG_NAME(1);
+    NameData *conname = PG_CONNAME(1);
     pg_curl_t *curl = pg_curl_easy_init(conname);
     if (PG_ARGISNULL(0)) ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("curl_easy_unescape requires argument url")));
     url = PG_GETARG_TEXT_PP(0);
@@ -396,7 +398,7 @@ EXTENSION(pg_curl_easy_unescape) {
 EXTENSION(pg_curl_header_append) {
     char *name, *value;
     StringInfoData buf;
-    NameData *conname = PG_ARGISNULL(2) ? NULL : PG_GETARG_NAME(2);
+    NameData *conname = PG_CONNAME(2);
     pg_curl_t *curl = pg_curl_easy_init(conname);
     struct curl_slist *temp = curl->header;
     if (PG_ARGISNULL(0)) ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("curl_header_append requires argument name")));
@@ -414,7 +416,7 @@ EXTENSION(pg_curl_header_append) {
 
 EXTENSION(pg_curl_postquote_append) {
     char *command;
-    NameData *conname = PG_ARGISNULL(1) ? NULL : PG_GETARG_NAME(1);
+    NameData *conname = PG_CONNAME(1);
     pg_curl_t *curl = pg_curl_easy_init(conname);
     struct curl_slist *temp = curl->postquote;
     if (PG_ARGISNULL(0)) ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("curl_postquote_append requires argument command")));
@@ -426,7 +428,7 @@ EXTENSION(pg_curl_postquote_append) {
 
 EXTENSION(pg_curl_prequote_append) {
     char *command;
-    NameData *conname = PG_ARGISNULL(1) ? NULL : PG_GETARG_NAME(1);
+    NameData *conname = PG_CONNAME(1);
     pg_curl_t *curl = pg_curl_easy_init(conname);
     struct curl_slist *temp = curl->prequote;
     if (PG_ARGISNULL(0)) ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("curl_prequote_append requires argument command")));
@@ -438,7 +440,7 @@ EXTENSION(pg_curl_prequote_append) {
 
 EXTENSION(pg_curl_quote_append) {
     char *command;
-    NameData *conname = PG_ARGISNULL(1) ? NULL : PG_GETARG_NAME(1);
+    NameData *conname = PG_CONNAME(1);
     pg_curl_t *curl = pg_curl_easy_init(conname);
     struct curl_slist *temp = curl->quote;
     if (PG_ARGISNULL(0)) ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("curl_quote_append requires argument command")));
@@ -451,7 +453,7 @@ EXTENSION(pg_curl_quote_append) {
 EXTENSION(pg_curl_recipient_append) {
 #if CURL_AT_LEAST_VERSION(7, 20, 0)
     char *email;
-    NameData *conname = PG_ARGISNULL(1) ? NULL : PG_GETARG_NAME(1);
+    NameData *conname = PG_CONNAME(1);
     pg_curl_t *curl = pg_curl_easy_init(conname);
     struct curl_slist *temp = curl->recipient;
     if (PG_ARGISNULL(0)) ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("curl_recipient_append requires argument email")));
@@ -497,7 +499,7 @@ EXTENSION(pg_curl_mime_data_text) {
 #if CURL_AT_LEAST_VERSION(7, 56, 0)
     CURLcode ec = CURL_LAST;
     curl_mimepart *part;
-    NameData *conname = PG_ARGISNULL(6) ? NULL : PG_GETARG_NAME(6);
+    NameData *conname = PG_CONNAME(6);
     pg_curl_t *curl = pg_curl_easy_init(conname);
     if (!curl->mime && !(curl->mime = curl_mime_init(curl->easy))) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_mime_init")));
     if (!(part = curl_mime_addpart(curl->mime))) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_mime_addpart")));
@@ -516,7 +518,7 @@ EXTENSION(pg_curl_mime_data_bytea) {
 #if CURL_AT_LEAST_VERSION(7, 56, 0)
     CURLcode ec = CURL_LAST;
     curl_mimepart *part;
-    NameData *conname = PG_ARGISNULL(6) ? NULL : PG_GETARG_NAME(6);
+    NameData *conname = PG_CONNAME(6);
     pg_curl_t *curl = pg_curl_easy_init(conname);
     if (!curl->mime && !(curl->mime = curl_mime_init(curl->easy))) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_mime_init")));
     if (!(part = curl_mime_addpart(curl->mime))) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_mime_addpart")));
@@ -535,7 +537,7 @@ EXTENSION(pg_curl_mime_file) {
 #if CURL_AT_LEAST_VERSION(7, 56, 0)
     CURLcode ec = CURL_LAST;
     curl_mimepart *part;
-    NameData *conname = PG_ARGISNULL(6) ? NULL : PG_GETARG_NAME(6);
+    NameData *conname = PG_CONNAME(6);
     pg_curl_t *curl = pg_curl_easy_init(conname);
     if (PG_ARGISNULL(0)) ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("curl_mime_file requires argument data")));
     if (!curl->mime && !(curl->mime = curl_mime_init(curl->easy))) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_mime_init")));
@@ -554,7 +556,7 @@ EXTENSION(pg_curl_mime_file) {
 EXTENSION(pg_curl_easy_setopt_postfields) {
     CURLcode ec = CURLE_OK;
     bytea *parameter;
-    NameData *conname = PG_ARGISNULL(1) ? NULL : PG_GETARG_NAME(1);
+    NameData *conname = PG_CONNAME(1);
     pg_curl_t *curl = pg_curl_easy_init(conname);
     if (PG_ARGISNULL(0)) ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("curl_easy_setopt_postfields requires argument parameter")));
     parameter = PG_GETARG_BYTEA_PP(0);
@@ -567,7 +569,7 @@ EXTENSION(pg_curl_easy_setopt_postfields) {
 EXTENSION(pg_curl_easy_setopt_url) {
     CURLcode ec = CURLE_OK;
     text *parameter;
-    NameData *conname = PG_ARGISNULL(1) ? NULL : PG_GETARG_NAME(1);
+    NameData *conname = PG_CONNAME(1);
     pg_curl_t *curl = pg_curl_easy_init(conname);
     if (PG_ARGISNULL(0)) ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("curl_easy_setopt_url requires argument parameter")));
     parameter = PG_GETARG_TEXT_PP(0);
@@ -598,14 +600,14 @@ static Datum pg_curl_postfield_or_url_append(PG_FUNCTION_ARGS, pg_curl_t *curl, 
 }
 
 EXTENSION(pg_curl_postfield_append) {
-    NameData *conname = PG_ARGISNULL(2) ? NULL : PG_GETARG_NAME(2);
+    NameData *conname = PG_CONNAME(2);
     pg_curl_t *curl = pg_curl_easy_init(conname);
     if (PG_ARGISNULL(0)) ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("pg_curl_postfield_append requires argument name")));
     return pg_curl_postfield_or_url_append(fcinfo, curl, &curl->postfield);
 }
 
 EXTENSION(pg_curl_url_append) {
-    NameData *conname = PG_ARGISNULL(2) ? NULL : PG_GETARG_NAME(2);
+    NameData *conname = PG_CONNAME(2);
     pg_curl_t *curl = pg_curl_easy_init(conname);
     if (PG_ARGISNULL(0)) ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("pg_curl_url_append requires argument name")));
     return pg_curl_postfield_or_url_append(fcinfo, curl, &curl->url);
@@ -616,7 +618,7 @@ static Datum pg_curl_easy_setopt_blob(PG_FUNCTION_ARGS, CURLoption option) {
     CURLcode ec = CURLE_OK;
     bytea *parameter;
     struct curl_blob blob;
-    NameData *conname = PG_ARGISNULL(1) ? NULL : PG_GETARG_NAME(1);
+    NameData *conname = PG_CONNAME(1);
     pg_curl_t *curl = pg_curl_easy_init(conname);
     if (PG_ARGISNULL(0)) ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("curl_easy_setopt_* requires argument parameter")));
     parameter = PG_GETARG_BYTEA_PP(0);
@@ -632,7 +634,7 @@ static Datum pg_curl_easy_setopt_blob(PG_FUNCTION_ARGS, CURLoption option) {
 static Datum pg_curl_easy_setopt_char(PG_FUNCTION_ARGS, CURLoption option) {
     CURLcode ec = CURL_LAST;
     char *parameter;
-    NameData *conname = PG_ARGISNULL(1) ? NULL : PG_GETARG_NAME(1);
+    NameData *conname = PG_CONNAME(1);
     pg_curl_t *curl = pg_curl_easy_init(conname);
     if (PG_ARGISNULL(0)) ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("curl_easy_setopt_* requires argument parameter")));
     parameter = TextDatumGetCString(PG_GETARG_DATUM(0));
@@ -1203,7 +1205,7 @@ EXTENSION(pg_curl_easy_setopt_xoauth2_bearer) {
 static Datum pg_curl_easy_setopt_long(PG_FUNCTION_ARGS, CURLoption option) {
     CURLcode ec = CURL_LAST;
     long parameter;
-    NameData *conname = PG_ARGISNULL(1) ? NULL : PG_GETARG_NAME(1);
+    NameData *conname = PG_CONNAME(1);
     pg_curl_t *curl = pg_curl_easy_init(conname);
     if (PG_ARGISNULL(0)) ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("curl_easy_setopt_* requires argument parameter")));
     parameter = PG_GETARG_INT64(0);
@@ -1749,7 +1751,7 @@ EXTENSION(pg_curl_easy_setopt_use_ssl) {
 }
 EXTENSION(pg_curl_easy_setopt_verbose) {
     CURLcode ec = CURL_LAST;
-    NameData *conname = PG_ARGISNULL(0) ? NULL : PG_GETARG_NAME(0);
+    NameData *conname = PG_CONNAME(0);
     pg_curl_t *curl = pg_curl_easy_init(conname);
     if ((ec = curl_easy_setopt(curl->easy, CURLOPT_DEBUGDATA, curl)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
     if ((ec = curl_easy_setopt(curl->easy, CURLOPT_DEBUGFUNCTION, pg_debug_callback)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
@@ -1841,7 +1843,7 @@ EXTENSION(pg_curl_easy_perform) {
     CURLMcode mc;
     int try;
     long sleep;
-    NameData *conname = PG_ARGISNULL(2) ? NULL : PG_GETARG_NAME(2);
+    NameData *conname = PG_CONNAME(2);
     pg_curl_t *curl = pg_curl_easy_init(conname);
     resetStringInfo(&curl->data_in);
     resetStringInfo(&curl->data_out);
@@ -1911,35 +1913,35 @@ EXTENSION(pg_curl_easy_perform) {
 }
 
 EXTENSION(pg_curl_easy_getinfo_debug) {
-    NameData *conname = PG_ARGISNULL(0) ? NULL : PG_GETARG_NAME(0);
+    NameData *conname = PG_CONNAME(0);
     pg_curl_t *curl = pg_curl_easy_init(conname);
     if (!curl->debug.len) PG_RETURN_NULL();
     PG_RETURN_TEXT_P(cstring_to_text_with_len(curl->debug.data, curl->debug.len));
 }
 
 EXTENSION(pg_curl_easy_getinfo_header_in) {
-    NameData *conname = PG_ARGISNULL(0) ? NULL : PG_GETARG_NAME(0);
+    NameData *conname = PG_CONNAME(0);
     pg_curl_t *curl = pg_curl_easy_init(conname);
     if (!curl->header_in.len) PG_RETURN_NULL();
     PG_RETURN_TEXT_P(cstring_to_text_with_len(curl->header_in.data, curl->header_in.len));
 }
 
 EXTENSION(pg_curl_easy_getinfo_header_out) {
-    NameData *conname = PG_ARGISNULL(0) ? NULL : PG_GETARG_NAME(0);
+    NameData *conname = PG_CONNAME(0);
     pg_curl_t *curl = pg_curl_easy_init(conname);
     if (!curl->header_out.len) PG_RETURN_NULL();
     PG_RETURN_TEXT_P(cstring_to_text_with_len(curl->header_out.data, curl->header_out.len));
 }
 
 EXTENSION(pg_curl_easy_getinfo_data_in) {
-    NameData *conname = PG_ARGISNULL(0) ? NULL : PG_GETARG_NAME(0);
+    NameData *conname = PG_CONNAME(0);
     pg_curl_t *curl = pg_curl_easy_init(conname);
     if (!curl->data_in.len) PG_RETURN_NULL();
     PG_RETURN_BYTEA_P(cstring_to_text_with_len(curl->data_in.data, curl->data_in.len));
 }
 
 EXTENSION(pg_curl_easy_getinfo_data_out) {
-    NameData *conname = PG_ARGISNULL(0) ? NULL : PG_GETARG_NAME(0);
+    NameData *conname = PG_CONNAME(0);
     pg_curl_t *curl = pg_curl_easy_init(conname);
     if (!curl->data_out.len) PG_RETURN_NULL();
     PG_RETURN_BYTEA_P(cstring_to_text_with_len(curl->data_out.data, curl->data_out.len));
@@ -1956,20 +1958,20 @@ EXTENSION(pg_curl_easy_getinfo_response) {
 }
 
 EXTENSION(pg_curl_easy_getinfo_errbuf) {
-    NameData *conname = PG_ARGISNULL(0) ? NULL : PG_GETARG_NAME(0);
+    NameData *conname = PG_CONNAME(0);
     pg_curl_t *curl = pg_curl_easy_init(conname);
     if (!curl->errbuf[0]) PG_RETURN_NULL();
     PG_RETURN_TEXT_P(cstring_to_text(curl->errbuf));
 }
 
 EXTENSION(pg_curl_easy_getinfo_errdesc) {
-    NameData *conname = PG_ARGISNULL(0) ? NULL : PG_GETARG_NAME(0);
+    NameData *conname = PG_CONNAME(0);
     pg_curl_t *curl = pg_curl_easy_init(conname);
     PG_RETURN_TEXT_P(cstring_to_text(curl_easy_strerror(curl->errcode)));
 }
 
 EXTENSION(pg_curl_easy_getinfo_errcode) {
-    NameData *conname = PG_ARGISNULL(0) ? NULL : PG_GETARG_NAME(0);
+    NameData *conname = PG_CONNAME(0);
     pg_curl_t *curl = pg_curl_easy_init(conname);
     PG_RETURN_INT64(curl->errcode);
 }
@@ -1978,7 +1980,7 @@ static Datum pg_curl_easy_getinfo_char(PG_FUNCTION_ARGS, CURLINFO info) {
 #if CURL_AT_LEAST_VERSION(7, 4, 1)
     CURLcode ec = CURL_LAST;
     char *value = NULL;
-    NameData *conname = PG_ARGISNULL(0) ? NULL : PG_GETARG_NAME(0);
+    NameData *conname = PG_CONNAME(0);
     pg_curl_t *curl = pg_curl_easy_init(conname);
     if ((ec = curl_easy_getinfo(curl->easy, info, &value)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
     if (!value) PG_RETURN_NULL();
@@ -2049,7 +2051,7 @@ static Datum pg_curl_easy_getinfo_long(PG_FUNCTION_ARGS, CURLINFO info) {
 #if CURL_AT_LEAST_VERSION(7, 4, 1)
     CURLcode ec = CURL_LAST;
     long value;
-    NameData *conname = PG_ARGISNULL(0) ? NULL : PG_GETARG_NAME(0);
+    NameData *conname = PG_CONNAME(0);
     pg_curl_t *curl = pg_curl_easy_init(conname);
     if ((ec = curl_easy_getinfo(curl->easy, info, &value)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
     PG_RETURN_INT64(value);
