@@ -12,8 +12,8 @@ CREATE FUNCTION curl_easy_reset(conname NAME DEFAULT NULL) RETURNS void AS 'MODU
 CREATE FUNCTION curl_easy_escape(string text, conname NAME DEFAULT NULL) RETURNS text AS 'MODULE_PATHNAME', 'pg_curl_easy_escape' LANGUAGE 'c';
 CREATE FUNCTION curl_easy_unescape(url text, conname NAME DEFAULT NULL) RETURNS text AS 'MODULE_PATHNAME', 'pg_curl_easy_unescape' LANGUAGE 'c';
 
-CREATE FUNCTION curl_postfield_append(name text, value text default null, conname NAME DEFAULT NULL) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_postfield_append' LANGUAGE 'c';
-CREATE FUNCTION curl_url_append(name text, value text default null, conname NAME DEFAULT NULL) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_url_append' LANGUAGE 'c';
+CREATE FUNCTION curl_postfield_append(name text, value text DEFAULT null, conname NAME DEFAULT NULL) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_postfield_append' LANGUAGE 'c';
+CREATE FUNCTION curl_url_append(name text, value text DEFAULT null, conname NAME DEFAULT NULL) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_url_append' LANGUAGE 'c';
 
 CREATE FUNCTION curl_header_append(name text, value text, conname NAME DEFAULT NULL) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_header_append' LANGUAGE 'c';
 CREATE FUNCTION curl_postquote_append(command text, conname NAME DEFAULT NULL) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_postquote_append' LANGUAGE 'c';
@@ -21,9 +21,9 @@ CREATE FUNCTION curl_prequote_append(command text, conname NAME DEFAULT NULL) RE
 CREATE FUNCTION curl_quote_append(command text, conname NAME DEFAULT NULL) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_quote_append' LANGUAGE 'c';
 CREATE FUNCTION curl_recipient_append(email text, conname NAME DEFAULT NULL) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_recipient_append' LANGUAGE 'c';
 
-CREATE FUNCTION curl_mime_data(data bytea, name text default null, file text default null, type text default null, code text default null, head text default null, conname NAME DEFAULT NULL) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_mime_data_bytea' LANGUAGE 'c';
-CREATE FUNCTION curl_mime_data(data text, name text default null, file text default null, type text default null, code text default null, head text default null, conname NAME DEFAULT NULL) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_mime_data_text' LANGUAGE 'c';
-CREATE FUNCTION curl_mime_file(data text, name text default null, file text default null, type text default null, code text default null, head text default null, conname NAME DEFAULT NULL) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_mime_file' LANGUAGE 'c';
+CREATE FUNCTION curl_mime_data(data bytea, name text DEFAULT null, file text DEFAULT null, type text DEFAULT null, code text DEFAULT null, head text DEFAULT null, conname NAME DEFAULT NULL) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_mime_data_bytea' LANGUAGE 'c';
+CREATE FUNCTION curl_mime_data(data text, name text DEFAULT null, file text DEFAULT null, type text DEFAULT null, code text DEFAULT null, head text DEFAULT null, conname NAME DEFAULT NULL) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_mime_data_text' LANGUAGE 'c';
+CREATE FUNCTION curl_mime_file(data text, name text DEFAULT null, file text DEFAULT null, type text DEFAULT null, code text DEFAULT null, head text DEFAULT null, conname NAME DEFAULT NULL) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_mime_file' LANGUAGE 'c';
 
 CREATE FUNCTION curl_easy_setopt_postfields(parameter bytea, conname NAME DEFAULT NULL) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_postfields' LANGUAGE 'c';
 
@@ -231,8 +231,8 @@ CREATE FUNCTION curl_easy_setopt_use_ssl(parameter bigint, conname NAME DEFAULT 
 CREATE FUNCTION curl_easy_setopt_verbose(parameter bigint, conname NAME DEFAULT NULL) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_verbose' LANGUAGE 'c';
 CREATE FUNCTION curl_easy_setopt_wildcardmatch(parameter bigint, conname NAME DEFAULT NULL) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_setopt_wildcardmatch' LANGUAGE 'c';
 
-CREATE FUNCTION curl_easy_perform(try int default 1, sleep bigint default 1000000, conname NAME DEFAULT NULL) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_perform' LANGUAGE 'c';
-CREATE FUNCTION curl_multi_perform(try int default 1, sleep bigint default 1000000) RETURNS void AS 'MODULE_PATHNAME', 'pg_curl_multi_perform' LANGUAGE 'c';
+CREATE FUNCTION curl_easy_perform(try int DEFAULT 1, sleep bigint DEFAULT 1000000, conname NAME DEFAULT NULL) RETURNS boolean AS 'MODULE_PATHNAME', 'pg_curl_easy_perform' LANGUAGE 'c';
+CREATE FUNCTION curl_multi_perform(try int DEFAULT 1, sleep bigint DEFAULT 1000000, timeout_ms int DEFAULT 1000) RETURNS void AS 'MODULE_PATHNAME', 'pg_curl_multi_perform' LANGUAGE 'c';
 
 CREATE FUNCTION curl_easy_getinfo_headers(conname NAME DEFAULT NULL) RETURNS text AS 'MODULE_PATHNAME', 'pg_curl_easy_getinfo_headers' LANGUAGE 'c';
 CREATE FUNCTION curl_easy_getinfo_response(conname NAME DEFAULT NULL) RETURNS bytea AS 'MODULE_PATHNAME', 'pg_curl_easy_getinfo_response' LANGUAGE 'c';
