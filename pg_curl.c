@@ -67,7 +67,9 @@ typedef struct {
 static bool pg_curl_transaction = true;
 static CURLM *multi = NULL;
 static HTAB *pg_curl_hash = NULL;
+#if PG_VERSION_NUM >= 90500
 static MemoryContextCallback multi_cleanup = {0};
+#endif
 static pg_curl_global_t pg_curl_global = {0};
 static pg_curl_t pg_curl = {0};
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -163,6 +165,7 @@ static void pg_curl_hash_init(void) {
     }
 }
 
+#if PG_VERSION_NUM >= 90500
 static void pg_curl_global_cleanup(void *arg) {
     if (!pg_curl_global.context) return;
     pqsignal(SIGINT, pg_curl_global.interrupt.handler);
@@ -171,6 +174,7 @@ static void pg_curl_global_cleanup(void *arg) {
 #endif
     pg_curl_global.context = NULL;
 }
+#endif
 
 static void pg_curl_multi_remove_handle(pg_curl_t *curl) {
     CURLMcode mc;
@@ -179,6 +183,7 @@ static void pg_curl_multi_remove_handle(pg_curl_t *curl) {
     curl->multi = NULL;
 }
 
+#if PG_VERSION_NUM >= 90500
 static void pg_curl_easy_cleanup(void *arg) {
     pg_curl_t *curl = arg;
     if (!curl || !curl->easy) return;
@@ -197,6 +202,7 @@ static void pg_curl_easy_cleanup(void *arg) {
     curl->easy = NULL;
     if (NameStr(curl->conname)[0] && !hash_search(pg_curl_hash, NameStr(curl->conname), HASH_REMOVE, NULL)) ereport(ERROR, (errcode(ERRCODE_UNDEFINED_OBJECT), errmsg("undefined connection name")));
 }
+#endif
 
 static void pg_curl_global_init(void) {
     MemoryContext oldMemoryContext;
@@ -221,12 +227,14 @@ static void pg_curl_global_init(void) {
     MemoryContextSwitchTo(oldMemoryContext);
 }
 
+#if PG_VERSION_NUM >= 90500
 static void pg_curl_multi_cleanup(void *arg) {
     CURLMcode mc;
     CURLM *multi = arg;
     if (!multi) return;
     if ((mc = curl_multi_cleanup(multi)) != CURLM_OK) ereport(ERROR, (pg_curl_mc(mc), errmsg("%s", curl_multi_strerror(mc))));
 }
+#endif
 
 static void pg_curl_multi_init(void) {
     if (multi) return;
