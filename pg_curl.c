@@ -75,11 +75,17 @@ static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 static void pg_curl_interrupt_handler(int sig) { pg_curl_global.interrupt.requested = sig; }
 
 static int pg_curl_ec(CURLcode ec) {
-    return MAKE_SQLSTATE('X','X','0','0','0');
+    if (ec < 10) return MAKE_SQLSTATE('X','E','0','0','0'+ec);
+    if (ec < 100) return MAKE_SQLSTATE('X','E','0','0'+ec/10,'0'+ec%10);
+    if (ec < 1000) return MAKE_SQLSTATE('X','E','0'+ec/100,'0'+(ec%100)/10,'0'+(ec%100)%10);
+    return MAKE_SQLSTATE('X','E','0','0','0');
 }
 
 static int pg_curl_mc(CURLMcode mc) {
-    return MAKE_SQLSTATE('X','X','0','0','0');
+    if (mc < 10) return MAKE_SQLSTATE('X','E','0','0','0'+mc);
+    if (mc < 100) return MAKE_SQLSTATE('X','E','0','0'+mc/10,'0'+mc%10);
+    if (mc < 1000) return MAKE_SQLSTATE('X','E','0'+mc/100,'0'+(mc%100)/10,'0'+(mc%100)%10);
+    return MAKE_SQLSTATE('X','M','0','0','0');
 }
 
 #if CURL_AT_LEAST_VERSION(7, 12, 0)
@@ -1808,12 +1814,12 @@ EXTENSION(pg_curl_multi_perform) {
                 } // fall through
                 default: {
                     if (curl->try < try) {
-                        if (curl->errbuf[0]) ereport(WARNING, (errmsg("%s", curl_easy_strerror(ec)), errdetail("%s", curl->errbuf), errcontext("try %i", curl->try)));
-                        else ereport(WARNING, (errmsg("%s", curl_easy_strerror(ec)), errdetail("try %i", curl->try)));
+                        if (curl->errbuf[0]) ereport(WARNING, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec)), errdetail("%s", curl->errbuf), errcontext("try %i", curl->try)));
+                        else ereport(WARNING, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec)), errdetail("try %i", curl->try)));
                         sleep_need = true;
                     } else {
-                        if (curl->errbuf[0]) ereport(WARNING, (errmsg("%s", curl_easy_strerror(ec)), errdetail("%s", curl->errbuf)));
-                        else ereport(WARNING, (errmsg("%s", curl_easy_strerror(ec))));
+                        if (curl->errbuf[0]) ereport(WARNING, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec)), errdetail("%s", curl->errbuf)));
+                        else ereport(WARNING, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
                     }
                 } break;
             }
@@ -1888,8 +1894,8 @@ EXTENSION(pg_curl_easy_perform) {
             } // fall through
             default: {
                 if (curl->try < try) {
-                    if (curl->errbuf[0]) ereport(WARNING, (errmsg("%s", curl_easy_strerror(ec)), errdetail("%s", curl->errbuf), errcontext("try %i", curl->try)));
-                    else ereport(WARNING, (errmsg("%s", curl_easy_strerror(ec)), errdetail("try %i", curl->try)));
+                    if (curl->errbuf[0]) ereport(WARNING, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec)), errdetail("%s", curl->errbuf), errcontext("try %i", curl->try)));
+                    else ereport(WARNING, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec)), errdetail("try %i", curl->try)));
                     sleep_need = true;
                 } else {
                     if (curl->errbuf[0]) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec)), errdetail("%s", curl->errbuf)));
