@@ -159,7 +159,7 @@ static void pg_curl_hash_init(void) {
             .keysize = sizeof(NameData),
             .entrysize = sizeof(pg_curl_t),
         };
-        pg_curl_hash = hash_create("Connection name hash", NUMCONN, &ctl, HASH_ELEM | HASH_STRINGS);
+        pg_curl_hash = hash_create("Connection name hash", NUMCONN, &ctl, HASH_ELEM);
     }
 }
 
