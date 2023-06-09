@@ -15,9 +15,6 @@ select curl_easy_setopt_url('https://httpbin.org/basic-auth/username/password', 
 select curl_easy_setopt_username('username', conname:='2');
 select curl_easy_setopt_url('https://httpbin.org/bearer', conname:='3');
 select curl_header_append('Authorization', 'Bearer token', conname:='3');
-select curl_easy_perform(conname:='1');
-select curl_easy_perform(conname:='2');
-select curl_easy_perform(conname:='3');
 select curl_multi_perform();
 with s as (
     select regexp_matches(curl_easy_getinfo_header_in(conname:='1'), E'([^ \t\r\n\f]+): ?([^\t\r\n\f]+)', 'g') as s

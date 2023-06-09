@@ -7,9 +7,6 @@ t
 t
 t
 t
-t
-t
-t
 
 www-authenticate|Basic realm="Fake Realm"
 access-control-allow-origin|*
