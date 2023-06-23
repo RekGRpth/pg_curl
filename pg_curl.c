@@ -1853,7 +1853,7 @@ EXTENSION(pg_curl_multi_perform) {
     do {
         bool sleep_need = false;
         CHECK_FOR_INTERRUPTS();
-        if ((mc = curl_multi_poll(multi, NULL, 0, timeout_ms, NULL)) != CURLM_OK) ereport(ERROR, (pg_curl_mc(mc), errmsg("%s", curl_multi_strerror(mc))));
+        if ((mc = curl_multi_wait(multi, NULL, 0, timeout_ms, NULL)) != CURLM_OK) ereport(ERROR, (pg_curl_mc(mc), errmsg("%s", curl_multi_strerror(mc))));
         if ((mc = curl_multi_perform(multi, &running_handles)) != CURLM_OK) ereport(ERROR, (pg_curl_mc(mc), errmsg("%s", curl_multi_strerror(mc))));
         while ((msg = curl_multi_info_read(multi, &msgs_in_queue))) if (msg->msg == CURLMSG_DONE) {
             pg_curl_t *curl;
