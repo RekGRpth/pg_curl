@@ -189,13 +189,19 @@ static void pg_curl_easy_cleanup(void *arg) {
     if (!curl || !curl->easy) return;
 #if CURL_AT_LEAST_VERSION(7, 56, 0)
     curl_mime_free(curl->mime);
+    curl->mime = NULL;
 #endif
     curl_slist_free_all(curl->header);
+    curl->header = NULL;
     curl_slist_free_all(curl->postquote);
+    curl->postquote = NULL;
     curl_slist_free_all(curl->prequote);
+    curl->prequote = NULL;
     curl_slist_free_all(curl->quote);
+    curl->quote = NULL;
 #if CURL_AT_LEAST_VERSION(7, 20, 0)
     curl_slist_free_all(curl->recipient);
+    curl->recipient = NULL;
 #endif
     pg_curl_multi_remove_handle(curl);
     curl_easy_cleanup(curl->easy);
