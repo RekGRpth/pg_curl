@@ -58,6 +58,6 @@ select curl_easy_perform();
 with s as (
     select regexp_matches(curl_easy_getinfo_header_in(), E'([^ \t\r\n\f]+): ?([^\t\r\n\f]+)', 'g') as s
 ) select s[1] as key, s[2] as value from s where s[1] not in ('date', 'server', 'content-length');
-select jsonb_pretty(((convert_from(curl_easy_getinfo_data_in(), 'utf-8')::jsonb #- '{headers,X-Amzn-Trace-Id}'::text[]) #- '{headers,Content-Type}'::text[]) - 'origin');
+select jsonb_pretty((((convert_from(curl_easy_getinfo_data_in(), 'utf-8')::jsonb #- '{headers,X-Amzn-Trace-Id}'::text[]) #- '{headers,Content-Type}'::text[]) #- '{headers,Content-Length}'::text[]) - 'origin');
 select curl_easy_getinfo_errcode(), curl_easy_getinfo_errdesc(), curl_easy_getinfo_errbuf();
 ROLLBACK;
