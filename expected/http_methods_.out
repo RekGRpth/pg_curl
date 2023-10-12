@@ -116,7 +116,7 @@ access-control-allow-credentials|true
     "headers": {
         "Host": "httpbin.org",
         "Accept": "*/*",
-        "Content-Length": "476"
+        "Content-Length": "506"
     }
 }
 0|No error|
