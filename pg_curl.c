@@ -1765,7 +1765,7 @@ EXTENSION(pg_curl_easy_setopt_use_ssl) {
 }
 EXTENSION(pg_curl_easy_setopt_verbose) {
     CURLcode ec = CURL_LAST;
-    NameData *conname = PG_CONNAME(0);
+    NameData *conname = PG_CONNAME(1);
     pg_curl_t *curl = pg_curl_easy_init(conname);
     if ((ec = curl_easy_setopt(curl->easy, CURLOPT_DEBUGDATA, curl)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
     if ((ec = curl_easy_setopt(curl->easy, CURLOPT_DEBUGFUNCTION, pg_debug_callback)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
