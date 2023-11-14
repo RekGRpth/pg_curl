@@ -1846,12 +1846,12 @@ static CURLcode pg_curl_easy_prepare(pg_curl_t *curl) {
 #endif
     if ((ec = curl_easy_setopt(curl->easy, CURLOPT_NOPROGRESS, 0L)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
     if ((ec = curl_easy_setopt(curl->easy, CURLOPT_NOSIGNAL, 1L)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
-    if (curl->postfield.len && (ec = curl_easy_setopt(curl->easy, CURLOPT_POSTFIELDSIZE, curl->postfield.len)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
     if (curl->postfield.len && (ec = curl_easy_setopt(curl->easy, CURLOPT_POSTFIELDS, curl->postfield.data)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
+    if (curl->postfield.len && (ec = curl_easy_setopt(curl->easy, CURLOPT_POSTFIELDSIZE, curl->postfield.len)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
     if (curl->readdata.len && (ec = curl_easy_setopt(curl->easy, CURLOPT_INFILESIZE, curl->readdata.len)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
     if (curl->readdata.len && (ec = curl_easy_setopt(curl->easy, CURLOPT_READDATA, curl)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
-    if (curl->readdata.len && (ec = curl_easy_setopt(curl->easy, CURLOPT_UPLOAD, 1L)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
     if (curl->readdata.len && (ec = curl_easy_setopt(curl->easy, CURLOPT_READFUNCTION, pg_read_callback)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
+    if (curl->readdata.len && (ec = curl_easy_setopt(curl->easy, CURLOPT_UPLOAD, 1L)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
     if ((ec = curl_easy_setopt(curl->easy, CURLOPT_URL, curl->url.data)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
     if ((ec = curl_easy_setopt(curl->easy, CURLOPT_WRITEDATA, curl)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
     if ((ec = curl_easy_setopt(curl->easy, CURLOPT_WRITEFUNCTION, pg_write_callback)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
