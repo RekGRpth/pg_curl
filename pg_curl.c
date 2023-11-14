@@ -43,6 +43,7 @@ typedef struct {
     StringInfoData header_in;
     StringInfoData header_out;
     StringInfoData postfield;
+    StringInfoData readdata;
     StringInfoData url;
     struct curl_slist *header;
     struct curl_slist *postquote;
@@ -275,6 +276,7 @@ static pg_curl_t *pg_curl_easy_init(NameData *conname) {
     initStringInfo(&curl->header_in);
     initStringInfo(&curl->header_out);
     initStringInfo(&curl->postfield);
+    initStringInfo(&curl->readdata);
     initStringInfo(&curl->url);
 #if PG_VERSION_NUM >= 90500
     curl->easy_cleanup.arg = curl;
@@ -367,6 +369,7 @@ EXTENSION(pg_curl_easy_reset) {
     resetStringInfo(&curl->header_in);
     resetStringInfo(&curl->header_out);
     resetStringInfo(&curl->postfield);
+    resetStringInfo(&curl->readdata);
     resetStringInfo(&curl->url);
     pg_curl_multi_remove_handle(curl);
     PG_RETURN_VOID();
@@ -576,6 +579,19 @@ EXTENSION(pg_curl_easy_setopt_postfields) {
     parameter = PG_GETARG_BYTEA_PP(0);
     resetStringInfo(&curl->postfield);
     appendBinaryStringInfo(&curl->postfield, VARDATA_ANY(parameter), VARSIZE_ANY_EXHDR(parameter));
+    PG_FREE_IF_COPY(parameter, 0);
+    PG_RETURN_BOOL(ec == CURLE_OK);
+}
+
+EXTENSION(pg_curl_easy_setopt_readdata) {
+    CURLcode ec = CURLE_OK;
+    bytea *parameter;
+    NameData *conname = PG_CONNAME(1);
+    pg_curl_t *curl = pg_curl_easy_init(conname);
+    if (PG_ARGISNULL(0)) ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("curl_easy_setopt_readdata requires argument parameter")));
+    parameter = PG_GETARG_BYTEA_PP(0);
+    resetStringInfo(&curl->readdata);
+    appendBinaryStringInfo(&curl->readdata, VARDATA_ANY(parameter), VARSIZE_ANY_EXHDR(parameter));
     PG_FREE_IF_COPY(parameter, 0);
     PG_RETURN_BOOL(ec == CURLE_OK);
 }
@@ -1790,6 +1806,17 @@ static size_t pg_header_callback(char *buffer, size_t size, size_t nitems, void 
     return size;
 }
 
+static size_t pg_read_callback(char *buffer, size_t size, size_t nitems, void *userdata) {
+    pg_curl_t *curl = userdata;
+    size_t reqsize = size * nitems;
+    StringInfoData *si = &curl->readdata;
+    size_t remaining = si->len - si->cursor;
+    size_t readsize = reqsize < remaining ? reqsize : remaining;
+    memcpy(buffer, si->data + si->cursor, readsize);
+    si->cursor += readsize;
+    return readsize;
+}
+
 static size_t pg_write_callback(char *ptr, size_t size, size_t nmemb, void *userdata) {
     pg_curl_t *curl = userdata;
     size *= nmemb;
@@ -1821,6 +1848,10 @@ static CURLcode pg_curl_easy_prepare(pg_curl_t *curl) {
     if ((ec = curl_easy_setopt(curl->easy, CURLOPT_NOSIGNAL, 1L)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
     if (curl->postfield.len && (ec = curl_easy_setopt(curl->easy, CURLOPT_POSTFIELDSIZE, curl->postfield.len)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
     if (curl->postfield.len && (ec = curl_easy_setopt(curl->easy, CURLOPT_POSTFIELDS, curl->postfield.data)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
+    if (curl->readdata.len && (ec = curl_easy_setopt(curl->easy, CURLOPT_INFILESIZE, curl->readdata.len)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
+    if (curl->readdata.len && (ec = curl_easy_setopt(curl->easy, CURLOPT_READDATA, curl)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
+    if (curl->readdata.len && (ec = curl_easy_setopt(curl->easy, CURLOPT_UPLOAD, 1L)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
+    if (curl->readdata.len && (ec = curl_easy_setopt(curl->easy, CURLOPT_READFUNCTION, pg_read_callback)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
     if ((ec = curl_easy_setopt(curl->easy, CURLOPT_URL, curl->url.data)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
     if ((ec = curl_easy_setopt(curl->easy, CURLOPT_WRITEDATA, curl)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
     if ((ec = curl_easy_setopt(curl->easy, CURLOPT_WRITEFUNCTION, pg_write_callback)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
