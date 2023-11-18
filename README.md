@@ -76,6 +76,34 @@ CREATE OR REPLACE FUNCTION email(url TEXT, username TEXT, password TEXT, subject
 $BODY$;
 ```
 
+# ftp upload
+```sql
+CREATE OR REPLACE FUNCTION upload(url TEXT, username TEXT, password TEXT, file BYTEA) RETURNS TEXT LANGUAGE SQL AS $BODY$
+    WITH s AS (SELECT
+        curl_easy_reset(),
+        curl_easy_setopt_password(password),
+        curl_easy_setopt_readdata(file),
+        curl_easy_setopt_url(url),
+        curl_easy_setopt_username(username),
+        curl_easy_perform(),
+        curl_easy_getinfo_header_in()
+    ) SELECT curl_easy_getinfo_header_in FROM s;
+$BODY$;
+```
+# ftp download
+```sql
+CREATE OR REPLACE FUNCTION download(url TEXT, username TEXT, password TEXT) RETURNS BYTEA LANGUAGE SQL AS $BODY$
+    WITH s AS (SELECT
+        curl_easy_reset(),
+        curl_easy_setopt_password(password),
+        curl_easy_setopt_url(url),
+        curl_easy_setopt_username(username),
+        curl_easy_perform(),
+        curl_easy_getinfo_data_in()
+    ) SELECT curl_easy_getinfo_data_in FROM s;
+$BODY$;
+```
+
 # convert http headers to table
 ```sql
 WITH s AS (
