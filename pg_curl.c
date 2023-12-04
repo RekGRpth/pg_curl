@@ -680,8 +680,9 @@ static int pg_debug_callback(CURL *handle, curl_infotype type, char *data, size_
     pg_curl_t *curl = userptr;
     if (size) switch (type) {
         case CURLINFO_DATA_OUT: appendBinaryStringInfo(&curl->data_out, data, size); break;
-        case CURLINFO_HEADER_OUT: appendBinaryStringInfo(&curl->header_out, data, size); break;
-        case CURLINFO_TEXT: appendBinaryStringInfo(&curl->debug, data, size); break;
+        case CURLINFO_HEADER_IN: fwrite("< ", sizeof("< ") - 1, 1, stderr); fwrite(data, size, 1, stderr); break;
+        case CURLINFO_HEADER_OUT: fwrite("> ", sizeof("> ") - 1, 1, stderr); fwrite(data, size, 1, stderr); appendBinaryStringInfo(&curl->header_out, data, size); break;
+        case CURLINFO_TEXT: fwrite("* ", sizeof("* ") - 1, 1, stderr); fwrite(data, size, 1, stderr); appendBinaryStringInfo(&curl->debug, data, size); break;
         default: break;
     }
     return 0;
