@@ -8,6 +8,7 @@
 #endif
 #include <miscadmin.h>
 #include <signal.h>
+#include <tcop/tcopprot.h>
 #include <utils/builtins.h>
 #include <utils/guc.h>
 #include <utils/hsearch.h>
@@ -75,7 +76,7 @@ static pg_curl_global_t pg_curl_global = {0};
 static pg_curl_t pg_curl = {0};
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
-static void pg_curl_interrupt_handler(int sig) { pg_curl_global.interrupt.requested = sig; }
+static void pg_curl_interrupt_handler(SIGNAL_ARGS) { pg_curl_global.interrupt.requested = postgres_signal_arg; }
 
 static int pg_curl_ec(CURLcode ec) {
     if (ec < 10) return errcode(MAKE_SQLSTATE('X','E','0','0','0'+ec));
@@ -226,7 +227,8 @@ static void pg_curl_global_init(void) {
     if (curl_global_init(CURL_GLOBAL_ALL)) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_global_init")));
 #endif
     pg_curl_global.interrupt.requested = 0;
-    pg_curl_global.interrupt.handler = pqsignal(SIGINT, pg_curl_interrupt_handler);
+    pg_curl_global.interrupt.handler = StatementCancelHandler;
+    pqsignal(SIGINT, pg_curl_interrupt_handler);
 #if PG_VERSION_NUM >= 90500
     pg_curl_global.cleanup.func = pg_curl_global_cleanup;
     MemoryContextRegisterResetCallback(pg_curl_global.context, &pg_curl_global.cleanup);
