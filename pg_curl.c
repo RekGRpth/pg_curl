@@ -48,7 +48,7 @@ typedef struct {
 static bool pg_curl_transaction = true;
 static CURLM *pg_curl_multi = NULL;
 static HTAB *pg_curl_hash = NULL;
-static MemoryContext global_context = NULL;
+static MemoryContext pg_curl_context = NULL;
 #if PG_VERSION_NUM >= 90500
 static MemoryContextCallback global_cleanup = {0};
 static MemoryContextCallback multi_cleanup = {0};
@@ -75,7 +75,7 @@ static void *pg_curl_malloc_callback(size_t size) {
     void *result;
     pthread_mutex_lock(&mutex);
     PG_TRY(); {
-        result = size ? MemoryContextAlloc(global_context, size) : NULL;
+        result = size ? MemoryContextAlloc(pg_curl_context, size) : NULL;
     } PG_CATCH(); {
         pthread_mutex_unlock(&mutex);
         PG_RE_THROW();
@@ -99,7 +99,7 @@ static void *pg_curl_realloc_callback(void *ptr, size_t size) {
     void *result;
     pthread_mutex_lock(&mutex);
     PG_TRY(); {
-        result = (ptr && size) ? repalloc(ptr, size) : (size ? MemoryContextAlloc(global_context, size) : ptr);
+        result = (ptr && size) ? repalloc(ptr, size) : (size ? MemoryContextAlloc(pg_curl_context, size) : ptr);
     } PG_CATCH(); {
         pthread_mutex_unlock(&mutex);
         PG_RE_THROW();
@@ -112,7 +112,7 @@ static char *pg_curl_strdup_callback(const char *str) {
     char *result;
     pthread_mutex_lock(&mutex);
     PG_TRY(); {
-        result = MemoryContextStrdup(global_context, str);
+        result = MemoryContextStrdup(pg_curl_context, str);
     } PG_CATCH(); {
         pthread_mutex_unlock(&mutex);
         PG_RE_THROW();
@@ -125,7 +125,7 @@ static void *pg_curl_calloc_callback(size_t nmemb, size_t size) {
     void *result;
     pthread_mutex_lock(&mutex);
     PG_TRY(); {
-        result = MemoryContextAllocZero(global_context, nmemb * size);
+        result = MemoryContextAllocZero(pg_curl_context, nmemb * size);
     } PG_CATCH(); {
         pthread_mutex_unlock(&mutex);
         PG_RE_THROW();
@@ -147,11 +147,11 @@ static void pg_curl_hash_init(void) {
 
 #if PG_VERSION_NUM >= 90500
 static void pg_curl_global_cleanup(void *arg) {
-    if (!global_context) return;
+    if (!pg_curl_context) return;
 #if CURL_AT_LEAST_VERSION(7, 8, 0)
     curl_global_cleanup();
 #endif
-    global_context = NULL;
+    pg_curl_context = NULL;
 }
 #endif
 
@@ -192,13 +192,13 @@ static void pg_curl_easy_cleanup(void *arg) {
 
 static void pg_curl_global_init(void) {
     MemoryContext oldMemoryContext;
-    if (global_context) return;
+    if (pg_curl_context) return;
 #if PG_VERSION_NUM >= 90500
-    global_context = pg_curl_transaction ? TopTransactionContext : TopMemoryContext;
+    pg_curl_context = pg_curl_transaction ? TopTransactionContext : TopMemoryContext;
 #else
-    global_context = TopMemoryContext;
+    pg_curl_context = TopMemoryContext;
 #endif
-    oldMemoryContext = MemoryContextSwitchTo(global_context);
+    oldMemoryContext = MemoryContextSwitchTo(pg_curl_context);
 #if CURL_AT_LEAST_VERSION(7, 12, 0)
     if (curl_global_init_mem(CURL_GLOBAL_ALL, pg_curl_malloc_callback, pg_curl_free_callback, pg_curl_realloc_callback, pg_curl_strdup_callback, pg_curl_calloc_callback)) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_global_init_mem")));
 #elif CURL_AT_LEAST_VERSION(7, 8, 0)
@@ -206,7 +206,7 @@ static void pg_curl_global_init(void) {
 #endif
 #if PG_VERSION_NUM >= 90500
     global_cleanup.func = pg_curl_global_cleanup;
-    MemoryContextRegisterResetCallback(global_context, &global_cleanup);
+    MemoryContextRegisterResetCallback(pg_curl_context, &global_cleanup);
 #endif
     MemoryContextSwitchTo(oldMemoryContext);
 }
@@ -225,7 +225,7 @@ static void pg_curl_multi_init(void) {
     if (!(pg_curl_multi = curl_multi_init())) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_multi_init")));
 #if PG_VERSION_NUM >= 90500
     multi_cleanup.func = pg_curl_multi_cleanup;
-    MemoryContextRegisterResetCallback(global_context, &multi_cleanup);
+    MemoryContextRegisterResetCallback(pg_curl_context, &multi_cleanup);
 #endif
 }
 
@@ -234,7 +234,7 @@ static pg_curl_t *pg_curl_easy_init(NameData *conname) {
     MemoryContext oldMemoryContext;
     pg_curl_t *curl;
     pg_curl_global_init();
-    oldMemoryContext = MemoryContextSwitchTo(global_context);
+    oldMemoryContext = MemoryContextSwitchTo(pg_curl_context);
     pg_curl_multi_init();
     if (!conname) conname = &unknown;
     pg_curl_hash_init();
@@ -255,7 +255,7 @@ static pg_curl_t *pg_curl_easy_init(NameData *conname) {
 #if PG_VERSION_NUM >= 90500
     curl->easy_cleanup.arg = curl;
     curl->easy_cleanup.func = pg_curl_easy_cleanup;
-    MemoryContextRegisterResetCallback(global_context, &curl->easy_cleanup);
+    MemoryContextRegisterResetCallback(pg_curl_context, &curl->easy_cleanup);
 #endif
     MemoryContextSwitchTo(oldMemoryContext);
     if (!(curl->easy = curl_easy_init())) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_easy_init")));
