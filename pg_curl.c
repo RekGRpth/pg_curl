@@ -210,6 +210,7 @@ static void pg_curl_multi_cleanup(void *arg) {
 static void pg_curl_multi_init(void) {
     MemoryContextCallback *callback;
     if (pg_curl.multi) return;
+    pg_curl_global_init();
     if (!(pg_curl.multi = curl_multi_init())) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_multi_init")));
 #if PG_VERSION_NUM >= 90500
     callback = MemoryContextAlloc(pg_curl.context, sizeof(*callback));
@@ -223,7 +224,6 @@ static pg_curl_t *pg_curl_easy_init(NameData *conname) {
     MemoryContextCallback *callback;
     MemoryContext oldMemoryContext;
     pg_curl_t *curl;
-    pg_curl_global_init();
     pg_curl_multi_init();
     if (!conname) conname = &pg_curl.unknown;
     if (!pg_curl.easy) pg_curl.easy = hash_create("Connection name hash", NUMCONN, &(HASHCTL){.keysize = sizeof(NameData), .entrysize = sizeof(pg_curl_t)}, HASH_ELEM);
