@@ -1902,7 +1902,7 @@ EXTENSION(pg_curl_multi_perform) {
         }
         if (sleep_need && sleep) pg_usleep(sleep);
     } while (running_handles);
-    PG_RETURN_BOOL(ec == CURLE_OK);
+    PG_RETURN_BOOL(ec == CURLE_OK && mc == CURLM_OK);
 }
 
 EXTENSION(pg_curl_easy_getinfo_debug) {
