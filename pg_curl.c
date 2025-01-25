@@ -45,16 +45,22 @@ typedef struct {
 #endif
 } pg_curl_t;
 
-static bool pg_curl_transaction = true;
-static CURLM *pg_curl_multi = NULL;
-static HTAB *pg_curl_hash = NULL;
-static MemoryContext pg_curl_context = NULL;
+static struct {
+    bool transaction;
+    CURLM *multi;
+    HTAB *easy;
+    MemoryContext context;
 #if PG_VERSION_NUM >= 90500
-static MemoryContextCallback global_cleanup = {0};
-static MemoryContextCallback multi_cleanup = {0};
+    MemoryContextCallback global_cleanup;
+    MemoryContextCallback multi_cleanup;
 #endif
-static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-static NameData unknown = {"unknown"};
+    pthread_mutex_t mutex;
+    NameData unknown;
+} pg_curl = {
+    .transaction = true,
+    .mutex = PTHREAD_MUTEX_INITIALIZER,
+    .unknown = {"unknown"},
+};
 
 static int pg_curl_ec(CURLcode ec) {
     if (ec < 10) return errcode(MAKE_SQLSTATE('X','E','0','0','0'+ec));
@@ -73,85 +79,85 @@ static int pg_curl_mc(CURLMcode mc) {
 #if CURL_AT_LEAST_VERSION(7, 12, 0)
 static void *pg_curl_malloc_callback(size_t size) {
     void *result;
-    pthread_mutex_lock(&mutex);
+    pthread_mutex_lock(&pg_curl.mutex);
     PG_TRY(); {
-        result = size ? MemoryContextAlloc(pg_curl_context, size) : NULL;
+        result = size ? MemoryContextAlloc(pg_curl.context, size) : NULL;
     } PG_CATCH(); {
-        pthread_mutex_unlock(&mutex);
+        pthread_mutex_unlock(&pg_curl.mutex);
         PG_RE_THROW();
     } PG_END_TRY();
-    pthread_mutex_unlock(&mutex);
+    pthread_mutex_unlock(&pg_curl.mutex);
     return result;
 }
 
 static void pg_curl_free_callback(void *ptr) {
-    pthread_mutex_lock(&mutex);
+    pthread_mutex_lock(&pg_curl.mutex);
     PG_TRY(); {
         if (ptr) pfree(ptr);
     } PG_CATCH(); {
-        pthread_mutex_unlock(&mutex);
+        pthread_mutex_unlock(&pg_curl.mutex);
         PG_RE_THROW();
     } PG_END_TRY();
-    pthread_mutex_unlock(&mutex);
+    pthread_mutex_unlock(&pg_curl.mutex);
 }
 
 static void *pg_curl_realloc_callback(void *ptr, size_t size) {
     void *result;
-    pthread_mutex_lock(&mutex);
+    pthread_mutex_lock(&pg_curl.mutex);
     PG_TRY(); {
-        result = (ptr && size) ? repalloc(ptr, size) : (size ? MemoryContextAlloc(pg_curl_context, size) : ptr);
+        result = (ptr && size) ? repalloc(ptr, size) : (size ? MemoryContextAlloc(pg_curl.context, size) : ptr);
     } PG_CATCH(); {
-        pthread_mutex_unlock(&mutex);
+        pthread_mutex_unlock(&pg_curl.mutex);
         PG_RE_THROW();
     } PG_END_TRY();
-    pthread_mutex_unlock(&mutex);
+    pthread_mutex_unlock(&pg_curl.mutex);
     return result;
 }
 
 static char *pg_curl_strdup_callback(const char *str) {
     char *result;
-    pthread_mutex_lock(&mutex);
+    pthread_mutex_lock(&pg_curl.mutex);
     PG_TRY(); {
-        result = MemoryContextStrdup(pg_curl_context, str);
+        result = MemoryContextStrdup(pg_curl.context, str);
     } PG_CATCH(); {
-        pthread_mutex_unlock(&mutex);
+        pthread_mutex_unlock(&pg_curl.mutex);
         PG_RE_THROW();
     } PG_END_TRY();
-    pthread_mutex_unlock(&mutex);
+    pthread_mutex_unlock(&pg_curl.mutex);
     return result;
 }
 
 static void *pg_curl_calloc_callback(size_t nmemb, size_t size) {
     void *result;
-    pthread_mutex_lock(&mutex);
+    pthread_mutex_lock(&pg_curl.mutex);
     PG_TRY(); {
-        result = MemoryContextAllocZero(pg_curl_context, nmemb * size);
+        result = MemoryContextAllocZero(pg_curl.context, nmemb * size);
     } PG_CATCH(); {
-        pthread_mutex_unlock(&mutex);
+        pthread_mutex_unlock(&pg_curl.mutex);
         PG_RE_THROW();
     } PG_END_TRY();
-    pthread_mutex_unlock(&mutex);
+    pthread_mutex_unlock(&pg_curl.mutex);
     return result;
 }
 #endif
 
 static void pg_curl_hash_init(void) {
-    if (!pg_curl_hash) {
+    if (!pg_curl.easy) {
         HASHCTL ctl = {
             .keysize = sizeof(NameData),
             .entrysize = sizeof(pg_curl_t),
         };
-        pg_curl_hash = hash_create("Connection name hash", NUMCONN, &ctl, HASH_ELEM);
+        pg_curl.easy = hash_create("Connection name hash", NUMCONN, &ctl, HASH_ELEM);
     }
 }
 
 #if PG_VERSION_NUM >= 90500
 static void pg_curl_global_cleanup(void *arg) {
-    if (!pg_curl_context) return;
+    if (!pg_curl.context) return;
 #if CURL_AT_LEAST_VERSION(7, 8, 0)
     curl_global_cleanup();
 #endif
-    pg_curl_context = NULL;
+    pg_curl.context = NULL;
 }
 #endif
 
@@ -186,27 +192,27 @@ static void pg_curl_easy_cleanup(void *arg) {
         curl_easy_cleanup(curl->easy);
         curl->easy = NULL;
     }
-    if (pg_curl_hash && !hash_search(pg_curl_hash, NameStr(curl->conname), HASH_REMOVE, NULL)) ereport(ERROR, (errcode(ERRCODE_UNDEFINED_OBJECT), errmsg("undefined connection name")));
+    if (pg_curl.easy && !hash_search(pg_curl.easy, NameStr(curl->conname), HASH_REMOVE, NULL)) ereport(ERROR, (errcode(ERRCODE_UNDEFINED_OBJECT), errmsg("undefined connection name")));
 }
 #endif
 
 static void pg_curl_global_init(void) {
     MemoryContext oldMemoryContext;
-    if (pg_curl_context) return;
+    if (pg_curl.context) return;
 #if PG_VERSION_NUM >= 90500
-    pg_curl_context = pg_curl_transaction ? TopTransactionContext : TopMemoryContext;
+    pg_curl.context = pg_curl.transaction ? TopTransactionContext : TopMemoryContext;
 #else
-    pg_curl_context = TopMemoryContext;
+    pg_curl.context = TopMemoryContext;
 #endif
-    oldMemoryContext = MemoryContextSwitchTo(pg_curl_context);
+    oldMemoryContext = MemoryContextSwitchTo(pg_curl.context);
 #if CURL_AT_LEAST_VERSION(7, 12, 0)
     if (curl_global_init_mem(CURL_GLOBAL_ALL, pg_curl_malloc_callback, pg_curl_free_callback, pg_curl_realloc_callback, pg_curl_strdup_callback, pg_curl_calloc_callback)) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_global_init_mem")));
 #elif CURL_AT_LEAST_VERSION(7, 8, 0)
     if (curl_global_init(CURL_GLOBAL_ALL)) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_global_init")));
 #endif
 #if PG_VERSION_NUM >= 90500
-    global_cleanup.func = pg_curl_global_cleanup;
-    MemoryContextRegisterResetCallback(pg_curl_context, &global_cleanup);
+    pg_curl.global_cleanup.func = pg_curl_global_cleanup;
+    MemoryContextRegisterResetCallback(pg_curl.context, &pg_curl.global_cleanup);
 #endif
     MemoryContextSwitchTo(oldMemoryContext);
 }
@@ -214,18 +220,18 @@ static void pg_curl_global_init(void) {
 #if PG_VERSION_NUM >= 90500
 static void pg_curl_multi_cleanup(void *arg) {
     CURLMcode mc;
-    if (!pg_curl_multi) return;
-    if ((mc = curl_multi_cleanup(pg_curl_multi)) != CURLM_OK) ereport(ERROR, (pg_curl_mc(mc), errmsg("%s", curl_multi_strerror(mc))));
-    pg_curl_multi = NULL;
+    if (!pg_curl.multi) return;
+    if ((mc = curl_multi_cleanup(pg_curl.multi)) != CURLM_OK) ereport(ERROR, (pg_curl_mc(mc), errmsg("%s", curl_multi_strerror(mc))));
+    pg_curl.multi = NULL;
 }
 #endif
 
 static void pg_curl_multi_init(void) {
-    if (pg_curl_multi) return;
-    if (!(pg_curl_multi = curl_multi_init())) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_multi_init")));
+    if (pg_curl.multi) return;
+    if (!(pg_curl.multi = curl_multi_init())) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_multi_init")));
 #if PG_VERSION_NUM >= 90500
-    multi_cleanup.func = pg_curl_multi_cleanup;
-    MemoryContextRegisterResetCallback(pg_curl_context, &multi_cleanup);
+    pg_curl.multi_cleanup.func = pg_curl_multi_cleanup;
+    MemoryContextRegisterResetCallback(pg_curl.context, &pg_curl.multi_cleanup);
 #endif
 }
 
@@ -234,11 +240,11 @@ static pg_curl_t *pg_curl_easy_init(NameData *conname) {
     MemoryContext oldMemoryContext;
     pg_curl_t *curl;
     pg_curl_global_init();
-    oldMemoryContext = MemoryContextSwitchTo(pg_curl_context);
+    oldMemoryContext = MemoryContextSwitchTo(pg_curl.context);
     pg_curl_multi_init();
-    if (!conname) conname = &unknown;
+    if (!conname) conname = &pg_curl.unknown;
     pg_curl_hash_init();
-    curl = hash_search(pg_curl_hash, NameStr(*conname), HASH_ENTER, &found);
+    curl = hash_search(pg_curl.easy, NameStr(*conname), HASH_ENTER, &found);
     if (!found) {
         MemSet(curl, 0, sizeof(*curl));
         curl->conname = *conname;
@@ -255,7 +261,7 @@ static pg_curl_t *pg_curl_easy_init(NameData *conname) {
 #if PG_VERSION_NUM >= 90500
     curl->easy_cleanup.arg = curl;
     curl->easy_cleanup.func = pg_curl_easy_cleanup;
-    MemoryContextRegisterResetCallback(pg_curl_context, &curl->easy_cleanup);
+    MemoryContextRegisterResetCallback(pg_curl.context, &curl->easy_cleanup);
 #endif
     MemoryContextSwitchTo(oldMemoryContext);
     if (!(curl->easy = curl_easy_init())) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_easy_init")));
@@ -1841,7 +1847,7 @@ static CURLcode pg_curl_easy_prepare(pg_curl_t *curl) {
 #endif
     if ((ec = curl_easy_setopt(curl->easy, CURLOPT_PRIVATE, curl)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
     curl->try = 0;
-    if ((mc = curl_multi_add_handle(curl->multi = pg_curl_multi, curl->easy)) != CURLM_OK) ereport(ERROR, (pg_curl_mc(mc), errmsg("%s", curl_multi_strerror(mc))));
+    if ((mc = curl_multi_add_handle(curl->multi = pg_curl.multi, curl->easy)) != CURLM_OK) ereport(ERROR, (pg_curl_mc(mc), errmsg("%s", curl_multi_strerror(mc))));
     return ec;
 }
 
@@ -1855,20 +1861,20 @@ EXTENSION(pg_curl_multi_perform) {
     int timeout_ms;
     int try;
     long sleep;
-    if (!pg_curl_hash) ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("curl_multi_perform/curl_easy_perform no connections"), errhint("curl_multi_perform/curl_easy_perform requires at least one connection!")));
+    if (!pg_curl.easy) ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("curl_multi_perform/curl_easy_perform no connections"), errhint("curl_multi_perform/curl_easy_perform requires at least one connection!")));
     if ((try = PG_ARGISNULL(0) ? 1 : PG_GETARG_INT32(0)) <= 0) ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("curl_multi_perform invalid argument try %i", try), errhint("Argument try must be positive!")));
     if ((sleep = PG_ARGISNULL(1) ? 1000000 : PG_GETARG_INT64(1)) < 0) ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("curl_multi_perform invalid argument sleep %li", sleep), errhint("Argument sleep must be non-negative!")));
     if ((timeout_ms = PG_ARGISNULL(2) ? 1000 : PG_GETARG_INT32(0)) <= 0) ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("curl_multi_perform invalid argument timeout_ms %i", timeout_ms), errhint("Argument timeout_ms must be positive!")));
-    hash_seq_init(&status, pg_curl_hash);
+    hash_seq_init(&status, pg_curl.easy);
     for (pg_curl_t *curl; (curl = hash_seq_search(&status));) {
         if ((ec = pg_curl_easy_prepare(curl)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
     }
     do {
         bool sleep_need = false;
         CHECK_FOR_INTERRUPTS();
-        if ((mc = curl_multi_wait(pg_curl_multi, NULL, 0, timeout_ms, NULL)) != CURLM_OK) ereport(ERROR, (pg_curl_mc(mc), errmsg("%s", curl_multi_strerror(mc))));
-        if ((mc = curl_multi_perform(pg_curl_multi, &running_handles)) != CURLM_OK) ereport(ERROR, (pg_curl_mc(mc), errmsg("%s", curl_multi_strerror(mc))));
-        while ((msg = curl_multi_info_read(pg_curl_multi, &msgs_in_queue))) if (msg->msg == CURLMSG_DONE) {
+        if ((mc = curl_multi_wait(pg_curl.multi, NULL, 0, timeout_ms, NULL)) != CURLM_OK) ereport(ERROR, (pg_curl_mc(mc), errmsg("%s", curl_multi_strerror(mc))));
+        if ((mc = curl_multi_perform(pg_curl.multi, &running_handles)) != CURLM_OK) ereport(ERROR, (pg_curl_mc(mc), errmsg("%s", curl_multi_strerror(mc))));
+        while ((msg = curl_multi_info_read(pg_curl.multi, &msgs_in_queue))) if (msg->msg == CURLMSG_DONE) {
             pg_curl_t *curl;
             if ((ec = curl_easy_getinfo(msg->easy_handle, CURLINFO_PRIVATE, &curl)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
             curl->errcode = msg->data.result;
@@ -2984,6 +2990,6 @@ EXTENSION(pg_curl_max_write_size) {
 
 #if PG_VERSION_NUM >= 90500
 void _PG_init(void); void _PG_init(void) {
-    DefineCustomBoolVariable("pg_curl.transaction", "pg_curl transaction", "Use transaction context?", &pg_curl_transaction, true, PGC_USERSET, 0, NULL, NULL, NULL);
+    DefineCustomBoolVariable("pg_curl.transaction", "pg_curl transaction", "Use transaction context?", &pg_curl.transaction, true, PGC_USERSET, 0, NULL, NULL, NULL);
 }
 #endif
