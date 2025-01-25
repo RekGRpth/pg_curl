@@ -249,7 +249,6 @@ static pg_curl_t *pg_curl_easy_init(NameData *conname) {
         curl->conname = *conname;
     }
     if (curl->easy) return curl;
-    if (!(curl->easy = curl_easy_init())) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_easy_init")));
     initStringInfo(&curl->data_in);
     initStringInfo(&curl->data_out);
     initStringInfo(&curl->debug);
@@ -264,6 +263,7 @@ static pg_curl_t *pg_curl_easy_init(NameData *conname) {
     MemoryContextRegisterResetCallback(pg_curl_global.context, &curl->easy_cleanup);
 #endif
     MemoryContextSwitchTo(oldMemoryContext);
+    if (!(curl->easy = curl_easy_init())) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_easy_init")));
     return curl;
 }
 
