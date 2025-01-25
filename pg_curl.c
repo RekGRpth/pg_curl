@@ -242,14 +242,14 @@ static pg_curl_t *pg_curl_easy_init(NameData *conname) {
     initStringInfo(&curl->postfield);
     initStringInfo(&curl->readdata);
     initStringInfo(&curl->url);
+    MemoryContextSwitchTo(oldMemoryContext);
+    if (!(curl->easy = curl_easy_init())) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_easy_init")));
 #if PG_VERSION_NUM >= 90500
     callback = MemoryContextAlloc(pg_curl.context, sizeof(*callback));
     callback->arg = curl;
     callback->func = pg_curl_easy_cleanup;
     MemoryContextRegisterResetCallback(pg_curl.context, callback);
 #endif
-    MemoryContextSwitchTo(oldMemoryContext);
-    if (!(curl->easy = curl_easy_init())) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_easy_init")));
     return curl;
 }
 
