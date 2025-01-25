@@ -1,5 +1,6 @@
 #include <postgres.h>
 
+#include <lib/stringinfo.h>
 #include <miscadmin.h>
 #include <utils/builtins.h>
 #include <utils/guc.h>
