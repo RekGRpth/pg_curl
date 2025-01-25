@@ -199,6 +199,7 @@ static void pg_curl_global_init(void) {
     callback->func = pg_curl_global_cleanup;
     MemoryContextRegisterResetCallback(pg_curl.context, callback);
 #endif
+    pg_curl.easy = hash_create("Connection name hash", NUMCONN, &(HASHCTL){.keysize = sizeof(NameData), .entrysize = sizeof(pg_curl_t)}, HASH_ELEM);
 }
 
 #if PG_VERSION_NUM >= 90500
@@ -232,7 +233,6 @@ static pg_curl_t *pg_curl_easy_init(NameData *conname) {
     pg_curl_t *curl;
     pg_curl_multi_init();
     if (!conname) conname = &pg_curl.unknown;
-    if (!pg_curl.easy) pg_curl.easy = hash_create("Connection name hash", NUMCONN, &(HASHCTL){.keysize = sizeof(NameData), .entrysize = sizeof(pg_curl_t)}, HASH_ELEM);
     curl = hash_search(pg_curl.easy, NameStr(*conname), HASH_ENTER, &found);
     if (!found) {
         MemSet(curl, 0, sizeof(*curl));
