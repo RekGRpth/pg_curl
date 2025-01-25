@@ -142,13 +142,7 @@ static void *pg_curl_calloc_callback(size_t nmemb, size_t size) {
 #endif
 
 static void pg_curl_hash_init(void) {
-    if (!pg_curl.easy) {
-        HASHCTL ctl = {
-            .keysize = sizeof(NameData),
-            .entrysize = sizeof(pg_curl_t),
-        };
-        pg_curl.easy = hash_create("Connection name hash", NUMCONN, &ctl, HASH_ELEM);
-    }
+    if (!pg_curl.easy) pg_curl.easy = hash_create("Connection name hash", sizeof(NameData), &(HASHCTL){.keysize = sizeof(NameData), .entrysize = sizeof(pg_curl_t)}, HASH_ELEM);
 }
 
 #if PG_VERSION_NUM >= 90500
