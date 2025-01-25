@@ -163,7 +163,7 @@ static void pg_curl_global_cleanup(void *arg) {
 
 static void pg_curl_multi_remove_handle(pg_curl_t *curl) {
     CURLMcode mc;
-    if (!curl || !curl->easy || !curl->multi) return;
+    if (!curl->multi) return;
     if ((mc = curl_multi_remove_handle(curl->multi, curl->easy)) != CURLM_OK) ereport(ERROR, (pg_curl_mc(mc), errmsg("%s", curl_multi_strerror(mc))));
     curl->multi = NULL;
 }
@@ -171,7 +171,6 @@ static void pg_curl_multi_remove_handle(pg_curl_t *curl) {
 #if PG_VERSION_NUM >= 90500
 static void pg_curl_easy_cleanup(void *arg) {
     pg_curl_t *curl = arg;
-    if (!curl || !curl->easy) return;
 #if CURL_AT_LEAST_VERSION(7, 56, 0)
     curl_mime_free(curl->mime);
     curl->mime = NULL;
@@ -188,9 +187,11 @@ static void pg_curl_easy_cleanup(void *arg) {
     curl_slist_free_all(curl->recipient);
     curl->recipient = NULL;
 #endif
-    pg_curl_multi_remove_handle(curl);
-    curl_easy_cleanup(curl->easy);
-    curl->easy = NULL;
+    if (curl->easy) {
+        pg_curl_multi_remove_handle(curl);
+        curl_easy_cleanup(curl->easy);
+        curl->easy = NULL;
+    }
     if (pg_curl_hash && !hash_search(pg_curl_hash, NameStr(curl->conname), HASH_REMOVE, NULL)) ereport(ERROR, (errcode(ERRCODE_UNDEFINED_OBJECT), errmsg("undefined connection name")));
 }
 #endif
