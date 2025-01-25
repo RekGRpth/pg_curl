@@ -145,8 +145,7 @@ static void pg_curl_global_cleanup(void *arg) {
 
 static void pg_curl_multi_remove_handle(pg_curl_t *curl) {
     CURLMcode mc;
-    if (!curl->multi) return;
-    if ((mc = curl_multi_remove_handle(curl->multi, curl->easy)) != CURLM_OK) ereport(ERROR, (pg_curl_mc(mc), errmsg("%s", curl_multi_strerror(mc))));
+    if (curl->multi && (mc = curl_multi_remove_handle(curl->multi, curl->easy)) != CURLM_OK) ereport(ERROR, (pg_curl_mc(mc), errmsg("%s", curl_multi_strerror(mc))));
     curl->multi = NULL;
 }
 
