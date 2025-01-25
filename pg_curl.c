@@ -184,7 +184,6 @@ static void pg_curl_easy_cleanup(void *arg) {
 #endif
 
 static void pg_curl_global_init(void) {
-    MemoryContext oldMemoryContext;
     MemoryContextCallback *callback;
     if (pg_curl.context) return;
 #if PG_VERSION_NUM >= 90500
@@ -192,7 +191,6 @@ static void pg_curl_global_init(void) {
 #else
     pg_curl.context = TopMemoryContext;
 #endif
-    oldMemoryContext = MemoryContextSwitchTo(pg_curl.context);
 #if CURL_AT_LEAST_VERSION(7, 12, 0)
     if (curl_global_init_mem(CURL_GLOBAL_ALL, pg_curl_malloc_callback, pg_curl_free_callback, pg_curl_realloc_callback, pg_curl_strdup_callback, pg_curl_calloc_callback)) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_global_init_mem")));
 #elif CURL_AT_LEAST_VERSION(7, 8, 0)
@@ -203,7 +201,6 @@ static void pg_curl_global_init(void) {
     callback->func = pg_curl_global_cleanup;
     MemoryContextRegisterResetCallback(pg_curl.context, callback);
 #endif
-    MemoryContextSwitchTo(oldMemoryContext);
 }
 
 #if PG_VERSION_NUM >= 90500
