@@ -1895,11 +1895,7 @@ EXTENSION(pg_curl_multi_perform) {
                     }
                 } break;
             }
-            pg_curl_multi_remove_handle(curl);
-            if (curl->try < try) {
-                if ((mc = curl_multi_add_handle(curl->multi = pg_curl_multi, curl->easy)) != CURLM_OK) ereport(ERROR, (pg_curl_mc(mc), errmsg("%s", curl_multi_strerror(mc))));
-                running_handles++;
-            }
+            if (curl->try < try) running_handles++; else pg_curl_multi_remove_handle(curl);
         }
         if (sleep_need && sleep) pg_usleep(sleep);
     } while (running_handles);
