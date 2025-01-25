@@ -50,9 +50,6 @@ static struct {
     CURLM *multi;
     HTAB *easy;
     MemoryContext context;
-#if PG_VERSION_NUM >= 90500
-    MemoryContextCallback multi_cleanup;
-#endif
     pthread_mutex_t mutex;
     NameData unknown;
 } pg_curl = {
@@ -222,11 +219,13 @@ static void pg_curl_multi_cleanup(void *arg) {
 #endif
 
 static void pg_curl_multi_init(void) {
+    MemoryContextCallback *callback;
     if (pg_curl.multi) return;
     if (!(pg_curl.multi = curl_multi_init())) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_multi_init")));
 #if PG_VERSION_NUM >= 90500
-    pg_curl.multi_cleanup.func = pg_curl_multi_cleanup;
-    MemoryContextRegisterResetCallback(pg_curl.context, &pg_curl.multi_cleanup);
+    callback = MemoryContextAlloc(pg_curl.context, sizeof(*callback));
+    callback->func = pg_curl_multi_cleanup;
+    MemoryContextRegisterResetCallback(pg_curl.context, callback);
 #endif
 }
 
