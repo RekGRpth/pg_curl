@@ -25,9 +25,6 @@ typedef struct {
     curl_mime *mime;
 #endif
     int try;
-#if PG_VERSION_NUM >= 90500
-    MemoryContextCallback easy_cleanup;
-#endif
     StringInfoData data_in;
     StringInfoData data_out;
     StringInfoData debug;
@@ -231,6 +228,7 @@ static void pg_curl_multi_init(void) {
 
 static pg_curl_t *pg_curl_easy_init(NameData *conname) {
     bool found;
+    MemoryContextCallback *callback;
     MemoryContext oldMemoryContext;
     pg_curl_t *curl;
     pg_curl_global_init();
@@ -253,9 +251,10 @@ static pg_curl_t *pg_curl_easy_init(NameData *conname) {
     initStringInfo(&curl->readdata);
     initStringInfo(&curl->url);
 #if PG_VERSION_NUM >= 90500
-    curl->easy_cleanup.arg = curl;
-    curl->easy_cleanup.func = pg_curl_easy_cleanup;
-    MemoryContextRegisterResetCallback(pg_curl.context, &curl->easy_cleanup);
+    callback = MemoryContextAlloc(pg_curl.context, sizeof(*callback));
+    callback->arg = curl;
+    callback->func = pg_curl_easy_cleanup;
+    MemoryContextRegisterResetCallback(pg_curl.context, callback);
 #endif
     MemoryContextSwitchTo(oldMemoryContext);
     if (!(curl->easy = curl_easy_init())) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_easy_init")));
