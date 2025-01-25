@@ -180,7 +180,9 @@ static void pg_curl_easy_cleanup(void *arg) {
 #endif
 
 static void pg_curl_global_init(void) {
+#if PG_VERSION_NUM >= 90500
     MemoryContextCallback *callback;
+#endif
     if (pg_curl.context) return;
 #if PG_VERSION_NUM >= 90500
     pg_curl.context = pg_curl.transaction ? CurTransactionContext : TopMemoryContext;
@@ -208,7 +210,9 @@ static void pg_curl_multi_cleanup(void *arg) {
 #endif
 
 static void pg_curl_multi_init(void) {
+#if PG_VERSION_NUM >= 90500
     MemoryContextCallback *callback;
+#endif
     if (pg_curl.multi) return;
     pg_curl_global_init();
     if (!(pg_curl.multi = curl_multi_init())) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_multi_init")));
@@ -221,7 +225,9 @@ static void pg_curl_multi_init(void) {
 
 static pg_curl_t *pg_curl_easy_init(NameData *conname) {
     bool found;
+#if PG_VERSION_NUM >= 90500
     MemoryContextCallback *callback;
+#endif
     MemoryContext oldMemoryContext;
     pg_curl_t *curl;
     pg_curl_multi_init();
