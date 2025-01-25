@@ -60,10 +60,6 @@ typedef struct {
 #if PG_VERSION_NUM >= 90500
     MemoryContextCallback cleanup;
 #endif
-    struct {
-        int requested;
-        pqsigfunc handler;
-    } interrupt;
 } pg_curl_global_t;
 
 static bool pg_curl_transaction = true;
@@ -75,8 +71,6 @@ static MemoryContextCallback multi_cleanup = {0};
 static pg_curl_global_t pg_curl_global = {0};
 static pg_curl_t pg_curl = {0};
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-
-static void pg_curl_interrupt_handler(SIGNAL_ARGS) { pg_curl_global.interrupt.requested = postgres_signal_arg; }
 
 static int pg_curl_ec(CURLcode ec) {
     if (ec < 10) return errcode(MAKE_SQLSTATE('X','E','0','0','0'+ec));
@@ -170,7 +164,6 @@ static void pg_curl_hash_init(void) {
 #if PG_VERSION_NUM >= 90500
 static void pg_curl_global_cleanup(void *arg) {
     if (!pg_curl_global.context) return;
-    pqsignal(SIGINT, pg_curl_global.interrupt.handler);
 #if CURL_AT_LEAST_VERSION(7, 8, 0)
     curl_global_cleanup();
 #endif
@@ -226,9 +219,6 @@ static void pg_curl_global_init(void) {
 #elif CURL_AT_LEAST_VERSION(7, 8, 0)
     if (curl_global_init(CURL_GLOBAL_ALL)) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_global_init")));
 #endif
-    pg_curl_global.interrupt.requested = 0;
-    pg_curl_global.interrupt.handler = StatementCancelHandler;
-    pqsignal(SIGINT, pg_curl_interrupt_handler);
 #if PG_VERSION_NUM >= 90500
     pg_curl_global.cleanup.func = pg_curl_global_cleanup;
     MemoryContextRegisterResetCallback(pg_curl_global.context, &pg_curl_global.cleanup);
@@ -1802,7 +1792,7 @@ EXTENSION(pg_curl_easy_setopt_wildcardmatch) {
 }
 
 #if CURL_AT_LEAST_VERSION(7, 32, 0)
-static int pg_progress_callback(void *clientp, curl_off_t dltotal, curl_off_t dlnow, curl_off_t ultotal, curl_off_t ulnow) { return pg_curl_global.interrupt.requested; }
+static int pg_progress_callback(void *clientp, curl_off_t dltotal, curl_off_t dlnow, curl_off_t ultotal, curl_off_t ulnow) { return QueryCancelPending || ProcDiePending; }
 #endif
 
 static size_t pg_header_callback(char *buffer, size_t size, size_t nitems, void *userdata) {
@@ -1866,7 +1856,6 @@ static CURLcode pg_curl_easy_prepare(pg_curl_t *curl) {
     if ((ec = curl_easy_setopt(curl->easy, CURLOPT_XFERINFOFUNCTION, pg_progress_callback)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
 #endif
     if ((ec = curl_easy_setopt(curl->easy, CURLOPT_PRIVATE, curl)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
-    pg_curl_global.interrupt.requested = 0;
     curl->try = 0;
     if (NameStr(curl->conname)[0]) {
         CURLMcode mc;
@@ -1906,13 +1895,7 @@ EXTENSION(pg_curl_multi_perform) {
                 case CURLE_OK: {
                     curl->try = try;
                 } break;
-                case CURLE_UNSUPPORTED_PROTOCOL: case CURLE_FAILED_INIT: case CURLE_URL_MALFORMAT: case CURLE_NOT_BUILT_IN: case CURLE_FUNCTION_NOT_FOUND: case CURLE_BAD_FUNCTION_ARGUMENT: case CURLE_UNKNOWN_OPTION: case CURLE_LDAP_INVALID_URL: case CURLE_ABORTED_BY_CALLBACK: {
-                    curl->try = try;
-                    if (pg_curl_global.interrupt.handler && pg_curl_global.interrupt.requested) {
-                        pg_curl_global.interrupt.handler(pg_curl_global.interrupt.requested);
-                        pg_curl_global.interrupt.requested = 0;
-                    }
-                } // fall through
+                case CURLE_UNSUPPORTED_PROTOCOL: case CURLE_FAILED_INIT: case CURLE_URL_MALFORMAT: case CURLE_NOT_BUILT_IN: case CURLE_FUNCTION_NOT_FOUND: case CURLE_BAD_FUNCTION_ARGUMENT: case CURLE_UNKNOWN_OPTION: case CURLE_LDAP_INVALID_URL: case CURLE_ABORTED_BY_CALLBACK: curl->try = try; // fall through
                 default: {
                     if (curl->try < try) {
                         if (curl->errbuf[0]) ereport(WARNING, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec)), errdetail("%s", curl->errbuf), errcontext("try %i", curl->try)));
@@ -1949,13 +1932,7 @@ EXTENSION(pg_curl_easy_perform) {
             case CURLE_OK: {
                 curl->try = try;
             } break;
-            case CURLE_UNSUPPORTED_PROTOCOL: case CURLE_FAILED_INIT: case CURLE_URL_MALFORMAT: case CURLE_NOT_BUILT_IN: case CURLE_FUNCTION_NOT_FOUND: case CURLE_BAD_FUNCTION_ARGUMENT: case CURLE_UNKNOWN_OPTION: case CURLE_LDAP_INVALID_URL: case CURLE_ABORTED_BY_CALLBACK: {
-                curl->try = try;
-                if (pg_curl_global.interrupt.handler && pg_curl_global.interrupt.requested) {
-                    pg_curl_global.interrupt.handler(pg_curl_global.interrupt.requested);
-                    pg_curl_global.interrupt.requested = 0;
-                }
-            } // fall through
+            case CURLE_UNSUPPORTED_PROTOCOL: case CURLE_FAILED_INIT: case CURLE_URL_MALFORMAT: case CURLE_NOT_BUILT_IN: case CURLE_FUNCTION_NOT_FOUND: case CURLE_BAD_FUNCTION_ARGUMENT: case CURLE_UNKNOWN_OPTION: case CURLE_LDAP_INVALID_URL: case CURLE_ABORTED_BY_CALLBACK: curl->try = try; // fall through
             default: {
                 if (curl->try < try) {
                     if (curl->errbuf[0]) ereport(WARNING, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec)), errdetail("%s", curl->errbuf), errcontext("try %i", curl->try)));
