@@ -1796,7 +1796,6 @@ static size_t pg_write_callback(char *ptr, size_t size, size_t nmemb, void *user
 
 static CURLcode pg_curl_easy_prepare(pg_curl_t *curl) {
     CURLcode ec = CURL_LAST;
-    CURLMcode mc;
     resetStringInfo(&curl->data_in);
     resetStringInfo(&curl->data_out);
     resetStringInfo(&curl->debug);
@@ -1832,7 +1831,6 @@ static CURLcode pg_curl_easy_prepare(pg_curl_t *curl) {
 #endif
     if ((ec = curl_easy_setopt(curl->easy, CURLOPT_PRIVATE, curl)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
     curl->try = 0;
-    if ((mc = curl_multi_add_handle(curl->multi = pg_curl.multi, curl->easy)) != CURLM_OK) ereport(ERROR, (pg_curl_mc(mc), errmsg("%s", curl_multi_strerror(mc))));
     return ec;
 }
 
@@ -1853,6 +1851,7 @@ EXTENSION(pg_curl_multi_perform) {
     hash_seq_init(&status, pg_curl.easy);
     for (pg_curl_t *curl; (curl = hash_seq_search(&status));) {
         if ((ec = pg_curl_easy_prepare(curl)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
+        if ((mc = curl_multi_add_handle(curl->multi = pg_curl.multi, curl->easy)) != CURLM_OK) ereport(ERROR, (pg_curl_mc(mc), errmsg("%s", curl_multi_strerror(mc))));
     }
     do {
         bool sleep_need = false;
