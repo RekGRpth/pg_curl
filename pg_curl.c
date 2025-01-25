@@ -224,7 +224,6 @@ static pg_curl_t *pg_curl_easy_init(NameData *conname) {
     MemoryContext oldMemoryContext;
     pg_curl_t *curl;
     pg_curl_global_init();
-    oldMemoryContext = MemoryContextSwitchTo(pg_curl.context);
     pg_curl_multi_init();
     if (!conname) conname = &pg_curl.unknown;
     if (!pg_curl.easy) pg_curl.easy = hash_create("Connection name hash", NUMCONN, &(HASHCTL){.keysize = sizeof(NameData), .entrysize = sizeof(pg_curl_t)}, HASH_ELEM);
@@ -234,6 +233,7 @@ static pg_curl_t *pg_curl_easy_init(NameData *conname) {
         curl->conname = *conname;
     }
     if (curl->easy) return curl;
+    oldMemoryContext = MemoryContextSwitchTo(pg_curl.context);
     initStringInfo(&curl->data_in);
     initStringInfo(&curl->data_out);
     initStringInfo(&curl->debug);
