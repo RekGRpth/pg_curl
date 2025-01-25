@@ -181,7 +181,7 @@ static void pg_curl_global_init(void) {
     MemoryContextCallback *callback;
     if (pg_curl.context) return;
 #if PG_VERSION_NUM >= 90500
-    pg_curl.context = pg_curl.transaction ? TopTransactionContext : TopMemoryContext;
+    pg_curl.context = pg_curl.transaction ? CurTransactionContext : TopMemoryContext;
 #else
     pg_curl.context = TopMemoryContext;
 #endif
