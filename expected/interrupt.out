@@ -1,0 +1,5 @@
+\unset ECHO
+
+t
+ERROR:  Operation was aborted by an application callback
+DETAIL:  Callback aborted
