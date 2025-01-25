@@ -70,6 +70,7 @@ static MemoryContextCallback multi_cleanup = {0};
 #endif
 static pg_curl_global_t pg_curl_global = {0};
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+static NameData unknown = {"unknown"};
 
 static int pg_curl_ec(CURLcode ec) {
     if (ec < 10) return errcode(MAKE_SQLSTATE('X','E','0','0','0'+ec));
@@ -250,10 +251,7 @@ static pg_curl_t *pg_curl_easy_init(NameData *conname) {
     pg_curl_global_init();
     oldMemoryContext = MemoryContextSwitchTo(pg_curl_global.context);
     pg_curl_multi_init();
-    if (!conname) {
-        conname = palloc0(NAMEDATALEN);
-        memcpy(NameStr(*conname), "unknown", sizeof("unknown") - 1);
-    }
+    if (!conname) conname = &unknown;
     pg_curl_hash_init();
     curl = hash_search(pg_curl_hash, NameStr(*conname), HASH_ENTER, &found);
     if (!found) {
