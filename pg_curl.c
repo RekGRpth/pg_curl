@@ -225,7 +225,7 @@ static pg_curl_t *pg_curl_easy_init(NameData *conname) {
     oldMemoryContext = MemoryContextSwitchTo(pg_curl.context);
     pg_curl_multi_init();
     if (!conname) conname = &pg_curl.unknown;
-    if (!pg_curl.easy) pg_curl.easy = hash_create("Connection name hash", sizeof(NameData), &(HASHCTL){.keysize = sizeof(NameData), .entrysize = sizeof(pg_curl_t)}, HASH_ELEM);
+    if (!pg_curl.easy) pg_curl.easy = hash_create("Connection name hash", NUMCONN, &(HASHCTL){.keysize = sizeof(NameData), .entrysize = sizeof(pg_curl_t)}, HASH_ELEM);
     curl = hash_search(pg_curl.easy, NameStr(*conname), HASH_ENTER, &found);
     if (!found) {
         MemSet(curl, 0, sizeof(*curl));
