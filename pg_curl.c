@@ -47,15 +47,13 @@ typedef struct {
 
 typedef struct {
     MemoryContext context;
-#if PG_VERSION_NUM >= 90500
-    MemoryContextCallback cleanup;
-#endif
 } pg_curl_global_t;
 
 static bool pg_curl_transaction = true;
 static CURLM *pg_curl_multi = NULL;
 static HTAB *pg_curl_hash = NULL;
 #if PG_VERSION_NUM >= 90500
+static MemoryContextCallback global_cleanup = {0};
 static MemoryContextCallback multi_cleanup = {0};
 #endif
 static pg_curl_global_t pg_curl_global = {0};
@@ -211,8 +209,8 @@ static void pg_curl_global_init(void) {
     if (curl_global_init(CURL_GLOBAL_ALL)) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_global_init")));
 #endif
 #if PG_VERSION_NUM >= 90500
-    pg_curl_global.cleanup.func = pg_curl_global_cleanup;
-    MemoryContextRegisterResetCallback(pg_curl_global.context, &pg_curl_global.cleanup);
+    global_cleanup.func = pg_curl_global_cleanup;
+    MemoryContextRegisterResetCallback(pg_curl_global.context, &global_cleanup);
 #endif
     MemoryContextSwitchTo(oldMemoryContext);
 }
