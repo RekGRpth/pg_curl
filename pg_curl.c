@@ -69,7 +69,6 @@ static HTAB *pg_curl_hash = NULL;
 static MemoryContextCallback multi_cleanup = {0};
 #endif
 static pg_curl_global_t pg_curl_global = {0};
-static pg_curl_t pg_curl = {0};
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 static int pg_curl_ec(CURLcode ec) {
@@ -201,7 +200,7 @@ static void pg_curl_easy_cleanup(void *arg) {
     pg_curl_multi_remove_handle(curl);
     curl_easy_cleanup(curl->easy);
     curl->easy = NULL;
-    if (NameStr(curl->conname)[0] && !hash_search(pg_curl_hash, NameStr(curl->conname), HASH_REMOVE, NULL)) ereport(ERROR, (errcode(ERRCODE_UNDEFINED_OBJECT), errmsg("undefined connection name")));
+    if (pg_curl_hash && !hash_search(pg_curl_hash, NameStr(curl->conname), HASH_REMOVE, NULL)) ereport(ERROR, (errcode(ERRCODE_UNDEFINED_OBJECT), errmsg("undefined connection name")));
 }
 #endif
 
@@ -229,9 +228,9 @@ static void pg_curl_global_init(void) {
 #if PG_VERSION_NUM >= 90500
 static void pg_curl_multi_cleanup(void *arg) {
     CURLMcode mc;
-    CURLM *multi = arg;
     if (!multi) return;
     if ((mc = curl_multi_cleanup(multi)) != CURLM_OK) ereport(ERROR, (pg_curl_mc(mc), errmsg("%s", curl_multi_strerror(mc))));
+    multi = NULL;
 }
 #endif
 
@@ -239,26 +238,27 @@ static void pg_curl_multi_init(void) {
     if (multi) return;
     if (!(multi = curl_multi_init())) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_multi_init")));
 #if PG_VERSION_NUM >= 90500
-    multi_cleanup.arg = multi;
     multi_cleanup.func = pg_curl_multi_cleanup;
     MemoryContextRegisterResetCallback(pg_curl_global.context, &multi_cleanup);
 #endif
 }
 
 static pg_curl_t *pg_curl_easy_init(NameData *conname) {
+    bool found;
     MemoryContext oldMemoryContext;
     pg_curl_t *curl;
     pg_curl_global_init();
     oldMemoryContext = MemoryContextSwitchTo(pg_curl_global.context);
     pg_curl_multi_init();
-    if (!conname) curl = &pg_curl; else {
-        bool found;
-        pg_curl_hash_init();
-        curl = hash_search(pg_curl_hash, NameStr(*conname), HASH_ENTER, &found);
-        if (!found) {
-            MemSet(curl, 0, sizeof(*curl));
-            curl->conname = *conname;
-        }
+    if (!conname) {
+        conname = palloc0(NAMEDATALEN);
+        memcpy(NameStr(*conname), "unknown", sizeof("unknown") - 1);
+    }
+    pg_curl_hash_init();
+    curl = hash_search(pg_curl_hash, NameStr(*conname), HASH_ENTER, &found);
+    if (!found) {
+        MemSet(curl, 0, sizeof(*curl));
+        curl->conname = *conname;
     }
     if (curl->easy) return curl;
     if (!(curl->easy = curl_easy_init())) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_easy_init")));
@@ -1822,6 +1822,7 @@ static size_t pg_write_callback(char *ptr, size_t size, size_t nmemb, void *user
 
 static CURLcode pg_curl_easy_prepare(pg_curl_t *curl) {
     CURLcode ec = CURL_LAST;
+    CURLMcode mc;
     resetStringInfo(&curl->data_in);
     resetStringInfo(&curl->data_out);
     resetStringInfo(&curl->debug);
@@ -1857,10 +1858,7 @@ static CURLcode pg_curl_easy_prepare(pg_curl_t *curl) {
 #endif
     if ((ec = curl_easy_setopt(curl->easy, CURLOPT_PRIVATE, curl)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
     curl->try = 0;
-    if (NameStr(curl->conname)[0]) {
-        CURLMcode mc;
-        if ((mc = curl_multi_add_handle(curl->multi = multi, curl->easy)) != CURLM_OK) ereport(ERROR, (pg_curl_mc(mc), errmsg("%s", curl_multi_strerror(mc))));
-    }
+    if ((mc = curl_multi_add_handle(curl->multi = multi, curl->easy)) != CURLM_OK) ereport(ERROR, (pg_curl_mc(mc), errmsg("%s", curl_multi_strerror(mc))));
     return ec;
 }
 
@@ -1874,7 +1872,7 @@ EXTENSION(pg_curl_multi_perform) {
     int timeout_ms;
     int try;
     long sleep;
-    if (!pg_curl_hash) ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("curl_multi_perform no connections"), errhint("curl_multi_perform requires at least one connection!")));
+    if (!pg_curl_hash) ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("curl_multi_perform/curl_easy_perform no connections"), errhint("curl_multi_perform/curl_easy_perform requires at least one connection!")));
     if ((try = PG_ARGISNULL(0) ? 1 : PG_GETARG_INT32(0)) <= 0) ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("curl_multi_perform invalid argument try %i", try), errhint("Argument try must be positive!")));
     if ((sleep = PG_ARGISNULL(1) ? 1000000 : PG_GETARG_INT64(1)) < 0) ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("curl_multi_perform invalid argument sleep %li", sleep), errhint("Argument sleep must be non-negative!")));
     if ((timeout_ms = PG_ARGISNULL(2) ? 1000 : PG_GETARG_INT32(0)) <= 0) ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("curl_multi_perform invalid argument timeout_ms %i", timeout_ms), errhint("Argument timeout_ms must be positive!")));
@@ -1917,39 +1915,6 @@ EXTENSION(pg_curl_multi_perform) {
         }
         if (sleep_need && sleep) pg_usleep(sleep);
     } while (running_handles);
-    PG_RETURN_VOID();
-}
-
-EXTENSION(pg_curl_easy_perform) {
-    CURLcode ec = CURL_LAST;
-    int try;
-    long sleep;
-    pg_curl_t *curl = pg_curl_easy_init(NULL);
-    if (pg_curl_hash) ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("curl_easy_perform found connections"), errhint("curl_easy_perform does not work with named connections!")));
-    if ((try = PG_ARGISNULL(0) ? 1 : PG_GETARG_INT32(0)) <= 0) ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("curl_easy_perform invalid argument try %i", try), errhint("Argument try must be positive!")));
-    if ((sleep = PG_ARGISNULL(1) ? 1000000 : PG_GETARG_INT64(1)) < 0) ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("curl_easy_perform invalid argument sleep %li", sleep), errhint("Argument sleep must be non-negative!")));
-    if ((ec = pg_curl_easy_prepare(curl)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
-    while (curl->try++ < try) {
-        bool sleep_need = false;
-        switch (ec = curl_easy_perform(curl->easy)) {
-            case CURLE_ABORTED_BY_CALLBACK: ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec)), errdetail("%s", curl->errbuf))); break;
-            case CURLE_OK: {
-                curl->try = try;
-            } break;
-            case CURLE_UNSUPPORTED_PROTOCOL: case CURLE_FAILED_INIT: case CURLE_URL_MALFORMAT: case CURLE_NOT_BUILT_IN: case CURLE_FUNCTION_NOT_FOUND: case CURLE_BAD_FUNCTION_ARGUMENT: case CURLE_UNKNOWN_OPTION: case CURLE_LDAP_INVALID_URL: curl->try = try; // fall through
-            default: {
-                if (curl->try < try) {
-                    if (curl->errbuf[0]) ereport(WARNING, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec)), errdetail("%s", curl->errbuf), errcontext("try %i", curl->try)));
-                    else ereport(WARNING, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec)), errdetail("try %i", curl->try)));
-                    sleep_need = true;
-                } else {
-                    if (curl->errbuf[0]) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec)), errdetail("%s", curl->errbuf)));
-                    else ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
-                }
-            } break;
-        }
-        if (sleep_need && sleep) pg_usleep(sleep);
-    }
     PG_RETURN_BOOL(ec == CURLE_OK);
 }
 

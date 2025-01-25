@@ -1,4 +1,4 @@
-default_version = '2.2'
+default_version = '2.3'
 module_pathname = '$libdir/pg_curl'
 relocatable = true
 comment = 'PostgreSQL cURL allows most curl actions, including data transfer with URL syntax via HTTP, HTTPS, FTP, FTPS, GOPHER, TFTP, SCP, SFTP, SMB, TELNET, DICT, LDAP, LDAPS, FILE, IMAP, SMTP, POP3, RTSP and RTMP'
