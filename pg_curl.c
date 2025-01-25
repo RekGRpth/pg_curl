@@ -51,7 +51,6 @@ static struct {
     HTAB *easy;
     MemoryContext context;
 #if PG_VERSION_NUM >= 90500
-    MemoryContextCallback global_cleanup;
     MemoryContextCallback multi_cleanup;
 #endif
     pthread_mutex_t mutex;
@@ -192,6 +191,7 @@ static void pg_curl_easy_cleanup(void *arg) {
 
 static void pg_curl_global_init(void) {
     MemoryContext oldMemoryContext;
+    MemoryContextCallback *callback;
     if (pg_curl.context) return;
 #if PG_VERSION_NUM >= 90500
     pg_curl.context = pg_curl.transaction ? TopTransactionContext : TopMemoryContext;
@@ -205,8 +205,9 @@ static void pg_curl_global_init(void) {
     if (curl_global_init(CURL_GLOBAL_ALL)) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_global_init")));
 #endif
 #if PG_VERSION_NUM >= 90500
-    pg_curl.global_cleanup.func = pg_curl_global_cleanup;
-    MemoryContextRegisterResetCallback(pg_curl.context, &pg_curl.global_cleanup);
+    callback = MemoryContextAlloc(pg_curl.context, sizeof(*callback));
+    callback->func = pg_curl_global_cleanup;
+    MemoryContextRegisterResetCallback(pg_curl.context, callback);
 #endif
     MemoryContextSwitchTo(oldMemoryContext);
 }
