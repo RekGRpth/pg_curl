@@ -140,7 +140,6 @@ static void pg_curl_hash_init(void) {
 
 #if PG_VERSION_NUM >= 90500
 static void pg_curl_global_cleanup(void *arg) {
-    if (!pg_curl.context) return;
 #if CURL_AT_LEAST_VERSION(7, 8, 0)
     curl_global_cleanup();
 #endif
