@@ -63,7 +63,7 @@ typedef struct {
 } pg_curl_global_t;
 
 static bool pg_curl_transaction = true;
-static CURLM *multi = NULL;
+static CURLM *pg_curl_multi = NULL;
 static HTAB *pg_curl_hash = NULL;
 #if PG_VERSION_NUM >= 90500
 static MemoryContextCallback multi_cleanup = {0};
@@ -229,15 +229,15 @@ static void pg_curl_global_init(void) {
 #if PG_VERSION_NUM >= 90500
 static void pg_curl_multi_cleanup(void *arg) {
     CURLMcode mc;
-    if (!multi) return;
-    if ((mc = curl_multi_cleanup(multi)) != CURLM_OK) ereport(ERROR, (pg_curl_mc(mc), errmsg("%s", curl_multi_strerror(mc))));
-    multi = NULL;
+    if (!pg_curl_multi) return;
+    if ((mc = curl_multi_cleanup(pg_curl_multi)) != CURLM_OK) ereport(ERROR, (pg_curl_mc(mc), errmsg("%s", curl_multi_strerror(mc))));
+    pg_curl_multi = NULL;
 }
 #endif
 
 static void pg_curl_multi_init(void) {
-    if (multi) return;
-    if (!(multi = curl_multi_init())) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_multi_init")));
+    if (pg_curl_multi) return;
+    if (!(pg_curl_multi = curl_multi_init())) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_multi_init")));
 #if PG_VERSION_NUM >= 90500
     multi_cleanup.func = pg_curl_multi_cleanup;
     MemoryContextRegisterResetCallback(pg_curl_global.context, &multi_cleanup);
@@ -1856,7 +1856,7 @@ static CURLcode pg_curl_easy_prepare(pg_curl_t *curl) {
 #endif
     if ((ec = curl_easy_setopt(curl->easy, CURLOPT_PRIVATE, curl)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
     curl->try = 0;
-    if ((mc = curl_multi_add_handle(curl->multi = multi, curl->easy)) != CURLM_OK) ereport(ERROR, (pg_curl_mc(mc), errmsg("%s", curl_multi_strerror(mc))));
+    if ((mc = curl_multi_add_handle(curl->multi = pg_curl_multi, curl->easy)) != CURLM_OK) ereport(ERROR, (pg_curl_mc(mc), errmsg("%s", curl_multi_strerror(mc))));
     return ec;
 }
 
@@ -1881,9 +1881,9 @@ EXTENSION(pg_curl_multi_perform) {
     do {
         bool sleep_need = false;
         CHECK_FOR_INTERRUPTS();
-        if ((mc = curl_multi_wait(multi, NULL, 0, timeout_ms, NULL)) != CURLM_OK) ereport(ERROR, (pg_curl_mc(mc), errmsg("%s", curl_multi_strerror(mc))));
-        if ((mc = curl_multi_perform(multi, &running_handles)) != CURLM_OK) ereport(ERROR, (pg_curl_mc(mc), errmsg("%s", curl_multi_strerror(mc))));
-        while ((msg = curl_multi_info_read(multi, &msgs_in_queue))) if (msg->msg == CURLMSG_DONE) {
+        if ((mc = curl_multi_wait(pg_curl_multi, NULL, 0, timeout_ms, NULL)) != CURLM_OK) ereport(ERROR, (pg_curl_mc(mc), errmsg("%s", curl_multi_strerror(mc))));
+        if ((mc = curl_multi_perform(pg_curl_multi, &running_handles)) != CURLM_OK) ereport(ERROR, (pg_curl_mc(mc), errmsg("%s", curl_multi_strerror(mc))));
+        while ((msg = curl_multi_info_read(pg_curl_multi, &msgs_in_queue))) if (msg->msg == CURLMSG_DONE) {
             pg_curl_t *curl;
             if ((ec = curl_easy_getinfo(msg->easy_handle, CURLINFO_PRIVATE, &curl)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
             curl->errcode = msg->data.result;
@@ -1907,7 +1907,7 @@ EXTENSION(pg_curl_multi_perform) {
             }
             pg_curl_multi_remove_handle(curl);
             if (curl->try < try) {
-                if ((mc = curl_multi_add_handle(curl->multi = multi, curl->easy)) != CURLM_OK) ereport(ERROR, (pg_curl_mc(mc), errmsg("%s", curl_multi_strerror(mc))));
+                if ((mc = curl_multi_add_handle(curl->multi = pg_curl_multi, curl->easy)) != CURLM_OK) ereport(ERROR, (pg_curl_mc(mc), errmsg("%s", curl_multi_strerror(mc))));
                 running_handles++;
             }
         }
