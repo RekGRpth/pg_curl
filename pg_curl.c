@@ -189,15 +189,15 @@ static void pg_curl_global_init(void) {
 #else
     pg_curl.context = TopMemoryContext;
 #endif
-#if CURL_AT_LEAST_VERSION(7, 12, 0)
-    if (curl_global_init_mem(CURL_GLOBAL_ALL, pg_curl_malloc_callback, pg_curl_free_callback, pg_curl_realloc_callback, pg_curl_strdup_callback, pg_curl_calloc_callback)) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_global_init_mem")));
-#elif CURL_AT_LEAST_VERSION(7, 8, 0)
-    if (curl_global_init(CURL_GLOBAL_ALL)) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_global_init")));
-#endif
 #if PG_VERSION_NUM >= 90500
     callback = MemoryContextAlloc(pg_curl.context, sizeof(*callback));
     callback->func = pg_curl_global_cleanup;
     MemoryContextRegisterResetCallback(pg_curl.context, callback);
+#endif
+#if CURL_AT_LEAST_VERSION(7, 12, 0)
+    if (curl_global_init_mem(CURL_GLOBAL_ALL, pg_curl_malloc_callback, pg_curl_free_callback, pg_curl_realloc_callback, pg_curl_strdup_callback, pg_curl_calloc_callback)) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_global_init_mem")));
+#elif CURL_AT_LEAST_VERSION(7, 8, 0)
+    if (curl_global_init(CURL_GLOBAL_ALL)) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_global_init")));
 #endif
     pg_curl.easy = hash_create("Connection name hash", NUMCONN, &(HASHCTL){.keysize = sizeof(NameData), .entrysize = sizeof(pg_curl_t)}, HASH_ELEM);
 }
@@ -216,12 +216,12 @@ static void pg_curl_multi_init(void) {
 #endif
     if (pg_curl.multi) return;
     pg_curl_global_init();
-    if (!(pg_curl.multi = curl_multi_init())) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_multi_init")));
 #if PG_VERSION_NUM >= 90500
     callback = MemoryContextAlloc(pg_curl.context, sizeof(*callback));
     callback->func = pg_curl_multi_cleanup;
     MemoryContextRegisterResetCallback(pg_curl.context, callback);
 #endif
+    if (!(pg_curl.multi = curl_multi_init())) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_multi_init")));
 }
 
 static pg_curl_t *pg_curl_easy_init(NameData *conname) {
@@ -248,13 +248,13 @@ static pg_curl_t *pg_curl_easy_init(NameData *conname) {
     initStringInfo(&curl->readdata);
     initStringInfo(&curl->url);
     MemoryContextSwitchTo(oldMemoryContext);
-    if (!(curl->easy = curl_easy_init())) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_easy_init")));
 #if PG_VERSION_NUM >= 90500
     callback = MemoryContextAlloc(pg_curl.context, sizeof(*callback));
     callback->arg = curl;
     callback->func = pg_curl_easy_cleanup;
     MemoryContextRegisterResetCallback(pg_curl.context, callback);
 #endif
+    if (!(curl->easy = curl_easy_init())) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_easy_init")));
     return curl;
 }
 
