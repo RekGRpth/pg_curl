@@ -5,6 +5,9 @@
 \pset pager off
 BEGIN;
 CREATE EXTENSION pg_curl;
+select curl_easy_reset(conname:='1');
+select curl_easy_reset(conname:='2');
+select curl_easy_reset(conname:='3');
 select curl_easy_setopt_password('wrong', conname:='1');
 select curl_easy_setopt_url('https://httpbin.org/basic-auth/username/password', conname:='1');
 select curl_easy_setopt_username('username', conname:='1');

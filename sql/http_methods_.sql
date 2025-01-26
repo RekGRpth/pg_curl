@@ -5,6 +5,10 @@
 \pset pager off
 BEGIN;
 CREATE EXTENSION pg_curl;
+select curl_easy_reset(conname:='1');
+select curl_easy_reset(conname:='2');
+select curl_easy_reset(conname:='3');
+select curl_easy_reset(conname:='4');
 select curl_easy_setopt_url('https://httpbin.org/get?', conname:='1');
 select curl_url_append('a', 'b', conname:='1');
 select curl_url_append('c', '', conname:='1');
