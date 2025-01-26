@@ -1871,9 +1871,7 @@ EXTENSION(pg_curl_multi_perform) {
             curl->try++;
             switch ((ec = msg->data.result)) {
                 case CURLE_ABORTED_BY_CALLBACK: ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec)), errdetail("%s", curl->errbuf))); break;
-                case CURLE_OK: {
-                    curl->try = try;
-                } break;
+                case CURLE_OK: curl->try = try; break;
                 case CURLE_UNSUPPORTED_PROTOCOL: case CURLE_FAILED_INIT: case CURLE_URL_MALFORMAT: case CURLE_NOT_BUILT_IN: case CURLE_FUNCTION_NOT_FOUND: case CURLE_BAD_FUNCTION_ARGUMENT: case CURLE_UNKNOWN_OPTION: case CURLE_LDAP_INVALID_URL: curl->try = try; // fall through
                 default: {
                     if (curl->try < try) {
