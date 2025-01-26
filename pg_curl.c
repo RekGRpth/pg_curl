@@ -145,9 +145,9 @@ static void pg_curl_global_cleanup(void *arg) {
 }
 #endif
 
-static void pg_curl_multi_remove_handle(pg_curl_t *curl) {
+static void pg_curl_multi_remove_handle(pg_curl_t *curl, bool raise_error) {
     CURLMcode mc;
-    if (curl->multi && (mc = curl_multi_remove_handle(curl->multi, curl->easy)) != CURLM_OK) ereport(ERROR, (pg_curl_mc(mc), errmsg("%s", curl_multi_strerror(mc))));
+    if (curl->multi && (mc = curl_multi_remove_handle(curl->multi, curl->easy)) != CURLM_OK && raise_error) ereport(ERROR, (pg_curl_mc(mc), errmsg("%s", curl_multi_strerror(mc))));
     curl->multi = NULL;
 }
 
@@ -171,7 +171,7 @@ static void pg_curl_easy_cleanup(void *arg) {
     curl->recipient = NULL;
 #endif
     if (curl->easy) {
-        pg_curl_multi_remove_handle(curl);
+        pg_curl_multi_remove_handle(curl, false);
         curl_easy_cleanup(curl->easy);
         curl->easy = NULL;
     }
@@ -343,7 +343,7 @@ EXTENSION(pg_curl_easy_reset) {
     resetStringInfo(&curl->postfield);
     resetStringInfo(&curl->readdata);
     resetStringInfo(&curl->url);
-    pg_curl_multi_remove_handle(curl);
+    pg_curl_multi_remove_handle(curl, true);
     PG_RETURN_VOID();
 }
 
@@ -1886,7 +1886,7 @@ EXTENSION(pg_curl_multi_perform) {
                     }
                 } break;
             }
-            if (curl->try < try) running_handles++; else pg_curl_multi_remove_handle(curl);
+            if (curl->try < try) running_handles++; else pg_curl_multi_remove_handle(curl, true);
         }
         if (sleep_need && sleep) pg_usleep(sleep);
     } while (running_handles);
