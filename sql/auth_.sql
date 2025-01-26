@@ -3,8 +3,6 @@
 \pset format unaligned
 \pset tuples_only true
 \pset pager off
-\set ON_ERROR_ROLLBACK 1
-\set ON_ERROR_STOP true
 BEGIN;
 CREATE EXTENSION pg_curl;
 select curl_easy_setopt_password('wrong', conname:='1');

@@ -3,7 +3,6 @@
 \pset format unaligned
 \pset tuples_only true
 \pset pager off
-\set ON_ERROR_ROLLBACK 1
 BEGIN;
 CREATE EXTENSION pg_curl;
 select curl_easy_reset();
