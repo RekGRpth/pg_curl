@@ -1873,16 +1873,14 @@ EXTENSION(pg_curl_multi_perform) {
                 case CURLE_ABORTED_BY_CALLBACK: ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec)), errdetail("%s", curl->errbuf))); break;
                 case CURLE_OK: curl->try = try; break;
                 case CURLE_UNSUPPORTED_PROTOCOL: case CURLE_FAILED_INIT: case CURLE_URL_MALFORMAT: case CURLE_NOT_BUILT_IN: case CURLE_FUNCTION_NOT_FOUND: case CURLE_BAD_FUNCTION_ARGUMENT: case CURLE_UNKNOWN_OPTION: case CURLE_LDAP_INVALID_URL: curl->try = try; // fall through
-                default: {
-                    if (curl->try < try) {
-                        if (curl->errbuf[0]) ereport(WARNING, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec)), errdetail("%s", curl->errbuf), errcontext("try %i", curl->try)));
-                        else ereport(WARNING, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec)), errdetail("try %i", curl->try)));
-                        sleep_need = true;
-                    } else {
-                        if (curl->errbuf[0]) ereport(WARNING, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec)), errdetail("%s", curl->errbuf)));
-                        else ereport(WARNING, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
-                    }
-                } break;
+                default: if (curl->try < try) {
+                    if (curl->errbuf[0]) ereport(WARNING, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec)), errdetail("%s", curl->errbuf), errcontext("try %i", curl->try)));
+                    else ereport(WARNING, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec)), errdetail("try %i", curl->try)));
+                    sleep_need = true;
+                } else {
+                    if (curl->errbuf[0]) ereport(WARNING, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec)), errdetail("%s", curl->errbuf)));
+                    else ereport(WARNING, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
+                }
             }
             if (curl->try < try) running_handles++; else pg_curl_multi_remove_handle(curl, true);
         }
