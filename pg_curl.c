@@ -233,7 +233,10 @@ static pg_curl_t *pg_curl_easy_init(NameData *conname) {
     pg_curl_t *curl;
     pg_curl_multi_init();
     curl = hash_search(pg_curl.easy, NameStr(*conname), HASH_ENTER, &found);
-    if (!found) MemSet(curl + sizeof(*conname), 0, sizeof(*curl) - sizeof(*conname));
+    if (!found) {
+        MemSet(curl, 0, sizeof(*curl));
+        curl->conname = *conname;
+    }
     if (curl->easy) return curl;
     oldMemoryContext = MemoryContextSwitchTo(pg_curl.context);
     initStringInfo(&curl->data_in);
