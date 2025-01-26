@@ -232,7 +232,6 @@ static pg_curl_t *pg_curl_easy_init(NameData *conname) {
     MemoryContext oldMemoryContext;
     pg_curl_t *curl;
     pg_curl_multi_init();
-    if (!conname) conname = &pg_curl.unknown;
     curl = hash_search(pg_curl.easy, NameStr(*conname), HASH_ENTER, &found);
     if (!found) MemSet(curl + sizeof(*conname), 0, sizeof(*curl) - sizeof(*conname));
     if (curl->easy) return curl;
@@ -256,7 +255,7 @@ static pg_curl_t *pg_curl_easy_init(NameData *conname) {
     return curl;
 }
 
-#define PG_CONNAME(arg) (PG_NARGS() < arg + 1 || PG_ARGISNULL(arg)) ? NULL : PG_GETARG_NAME(arg)
+#define PG_CONNAME(arg) (PG_NARGS() < arg + 1 || PG_ARGISNULL(arg)) ? &pg_curl.unknown : PG_GETARG_NAME(arg)
 
 EXTENSION(pg_curl_easy_header_reset) {
     NameData *conname = PG_CONNAME(0);
