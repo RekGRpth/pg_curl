@@ -204,8 +204,8 @@ static void pg_curl_global_init(void) {
 
 #if PG_VERSION_NUM >= 90500
 static void pg_curl_multi_cleanup(void *arg) {
-    CURLMcode mc;
-    if (pg_curl.multi && (mc = curl_multi_cleanup(pg_curl.multi)) != CURLM_OK) ereport(ERROR, (pg_curl_mc(mc), errmsg("%s", curl_multi_strerror(mc))));
+    if (!pg_curl.multi) return;
+    curl_multi_cleanup(pg_curl.multi);
     pg_curl.multi = NULL;
 }
 #endif
