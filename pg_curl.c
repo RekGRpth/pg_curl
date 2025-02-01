@@ -16,7 +16,7 @@
 PG_MODULE_MAGIC;
 
 typedef struct {
-    char conname[NAMEDATALEN]; // always first, because it is key for hashmap
+    char conname[NAMEDATALEN]; // !!! always first !!! //
     char errbuf[CURL_ERROR_SIZE];
     CURLcode errcode;
     CURL *easy;
@@ -231,7 +231,10 @@ static pg_curl_t *pg_curl_easy_init(const char *conname) {
     pg_curl_t *curl;
     pg_curl_multi_init();
     curl = hash_search(pg_curl.easy, conname, HASH_ENTER, &found);
-    if (!found) MemSet(curl + NAMEDATALEN, 0, sizeof(*curl) - NAMEDATALEN);
+    if (!found) {
+        MemSet(curl, 0, sizeof(*curl));
+        strcpy(curl->conname, conname);
+    }
     if (curl->easy) return curl;
     oldMemoryContext = MemoryContextSwitchTo(pg_curl.context);
     initStringInfo(&curl->data_in);
