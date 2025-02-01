@@ -16,7 +16,7 @@
 PG_MODULE_MAGIC;
 
 typedef struct {
-    NameData conname; // !!! always first !!! //
+    char conname[NAMEDATALEN]; // !!! always first !!! //
     char errbuf[CURL_ERROR_SIZE];
     CURLcode errcode;
     CURL *easy;
@@ -48,11 +48,9 @@ static struct {
     HTAB *easy;
     MemoryContext context;
     pthread_mutex_t mutex;
-    NameData unknown;
 } pg_curl = {
-    .transaction = true,
     .mutex = PTHREAD_MUTEX_INITIALIZER,
-    .unknown = {"unknown"},
+    .transaction = true,
 };
 
 static int pg_curl_ec(CURLcode ec) {
@@ -175,7 +173,7 @@ static void pg_curl_easy_cleanup(void *arg) {
         curl_easy_cleanup(curl->easy);
         curl->easy = NULL;
     }
-    if (pg_curl.easy) hash_search(pg_curl.easy, NameStr(curl->conname), HASH_REMOVE, NULL);
+    if (pg_curl.easy) hash_search(pg_curl.easy, curl->conname, HASH_REMOVE, NULL);
 }
 #endif
 
@@ -224,7 +222,7 @@ static void pg_curl_multi_init(void) {
     if (!(pg_curl.multi = curl_multi_init())) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_multi_init")));
 }
 
-static pg_curl_t *pg_curl_easy_init(NameData *conname) {
+static pg_curl_t *pg_curl_easy_init(const char *conname) {
     bool found;
 #if PG_VERSION_NUM >= 90500
     MemoryContextCallback *callback;
@@ -232,10 +230,10 @@ static pg_curl_t *pg_curl_easy_init(NameData *conname) {
     MemoryContext oldMemoryContext;
     pg_curl_t *curl;
     pg_curl_multi_init();
-    curl = hash_search(pg_curl.easy, NameStr(*conname), HASH_ENTER, &found);
+    curl = hash_search(pg_curl.easy, conname, HASH_ENTER, &found);
     if (!found) {
         MemSet(curl, 0, sizeof(*curl));
-        curl->conname = *conname;
+        strcpy(curl->conname, conname);
     }
     if (curl->easy) return curl;
     oldMemoryContext = MemoryContextSwitchTo(pg_curl.context);
@@ -258,7 +256,7 @@ static pg_curl_t *pg_curl_easy_init(NameData *conname) {
     return curl;
 }
 
-#define PG_CONNAME(arg) (PG_NARGS() < arg + 1 || PG_ARGISNULL(arg)) ? &pg_curl.unknown : PG_GETARG_NAME(arg)
+#define PG_CONNAME(arg) (PG_NARGS() < arg + 1 || PG_ARGISNULL(arg)) ? "unknown" : NameStr(*PG_GETARG_NAME(arg))
 
 EXTENSION(pg_curl_easy_header_reset) {
     pg_curl_t *curl = pg_curl_easy_init(PG_CONNAME(0));
