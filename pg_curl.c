@@ -309,7 +309,7 @@ EXTENSION(pg_curl_easy_recipient_reset) {
 
 EXTENSION(pg_curl_easy_reset) {
     pg_curl_t *curl = pg_curl_easy_init(PG_CONNAME(0));
-    MemSet(curl->errbuf, 0, sizeof(*curl->errbuf));
+    curl->errbuf[0] = '\0';
     curl->errcode = CURLE_OK;
     pg_curl_easy_header_reset(fcinfo);
     pg_curl_easy_postquote_reset(fcinfo);
@@ -1840,7 +1840,10 @@ EXTENSION(pg_curl_multi_perform) {
             curl->errcode = msg->data.result;
             curl->try++;
             switch ((ec = msg->data.result)) {
-                case CURLE_ABORTED_BY_CALLBACK: ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec)), errdetail("%s", curl->errbuf))); break;
+                case CURLE_ABORTED_BY_CALLBACK:
+                    if (curl->errbuf[0]) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec)), errdetail("%s", curl->errbuf)));
+                    else ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
+                    break;
                 case CURLE_OK: curl->try = try; break;
                 case CURLE_UNSUPPORTED_PROTOCOL: case CURLE_FAILED_INIT: case CURLE_URL_MALFORMAT: case CURLE_NOT_BUILT_IN: case CURLE_FUNCTION_NOT_FOUND: case CURLE_BAD_FUNCTION_ARGUMENT: case CURLE_UNKNOWN_OPTION: case CURLE_LDAP_INVALID_URL: curl->try = try; // fall through
                 default: if (curl->try < try) {
