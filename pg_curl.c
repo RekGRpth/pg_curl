@@ -11,7 +11,6 @@
 #include <pthread.h>
 
 #define EXTENSION(function) Datum (function)(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(function); Datum (function)(PG_FUNCTION_ARGS)
-#define NUMCONN 16
 
 PG_MODULE_MAGIC;
 
@@ -197,7 +196,7 @@ static void pg_curl_global_init(void) {
 #elif CURL_AT_LEAST_VERSION(7, 8, 0)
     if (curl_global_init(CURL_GLOBAL_ALL)) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_global_init")));
 #endif
-    pg_curl.easy = hash_create("Connection name hash", NUMCONN, &(HASHCTL){.keysize = sizeof(NameData), .entrysize = sizeof(pg_curl_t)}, HASH_ELEM);
+    pg_curl.easy = hash_create("Connection name hash", 1, &(HASHCTL){.keysize = sizeof(NameData), .entrysize = sizeof(pg_curl_t)}, HASH_ELEM);
 }
 
 #if PG_VERSION_NUM >= 90500
