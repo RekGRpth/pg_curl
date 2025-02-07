@@ -141,7 +141,6 @@ static void pg_curl_global_cleanup(void *arg) {
     curl_global_cleanup();
 #endif
     pg_curl.context = NULL;
-    hash_destroy(pg_curl.hash);
     pg_curl.hash = NULL;
 }
 #endif
