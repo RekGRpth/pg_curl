@@ -15,7 +15,6 @@
 PG_MODULE_MAGIC;
 
 typedef struct {
-    char conname[NAMEDATALEN]; // !!! always first !!! //
     char errbuf[CURL_ERROR_SIZE];
     CURLcode errcode;
     CURL *easy;
@@ -40,6 +39,11 @@ typedef struct {
     struct curl_slist *recipient;
 #endif
 } pg_curl_t;
+
+typedef struct {
+    char conname[NAMEDATALEN]; // always first, because it is key for hashmap
+    pg_curl_t *curl;
+} pg_easy_t;
 
 static struct {
     bool transaction;
@@ -153,26 +157,20 @@ static void pg_curl_easy_cleanup(void *arg) {
     pg_curl_t *curl = arg;
 #if CURL_AT_LEAST_VERSION(7, 56, 0)
     curl_mime_free(curl->mime);
-    curl->mime = NULL;
 #endif
     curl_slist_free_all(curl->header);
-    curl->header = NULL;
     curl_slist_free_all(curl->postquote);
-    curl->postquote = NULL;
     curl_slist_free_all(curl->prequote);
-    curl->prequote = NULL;
     curl_slist_free_all(curl->quote);
-    curl->quote = NULL;
 #if CURL_AT_LEAST_VERSION(7, 20, 0)
     curl_slist_free_all(curl->recipient);
-    curl->recipient = NULL;
 #endif
     if (curl->easy) {
         pg_curl_multi_remove_handle(curl, false);
         curl_easy_cleanup(curl->easy);
-        curl->easy = NULL;
     }
-    if (pg_curl.easy) hash_search(pg_curl.easy, curl->conname, HASH_REMOVE, NULL);
+//    if (pg_curl.easy) hash_search(pg_curl.easy, curl->conname, HASH_REMOVE, NULL);
+    pfree(curl);
 }
 #endif
 
@@ -196,7 +194,7 @@ static void pg_curl_global_init(void) {
 #elif CURL_AT_LEAST_VERSION(7, 8, 0)
     if (curl_global_init(CURL_GLOBAL_ALL)) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_global_init")));
 #endif
-    pg_curl.easy = hash_create("Connection name hash", 1, &(HASHCTL){.keysize = sizeof(NameData), .entrysize = sizeof(pg_curl_t)}, HASH_ELEM);
+    pg_curl.easy = hash_create("Connection name hash", 1, &(HASHCTL){.keysize = NAMEDATALEN, .entrysize = sizeof(pg_curl_t *)}, HASH_ELEM);
 }
 
 #if PG_VERSION_NUM >= 90500
@@ -228,12 +226,11 @@ static pg_curl_t *pg_curl_easy_init(const char *conname) {
 #endif
     MemoryContext oldMemoryContext;
     pg_curl_t *curl;
+    pg_easy_t *easy;
     pg_curl_multi_init();
-    curl = hash_search(pg_curl.easy, conname, HASH_ENTER, &found);
-    if (!found) {
-        MemSet(curl, 0, sizeof(*curl));
-        strcpy(curl->conname, conname);
-    }
+    easy = hash_search(pg_curl.easy, conname, HASH_ENTER, &found);
+    if (!found) easy->curl = MemoryContextAllocZero(pg_curl.context, sizeof(*easy->curl));
+    curl = easy->curl;
     if (curl->easy) return curl;
     oldMemoryContext = MemoryContextSwitchTo(pg_curl.context);
     initStringInfo(&curl->data_in);
@@ -1820,12 +1817,14 @@ EXTENSION(pg_curl_multi_perform) {
     int timeout_ms;
     int try;
     long sleep;
+    pg_easy_t *easy;
     if (!pg_curl.easy) ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("curl_multi_perform/curl_easy_perform no connections"), errhint("curl_multi_perform/curl_easy_perform requires at least one connection!")));
     if ((try = PG_ARGISNULL(0) ? 1 : PG_GETARG_INT32(0)) <= 0) ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("curl_multi_perform invalid argument try %i", try), errhint("Argument try must be positive!")));
     if ((sleep = PG_ARGISNULL(1) ? 1000000 : PG_GETARG_INT64(1)) < 0) ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("curl_multi_perform invalid argument sleep %li", sleep), errhint("Argument sleep must be non-negative!")));
     if ((timeout_ms = PG_ARGISNULL(2) ? 1000 : PG_GETARG_INT32(0)) <= 0) ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("curl_multi_perform invalid argument timeout_ms %i", timeout_ms), errhint("Argument timeout_ms must be positive!")));
     hash_seq_init(&status, pg_curl.easy);
-    for (pg_curl_t *curl; (curl = hash_seq_search(&status));) {
+    while ((easy = hash_seq_search(&status))) {
+        pg_curl_t *curl = easy->curl;
         if ((ec = pg_curl_easy_prepare(curl)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
         if ((mc = curl_multi_add_handle(curl->multi = pg_curl.multi, curl->easy)) != CURLM_OK) ereport(ERROR, (pg_curl_mc(mc), errmsg("%s", curl_multi_strerror(mc))));
     }
