@@ -169,7 +169,6 @@ static void pg_curl_easy_cleanup(void *arg) {
         pg_curl_multi_remove_handle(curl, false);
         curl_easy_cleanup(curl->easy);
     }
-//    if (pg_curl.hash) hash_search(pg_curl.hash, curl->conname, HASH_REMOVE, NULL);
     pfree(curl);
 }
 #endif
