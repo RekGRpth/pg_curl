@@ -34,6 +34,10 @@ select curl_mime_data('f', name:='e', conname:='4');
 select curl_mime_data('', name:='g', conname:='4');
 select curl_mime_data(null, name:='h', conname:='4');
 select curl_mime_data('content', name:='filename.txt', file:='filename.txt', conname:='4');
+select curl_multi_add_handle(conname:='1');
+select curl_multi_add_handle(conname:='2');
+select curl_multi_add_handle(conname:='3');
+select curl_multi_add_handle(conname:='4');
 select curl_multi_perform();
 with s as (
     select regexp_matches(curl_easy_getinfo_header_in(conname:='1'), E'([^ \t\r\n\f]+): ?([^\t\r\n\f]+)', 'g') as s

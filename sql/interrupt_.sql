@@ -10,5 +10,7 @@ select curl_easy_reset(conname:='2');
 select curl_easy_setopt_url('https://httpbin.org/delay/2', conname:='1');
 select curl_easy_setopt_url('https://httpbin.org/delay/3', conname:='2');
 set statement_timeout = '1s';
+select curl_multi_add_handle(conname:='1');
+select curl_multi_add_handle(conname:='2');
 select curl_multi_perform();
 ROLLBACK;

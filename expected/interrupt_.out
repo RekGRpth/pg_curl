@@ -1,6 +1,8 @@
 \unset ECHO
-
-
+t
+t
+t
+t
 t
 t
 ERROR:  Operation was aborted by an application callback
