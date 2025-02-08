@@ -4,7 +4,10 @@
 \pset tuples_only true
 \pset pager off
 BEGIN;
-CREATE EXTENSION pg_curl;
+SET LOCAL client_min_messages = WARNING;
+CREATE EXTENSION IF NOT EXISTS pg_curl;
+END;
+BEGIN;
 select curl_easy_reset();
 select curl_easy_setopt_url('https://httpbin.org/get?');
 select curl_url_append('a', 'b');
@@ -16,6 +19,8 @@ with s as (
 ) select s[1] as key, s[2] as value from s where s[1] not in ('date', 'server', 'content-length');
 select jsonb_pretty((convert_from(curl_easy_getinfo_data_in(), 'utf-8')::jsonb #- '{headers,X-Amzn-Trace-Id}'::text[]) - 'origin');
 select curl_easy_getinfo_errcode(), curl_easy_getinfo_errdesc(), curl_easy_getinfo_errbuf();
+END;
+BEGIN;
 select curl_easy_reset();
 select curl_easy_setopt_postfields(convert_to('{"e":"f","g":"","h":null}', 'utf-8'));
 select curl_easy_setopt_url('https://httpbin.org/post?');
@@ -29,6 +34,8 @@ with s as (
 ) select s[1] as key, s[2] as value from s where s[1] not in ('date', 'server', 'content-length');
 select jsonb_pretty((convert_from(curl_easy_getinfo_data_in(), 'utf-8')::jsonb #- '{headers,X-Amzn-Trace-Id}'::text[]) - 'origin');
 select curl_easy_getinfo_errcode(), curl_easy_getinfo_errdesc(), curl_easy_getinfo_errbuf();
+END;
+BEGIN;
 select curl_easy_reset();
 select curl_postfield_append('e', 'f');
 select curl_postfield_append('g', '');
@@ -43,6 +50,8 @@ with s as (
 ) select s[1] as key, s[2] as value from s where s[1] not in ('date', 'server', 'content-length');
 select jsonb_pretty((convert_from(curl_easy_getinfo_data_in(), 'utf-8')::jsonb #- '{headers,X-Amzn-Trace-Id}'::text[]) - 'origin');
 select curl_easy_getinfo_errcode(), curl_easy_getinfo_errdesc(), curl_easy_getinfo_errbuf();
+END;
+BEGIN;
 select curl_easy_reset();
 select curl_easy_setopt_url('https://httpbin.org/post?');
 select curl_url_append('a', 'b');
@@ -58,4 +67,4 @@ with s as (
 ) select s[1] as key, s[2] as value from s where s[1] not in ('date', 'server', 'content-length');
 select jsonb_pretty((((convert_from(curl_easy_getinfo_data_in(), 'utf-8')::jsonb #- '{headers,X-Amzn-Trace-Id}'::text[]) #- '{headers,Content-Type}'::text[]) #- '{headers,Content-Length}'::text[]) - 'origin');
 select curl_easy_getinfo_errcode(), curl_easy_getinfo_errdesc(), curl_easy_getinfo_errbuf();
-ROLLBACK;
+END;

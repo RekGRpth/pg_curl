@@ -4,7 +4,10 @@
 \pset tuples_only true
 \pset pager off
 BEGIN;
-CREATE EXTENSION pg_curl;
+SET LOCAL client_min_messages = WARNING;
+CREATE EXTENSION IF NOT EXISTS pg_curl;
+END;
+BEGIN;
 select curl_easy_reset(conname:='1');
 select curl_easy_reset(conname:='2');
 select curl_easy_reset(conname:='3');
@@ -35,4 +38,4 @@ select convert_from(curl_easy_getinfo_data_in(conname:='3'), 'utf-8');
 select curl_easy_getinfo_errcode(conname:='1'), curl_easy_getinfo_errdesc(conname:='1'), curl_easy_getinfo_errbuf(conname:='1');
 select curl_easy_getinfo_errcode(conname:='2'), curl_easy_getinfo_errdesc(conname:='2'), curl_easy_getinfo_errbuf(conname:='2');
 select curl_easy_getinfo_errcode(conname:='3'), curl_easy_getinfo_errdesc(conname:='3'), curl_easy_getinfo_errbuf(conname:='3');
-ROLLBACK;
+END;

@@ -4,7 +4,10 @@
 \pset tuples_only true
 \pset pager off
 BEGIN;
-CREATE EXTENSION pg_curl;
+SET LOCAL client_min_messages = WARNING;
+CREATE EXTENSION IF NOT EXISTS pg_curl;
+END;
+BEGIN;
 select curl_easy_reset();
 select curl_easy_setopt_password('wrong');
 select curl_easy_setopt_url('https://httpbin.org/basic-auth/username/password');
@@ -15,6 +18,8 @@ with s as (
 ) select s[1] as key, s[2] as value from s where s[1] not in ('date', 'server', 'content-length');
 select convert_from(curl_easy_getinfo_data_in(), 'utf-8');
 select curl_easy_getinfo_errcode(), curl_easy_getinfo_errdesc(), curl_easy_getinfo_errbuf();
+END;
+BEGIN;
 select curl_easy_reset();
 select curl_easy_setopt_password('password');
 select curl_easy_setopt_url('https://httpbin.org/basic-auth/username/password');
@@ -25,6 +30,8 @@ with s as (
 ) select s[1] as key, s[2] as value from s where s[1] not in ('date', 'server', 'content-length');
 select convert_from(curl_easy_getinfo_data_in(), 'utf-8');
 select curl_easy_getinfo_errcode(), curl_easy_getinfo_errdesc(), curl_easy_getinfo_errbuf();
+END;
+BEGIN;
 select curl_easy_reset();
 select curl_easy_setopt_url('https://httpbin.org/bearer');
 select curl_header_append('Authorization', 'Bearer token');
@@ -34,4 +41,4 @@ with s as (
 ) select s[1] as key, s[2] as value from s where s[1] not in ('date', 'server', 'content-length');
 select convert_from(curl_easy_getinfo_data_in(), 'utf-8');
 select curl_easy_getinfo_errcode(), curl_easy_getinfo_errdesc(), curl_easy_getinfo_errbuf();
-ROLLBACK;
+END;
