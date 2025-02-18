@@ -192,7 +192,7 @@ static void pg_curl_global_init(void) {
 #elif CURL_AT_LEAST_VERSION(7, 8, 0)
     if (curl_global_init(CURL_GLOBAL_ALL)) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_global_init")));
 #endif
-    pg_curl.hash = hash_create("Connection name hash", 1, &(HASHCTL){.keysize = NAMEDATALEN, .entrysize = sizeof(pg_curl_t *), .hcxt = pg_curl.context}, HASH_CONTEXT | HASH_ELEM);
+    pg_curl.hash = hash_create("Connection name hash", 1, &(HASHCTL){.keysize = NAMEDATALEN, .entrysize = sizeof(pg_curl_hash_t), .hcxt = pg_curl.context}, HASH_CONTEXT | HASH_ELEM | HASH_STRINGS);
 }
 
 #if PG_VERSION_NUM >= 90500
