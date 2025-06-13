@@ -17,11 +17,7 @@ t
 content-type|application/json
 access-control-allow-origin|*
 access-control-allow-credentials|true
-{
-  "authenticated": true, 
-  "user": "username"
-}
-
+{"user": "username", "authenticated": true}
 0|No error|
 t
 t
@@ -30,9 +26,5 @@ t
 content-type|application/json
 access-control-allow-origin|*
 access-control-allow-credentials|true
-{
-  "authenticated": true, 
-  "token": "token"
-}
-
+{"token": "token", "authenticated": true}
 0|No error|

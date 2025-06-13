@@ -46,19 +46,16 @@ content-type|application/json
 access-control-allow-origin|*
 access-control-allow-credentials|true
 {
-    "url": "https://httpbin.org/get?a=b&c=&d",
     "args": {
         "a": "b",
         "c": "",
         "d": ""
     },
     "headers": {
-        "Host": "httpbin.org",
         "Accept": "*/*"
     }
 }
 {
-    "url": "https://httpbin.org/post?a=b&c=&d",
     "args": {
         "a": "b",
         "c": "",
@@ -75,14 +72,12 @@ access-control-allow-credentials|true
     "files": {
     },
     "headers": {
-        "Host": "httpbin.org",
         "Accept": "*/*",
         "Content-Type": "application/json; charset=utf-8",
         "Content-Length": "25"
     }
 }
 {
-    "url": "https://httpbin.org/post?a=b&c=&d",
     "args": {
         "a": "b",
         "c": "",
@@ -98,14 +93,12 @@ access-control-allow-credentials|true
     "files": {
     },
     "headers": {
-        "Host": "httpbin.org",
         "Accept": "*/*",
         "Content-Type": "application/x-www-form-urlencoded",
         "Content-Length": "8"
     }
 }
 {
-    "url": "https://httpbin.org/post?a=b&c=&d",
     "args": {
         "a": "b",
         "c": "",
@@ -122,7 +115,6 @@ access-control-allow-credentials|true
         "filename.txt": "content"
     },
     "headers": {
-        "Host": "httpbin.org",
         "Accept": "*/*"
     }
 }
