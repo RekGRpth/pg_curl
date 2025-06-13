@@ -1857,8 +1857,8 @@ EXTENSION(pg_curl_multi_perform) {
                     else ereport(WARNING, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec)), errdetail("try %i", curl->try)));
                     sleep_need = true;
                 } else {
-                    if (curl->errbuf[0]) ereport(WARNING, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec)), errdetail("%s", curl->errbuf)));
-                    else ereport(WARNING, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
+                    if (curl->errbuf[0]) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec)), errdetail("%s", curl->errbuf)));
+                    else ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
                 }
             }
             if (curl->try < try) running_handles++; else pg_curl_multi_remove_handle(curl, true);
