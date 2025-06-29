@@ -13,6 +13,7 @@ DO $plpgsql$ BEGIN
         PERFORM curl_easy_setopt_timeout(1);
         PERFORM curl_easy_setopt_url('http://localhost/status/202');
         PERFORM curl_easy_perform();
+        PERFORM curl_easy_getinfo_http_connectcode();
         SET pg_curl.httpbin = 'http://localhost';
     EXCEPTION WHEN OTHERS THEN
         SET pg_curl.httpbin = 'https://httpbin.org';

@@ -1770,53 +1770,52 @@ static size_t pg_write_callback(char *ptr, size_t size, size_t nmemb, void *user
 }
 
 static CURLcode pg_curl_easy_prepare(pg_curl_t *curl) {
-    CURLcode ec = CURL_LAST;
+    curl->errcode = CURL_LAST;
     resetStringInfo(&curl->data_in);
     resetStringInfo(&curl->data_out);
     resetStringInfo(&curl->debug);
     resetStringInfo(&curl->header_in);
     resetStringInfo(&curl->header_out);
-    if ((ec = curl_easy_setopt(curl->easy, CURLOPT_ERRORBUFFER, curl->errbuf)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
-    if ((ec = curl_easy_setopt(curl->easy, CURLOPT_HEADERDATA, curl)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
-    if ((ec = curl_easy_setopt(curl->easy, CURLOPT_HEADERFUNCTION, pg_header_callback)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
-    if (curl->header && ((ec = curl_easy_setopt(curl->easy, CURLOPT_HTTPHEADER, curl->header)) != CURLE_OK)) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
-    if (curl->postquote && ((ec = curl_easy_setopt(curl->easy, CURLOPT_POSTQUOTE, curl->postquote)) != CURLE_OK)) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
-    if (curl->prequote && ((ec = curl_easy_setopt(curl->easy, CURLOPT_PREQUOTE, curl->prequote)) != CURLE_OK)) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
-    if (curl->quote && ((ec = curl_easy_setopt(curl->easy, CURLOPT_QUOTE, curl->quote)) != CURLE_OK)) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
+    if ((curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_ERRORBUFFER, curl->errbuf)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
+    if ((curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_HEADERDATA, curl)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
+    if ((curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_HEADERFUNCTION, pg_header_callback)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
+    if (curl->header && ((curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_HTTPHEADER, curl->header)) != CURLE_OK)) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
+    if (curl->postquote && ((curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_POSTQUOTE, curl->postquote)) != CURLE_OK)) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
+    if (curl->prequote && ((curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_PREQUOTE, curl->prequote)) != CURLE_OK)) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
+    if (curl->quote && ((curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_QUOTE, curl->quote)) != CURLE_OK)) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
 #if CURL_AT_LEAST_VERSION(7, 32, 0)
-    if (curl->recipient && ((ec = curl_easy_setopt(curl->easy, CURLOPT_MAIL_RCPT, curl->recipient)) != CURLE_OK)) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
+    if (curl->recipient && ((curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_MAIL_RCPT, curl->recipient)) != CURLE_OK)) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
 #endif
 #if CURL_AT_LEAST_VERSION(7, 56, 0)
-    if (curl->mime && ((ec = curl_easy_setopt(curl->easy, CURLOPT_MIMEPOST, curl->mime)) != CURLE_OK)) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
+    if (curl->mime && ((curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_MIMEPOST, curl->mime)) != CURLE_OK)) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
 #endif
-    if ((ec = curl_easy_setopt(curl->easy, CURLOPT_NOPROGRESS, 0L)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
-    if ((ec = curl_easy_setopt(curl->easy, CURLOPT_NOSIGNAL, 1L)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
-    if (curl->postfield.len && (ec = curl_easy_setopt(curl->easy, CURLOPT_POSTFIELDS, curl->postfield.data)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
-    if (curl->postfield.len && (ec = curl_easy_setopt(curl->easy, CURLOPT_POSTFIELDSIZE_LARGE, curl->postfield.len)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
-    if (curl->readdata.len && (ec = curl_easy_setopt(curl->easy, CURLOPT_INFILESIZE_LARGE, curl->readdata.len)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
-    if (curl->readdata.len && (ec = curl_easy_setopt(curl->easy, CURLOPT_READDATA, curl)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
-    if (curl->readdata.len && (ec = curl_easy_setopt(curl->easy, CURLOPT_READFUNCTION, pg_read_callback)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
-    if (curl->readdata.len && (ec = curl_easy_setopt(curl->easy, CURLOPT_UPLOAD, 1L)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
-    if ((ec = curl_easy_setopt(curl->easy, CURLOPT_URL, curl->url.data)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
-    if ((ec = curl_easy_setopt(curl->easy, CURLOPT_WRITEDATA, curl)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
-    if ((ec = curl_easy_setopt(curl->easy, CURLOPT_WRITEFUNCTION, pg_write_callback)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
+    if ((curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_NOPROGRESS, 0L)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
+    if ((curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_NOSIGNAL, 1L)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
+    if (curl->postfield.len && (curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_POSTFIELDS, curl->postfield.data)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
+    if (curl->postfield.len && (curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_POSTFIELDSIZE_LARGE, curl->postfield.len)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
+    if (curl->readdata.len && (curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_INFILESIZE_LARGE, curl->readdata.len)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
+    if (curl->readdata.len && (curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_READDATA, curl)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
+    if (curl->readdata.len && (curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_READFUNCTION, pg_read_callback)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
+    if (curl->readdata.len && (curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_UPLOAD, 1L)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
+    if ((curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_URL, curl->url.data)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
+    if ((curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_WRITEDATA, curl)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
+    if ((curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_WRITEFUNCTION, pg_write_callback)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
 #if CURL_AT_LEAST_VERSION(7, 32, 0)
-    if ((ec = curl_easy_setopt(curl->easy, CURLOPT_XFERINFODATA, curl)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
-    if ((ec = curl_easy_setopt(curl->easy, CURLOPT_XFERINFOFUNCTION, pg_progress_callback)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
+    if ((curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_XFERINFODATA, curl)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
+    if ((curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_XFERINFOFUNCTION, pg_progress_callback)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
 #endif
-    if ((ec = curl_easy_setopt(curl->easy, CURLOPT_PRIVATE, curl)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
+    if ((curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_PRIVATE, curl)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
     curl->try = 0;
-    return ec;
+    return curl->errcode;
 }
 
 static bool pg_curl_multi_add_handle_my(const char *conname) {
-    CURLcode ec;
     CURLMcode mc;
     pg_curl_t *curl = pg_curl_easy_init(conname);
     pg_curl_multi_remove_handle(curl, true);
-    if ((ec = pg_curl_easy_prepare(curl)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
+    if ((curl->errcode = pg_curl_easy_prepare(curl)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
     if ((mc = curl_multi_add_handle(curl->multi = pg_curl.multi, curl->easy)) != CURLM_OK) ereport(ERROR, (pg_curl_mc(mc), errmsg("%s", curl_multi_strerror(mc))));
-    return ec == CURLE_OK && mc == CURLM_OK;
+    return curl->errcode == CURLE_OK && mc == CURLM_OK;
 }
 
 EXTENSION(pg_curl_multi_add_handle) {
@@ -1845,20 +1844,14 @@ EXTENSION(pg_curl_multi_perform) {
             if ((ec = curl_easy_getinfo(msg->easy_handle, CURLINFO_PRIVATE, &curl)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
             curl->errcode = msg->data.result;
             curl->try++;
-            switch ((ec = msg->data.result)) {
-                case CURLE_ABORTED_BY_CALLBACK:
-                    if (curl->errbuf[0]) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec)), errdetail("%s", curl->errbuf)));
-                    else ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
-                    break;
+            switch ((ec = curl->errcode)) {
+                case CURLE_ABORTED_BY_CALLBACK: break;
                 case CURLE_OK: curl->try = try; break;
                 case CURLE_UNSUPPORTED_PROTOCOL: case CURLE_FAILED_INIT: case CURLE_URL_MALFORMAT: case CURLE_NOT_BUILT_IN: case CURLE_FUNCTION_NOT_FOUND: case CURLE_BAD_FUNCTION_ARGUMENT: case CURLE_UNKNOWN_OPTION: case CURLE_LDAP_INVALID_URL: curl->try = try; // fall through
                 default: if (curl->try < try) {
                     if (curl->errbuf[0]) ereport(WARNING, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec)), errdetail("%s", curl->errbuf), errcontext("try %i", curl->try)));
-                    else ereport(WARNING, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec)), errdetail("try %i", curl->try)));
+                    else ereport(WARNING, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec)), errcontext("try %i", curl->try)));
                     sleep_need = true;
-                } else {
-                    if (curl->errbuf[0]) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec)), errdetail("%s", curl->errbuf)));
-                    else ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
                 }
             }
             if (curl->try < try) running_handles++; else pg_curl_multi_remove_handle(curl, true);
@@ -1872,32 +1865,44 @@ EXTENSION(pg_curl_easy_perform) {
     return pg_curl_multi_add_handle_my("unknown") && pg_curl_multi_perform(fcinfo);
 }
 
+static void pg_curl_check_error(pg_curl_t *curl) {
+    if (curl->errcode != CURLE_OK) {
+        if (curl->errbuf[0]) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode)), errdetail("%s", curl->errbuf)));
+        else ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
+    }
+}
+
 EXTENSION(pg_curl_easy_getinfo_debug) {
     pg_curl_t *curl = pg_curl_easy_init(PG_CONNAME(0));
+    pg_curl_check_error(curl);
     if (!curl->debug.len) PG_RETURN_NULL();
     PG_RETURN_TEXT_P(cstring_to_text_with_len(curl->debug.data, curl->debug.len));
 }
 
 EXTENSION(pg_curl_easy_getinfo_header_in) {
     pg_curl_t *curl = pg_curl_easy_init(PG_CONNAME(0));
+    pg_curl_check_error(curl);
     if (!curl->header_in.len) PG_RETURN_NULL();
     PG_RETURN_TEXT_P(cstring_to_text_with_len(curl->header_in.data, curl->header_in.len));
 }
 
 EXTENSION(pg_curl_easy_getinfo_header_out) {
     pg_curl_t *curl = pg_curl_easy_init(PG_CONNAME(0));
+    pg_curl_check_error(curl);
     if (!curl->header_out.len) PG_RETURN_NULL();
     PG_RETURN_TEXT_P(cstring_to_text_with_len(curl->header_out.data, curl->header_out.len));
 }
 
 EXTENSION(pg_curl_easy_getinfo_data_in) {
     pg_curl_t *curl = pg_curl_easy_init(PG_CONNAME(0));
+    pg_curl_check_error(curl);
     if (!curl->data_in.len) PG_RETURN_NULL();
     PG_RETURN_BYTEA_P(cstring_to_text_with_len(curl->data_in.data, curl->data_in.len));
 }
 
 EXTENSION(pg_curl_easy_getinfo_data_out) {
     pg_curl_t *curl = pg_curl_easy_init(PG_CONNAME(0));
+    pg_curl_check_error(curl);
     if (!curl->data_out.len) PG_RETURN_NULL();
     PG_RETURN_BYTEA_P(cstring_to_text_with_len(curl->data_out.data, curl->data_out.len));
 }
@@ -1933,6 +1938,7 @@ static Datum pg_curl_easy_getinfo_char(PG_FUNCTION_ARGS, CURLINFO info) {
     CURLcode ec = CURL_LAST;
     char *value = NULL;
     pg_curl_t *curl = pg_curl_easy_init(PG_CONNAME(0));
+    pg_curl_check_error(curl);
     if ((ec = curl_easy_getinfo(curl->easy, info, &value)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
     if (!value) PG_RETURN_NULL();
     PG_RETURN_TEXT_P(cstring_to_text(value));
@@ -2003,6 +2009,7 @@ static Datum pg_curl_easy_getinfo_long(PG_FUNCTION_ARGS, CURLINFO info) {
     CURLcode ec = CURL_LAST;
     long value;
     pg_curl_t *curl = pg_curl_easy_init(PG_CONNAME(0));
+    pg_curl_check_error(curl);
     if ((ec = curl_easy_getinfo(curl->easy, info, &value)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
     PG_RETURN_INT64(value);
 #else

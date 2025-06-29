@@ -1,5 +1,4 @@
 \unset ECHO
 t
 t
-ERROR:  Operation was aborted by an application callback
-DETAIL:  Callback aborted
+ERROR:  canceling statement due to statement timeout
