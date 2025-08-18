@@ -64,9 +64,9 @@ static int pg_curl_ec(CURLcode ec) {
 }
 
 static int pg_curl_mc(CURLMcode mc) {
-    if (mc < 10) return errcode(MAKE_SQLSTATE('X','E','0','0','0'+mc));
-    if (mc < 100) return errcode(MAKE_SQLSTATE('X','E','0','0'+mc/10,'0'+mc%10));
-    if (mc < 1000) return errcode(MAKE_SQLSTATE('X','E','0'+mc/100,'0'+(mc%100)/10,'0'+(mc%100)%10));
+    if (mc < 10) return errcode(MAKE_SQLSTATE('X','M','0','0','0'+mc));
+    if (mc < 100) return errcode(MAKE_SQLSTATE('X','M','0','0'+mc/10,'0'+mc%10));
+    if (mc < 1000) return errcode(MAKE_SQLSTATE('X','M','0'+mc/100,'0'+(mc%100)/10,'0'+(mc%100)%10));
     return errcode(MAKE_SQLSTATE('X','M','0','0','0'));
 }
 
