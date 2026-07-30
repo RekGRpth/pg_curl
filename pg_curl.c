@@ -8,7 +8,6 @@
 #include <utils/memutils.h>
 
 #include <curl/curl.h>
-#include <pthread.h>
 
 #define EXTENSION(function) Datum (function)(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(function); Datum (function)(PG_FUNCTION_ARGS)
 
@@ -50,9 +49,7 @@ static struct {
     CURLM *multi;
     HTAB *hash;
     MemoryContext context;
-    pthread_mutex_t mutex;
 } pg_curl = {
-    .mutex = PTHREAD_MUTEX_INITIALIZER,
     .transaction = true,
 };
 
@@ -69,71 +66,6 @@ static int pg_curl_mc(CURLMcode mc) {
     if (mc < 1000) return errcode(MAKE_SQLSTATE('M','C','0'+mc/100,'0'+(mc%100)/10,'0'+(mc%100)%10));
     return errcode(MAKE_SQLSTATE('M','C','0','0','0'));
 }
-
-#if CURL_AT_LEAST_VERSION(7, 12, 0)
-static void *pg_curl_malloc_callback(size_t size) {
-    void *result;
-    pthread_mutex_lock(&pg_curl.mutex);
-    PG_TRY(); {
-        result = size ? MemoryContextAlloc(pg_curl.context, size) : NULL;
-    } PG_CATCH(); {
-        pthread_mutex_unlock(&pg_curl.mutex);
-        PG_RE_THROW();
-    } PG_END_TRY();
-    pthread_mutex_unlock(&pg_curl.mutex);
-    return result;
-}
-
-static void pg_curl_free_callback(void *ptr) {
-    pthread_mutex_lock(&pg_curl.mutex);
-    PG_TRY(); {
-        if (ptr) pfree(ptr);
-    } PG_CATCH(); {
-        pthread_mutex_unlock(&pg_curl.mutex);
-        PG_RE_THROW();
-    } PG_END_TRY();
-    pthread_mutex_unlock(&pg_curl.mutex);
-}
-
-static void *pg_curl_realloc_callback(void *ptr, size_t size) {
-    void *result;
-    pthread_mutex_lock(&pg_curl.mutex);
-    PG_TRY(); {
-        result = (ptr && size) ? repalloc(ptr, size) : (size ? MemoryContextAlloc(pg_curl.context, size) : ptr);
-    } PG_CATCH(); {
-        pthread_mutex_unlock(&pg_curl.mutex);
-        PG_RE_THROW();
-    } PG_END_TRY();
-    pthread_mutex_unlock(&pg_curl.mutex);
-    return result;
-}
-
-static char *pg_curl_strdup_callback(const char *str) {
-    char *result;
-    pthread_mutex_lock(&pg_curl.mutex);
-    PG_TRY(); {
-        result = MemoryContextStrdup(pg_curl.context, str);
-    } PG_CATCH(); {
-        pthread_mutex_unlock(&pg_curl.mutex);
-        PG_RE_THROW();
-    } PG_END_TRY();
-    pthread_mutex_unlock(&pg_curl.mutex);
-    return result;
-}
-
-static void *pg_curl_calloc_callback(size_t nmemb, size_t size) {
-    void *result;
-    pthread_mutex_lock(&pg_curl.mutex);
-    PG_TRY(); {
-        result = MemoryContextAllocZero(pg_curl.context, nmemb * size);
-    } PG_CATCH(); {
-        pthread_mutex_unlock(&pg_curl.mutex);
-        PG_RE_THROW();
-    } PG_END_TRY();
-    pthread_mutex_unlock(&pg_curl.mutex);
-    return result;
-}
-#endif
 
 #if PG_VERSION_NUM >= 90500
 static void pg_curl_global_cleanup(void *arg) {
@@ -187,9 +119,7 @@ static void pg_curl_global_init(void) {
     callback->func = pg_curl_global_cleanup;
     MemoryContextRegisterResetCallback(pg_curl.context, callback);
 #endif
-#if CURL_AT_LEAST_VERSION(7, 12, 0)
-    if (curl_global_init_mem(CURL_GLOBAL_ALL, pg_curl_malloc_callback, pg_curl_free_callback, pg_curl_realloc_callback, pg_curl_strdup_callback, pg_curl_calloc_callback)) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_global_init_mem")));
-#elif CURL_AT_LEAST_VERSION(7, 8, 0)
+#if CURL_AT_LEAST_VERSION(7, 8, 0)
     if (curl_global_init(CURL_GLOBAL_ALL)) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_global_init")));
 #endif
 #if PG_VERSION_NUM >= 140000
