@@ -459,7 +459,7 @@ static Datum pg_curl_mime_data_or_file(PG_FUNCTION_ARGS, curl_mimepart *part) {
     if (type) pfree(type);
     if (code) pfree(code);
     if (head) pfree(head);
-    PG_RETURN_BOOL(ec == CURLE_OK);
+    PG_RETURN_BOOL(true);
 #else
     ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_mime_data requires curl 7.56.0 or later")));
 #endif
