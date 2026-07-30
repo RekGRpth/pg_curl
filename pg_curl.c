@@ -723,7 +723,9 @@ EXTENSION(pg_curl_easy_setopt_keypasswd) {
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_krblevel) {
-#if CURL_AT_LEAST_VERSION(7, 16, 4)
+#if CURL_AT_LEAST_VERSION(8, 17, 0)
+    ereport(ERROR, (errcode(ERRCODE_WARNING_DEPRECATED_FEATURE), errmsg("curl_easy_setopt_krblevel deprecated: since 8.17.0. removed")));
+#elif CURL_AT_LEAST_VERSION(7, 16, 4)
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_KRBLEVEL);
 #else
     ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_krblevel requires curl 7.16.4 or later")));
@@ -1543,7 +1545,9 @@ EXTENSION(pg_curl_easy_setopt_ssl_enable_npn) {
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_ssl_falsestart) {
-#if CURL_AT_LEAST_VERSION(7, 42, 0)
+#if CURL_AT_LEAST_VERSION(8, 15, 0)
+    ereport(ERROR, (errcode(ERRCODE_WARNING_DEPRECATED_FEATURE), errmsg("curl_easy_setopt_ssl_falsestart deprecated: since 8.15.0. Has no function")));
+#elif CURL_AT_LEAST_VERSION(7, 42, 0)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_SSL_FALSESTART);
 #else
     ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_ssl_falsestart requires curl 7.42.0 or later")));
