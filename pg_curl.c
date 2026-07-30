@@ -565,6 +565,7 @@ static Datum pg_curl_postfield_or_url_append(PG_FUNCTION_ARGS, pg_curl_t *curl, 
     if (buf->len && buf->data[buf->len - 1] != '?') appendStringInfoChar(buf, '&');
     if (!(escape = curl_easy_escape(curl->easy, VARDATA_ANY(name), VARSIZE_ANY_EXHDR(name)))) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_escape failed")));
     appendStringInfoString(buf, escape);
+    curl_free(escape);
     PG_FREE_IF_COPY(name, 0);
     if (!PG_ARGISNULL(1)) {
         text *value = PG_GETARG_TEXT_PP(1);
@@ -572,6 +573,7 @@ static Datum pg_curl_postfield_or_url_append(PG_FUNCTION_ARGS, pg_curl_t *curl, 
         if (VARSIZE_ANY_EXHDR(value)) {
             if (!(escape = curl_easy_escape(curl->easy, VARDATA_ANY(value), VARSIZE_ANY_EXHDR(value)))) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("curl_easy_escape failed")));
             appendStringInfoString(buf, escape);
+            curl_free(escape);
         }
         PG_FREE_IF_COPY(value, 1);
     }
