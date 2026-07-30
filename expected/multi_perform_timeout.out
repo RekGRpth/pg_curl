@@ -1,0 +1,3 @@
+\unset ECHO
+ERROR:  curl_multi_perform invalid argument timeout_ms -5
+HINT:  Argument timeout_ms must be positive!
