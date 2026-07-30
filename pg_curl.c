@@ -462,7 +462,6 @@ EXTENSION(pg_curl_mime_file) {
 }
 
 EXTENSION(pg_curl_easy_setopt_postfields) {
-    CURLcode ec = CURLE_OK;
     bytea *parameter;
     pg_curl_t *curl = pg_curl_easy_init(PG_CONNAME(1));
     if (PG_ARGISNULL(0)) ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("curl_easy_setopt_postfields requires argument parameter")));
@@ -471,11 +470,10 @@ EXTENSION(pg_curl_easy_setopt_postfields) {
     resetStringInfo(&curl->readdata);
     appendBinaryStringInfo(&curl->postfield, VARDATA_ANY(parameter), VARSIZE_ANY_EXHDR(parameter));
     PG_FREE_IF_COPY(parameter, 0);
-    PG_RETURN_BOOL(ec == CURLE_OK);
+    PG_RETURN_BOOL(true);
 }
 
 EXTENSION(pg_curl_easy_setopt_readdata) {
-    CURLcode ec = CURLE_OK;
     bytea *parameter;
     pg_curl_t *curl = pg_curl_easy_init(PG_CONNAME(1));
     if (PG_ARGISNULL(0)) ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("curl_easy_setopt_readdata requires argument parameter")));
@@ -484,11 +482,10 @@ EXTENSION(pg_curl_easy_setopt_readdata) {
     resetStringInfo(&curl->readdata);
     appendBinaryStringInfo(&curl->readdata, VARDATA_ANY(parameter), VARSIZE_ANY_EXHDR(parameter));
     PG_FREE_IF_COPY(parameter, 0);
-    PG_RETURN_BOOL(ec == CURLE_OK);
+    PG_RETURN_BOOL(true);
 }
 
 EXTENSION(pg_curl_easy_setopt_url) {
-    CURLcode ec = CURLE_OK;
     text *parameter;
     pg_curl_t *curl = pg_curl_easy_init(PG_CONNAME(1));
     if (PG_ARGISNULL(0)) ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("curl_easy_setopt_url requires argument parameter")));
@@ -496,7 +493,7 @@ EXTENSION(pg_curl_easy_setopt_url) {
     resetStringInfo(&curl->url);
     appendBinaryStringInfo(&curl->url, VARDATA_ANY(parameter), VARSIZE_ANY_EXHDR(parameter));
     PG_FREE_IF_COPY(parameter, 0);
-    PG_RETURN_BOOL(ec == CURLE_OK);
+    PG_RETURN_BOOL(true);
 }
 
 static Datum pg_curl_postfield_or_url_append(PG_FUNCTION_ARGS, pg_curl_t *curl, StringInfoData *buf) {
