@@ -1786,6 +1786,7 @@ EXTENSION(pg_curl_multi_perform) {
     int timeout_ms;
     int try;
     long sleep;
+    bool all_ok = true;
     if ((try = PG_ARGISNULL(0) ? 1 : PG_GETARG_INT32(0)) <= 0) ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("curl_multi_perform invalid argument try %i", try), errhint("Argument try must be positive!")));
     if ((sleep = PG_ARGISNULL(1) ? 1000000 : PG_GETARG_INT64(1)) < 0) ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("curl_multi_perform invalid argument sleep %li", sleep), errhint("Argument sleep must be non-negative!")));
     if ((timeout_ms = PG_ARGISNULL(2) ? 1000 : PG_GETARG_INT32(2)) <= 0) ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("curl_multi_perform invalid argument timeout_ms %i", timeout_ms), errhint("Argument timeout_ms must be positive!")));
@@ -1809,11 +1810,14 @@ EXTENSION(pg_curl_multi_perform) {
                     sleep_need = true;
                 }
             }
-            if (curl->try < try) running_handles++; else pg_curl_multi_remove_handle(curl, true);
+            if (curl->try < try) running_handles++; else {
+                if (curl->errcode != CURLE_OK) all_ok = false;
+                pg_curl_multi_remove_handle(curl, true);
+            }
         }
         if (sleep_need && sleep) pg_usleep(sleep);
     } while (running_handles);
-    PG_RETURN_BOOL(ec == CURLE_OK && mc == CURLM_OK);
+    PG_RETURN_BOOL(all_ok && mc == CURLM_OK);
 }
 
 EXTENSION(pg_curl_easy_perform) {
