@@ -178,6 +178,7 @@ static pg_curl_t *pg_curl_easy_init(const char *conname) {
     initStringInfo(&curl->readdata);
     initStringInfo(&curl->url);
     MemoryContextSwitchTo(oldMemoryContext);
+    curl->errcode = CURL_LAST;
 #if PG_VERSION_NUM >= 90500
     callback = MemoryContextAlloc(pg_curl.context, sizeof(*callback));
     callback->arg = curl;
@@ -243,7 +244,7 @@ EXTENSION(pg_curl_easy_recipient_reset) {
 EXTENSION(pg_curl_easy_reset) {
     pg_curl_t *curl = pg_curl_easy_init(PG_CONNAME(0));
     curl->errbuf[0] = '\0';
-    curl->errcode = CURLE_OK;
+    curl->errcode = CURL_LAST;
     pg_curl_easy_header_reset(fcinfo);
     pg_curl_easy_postquote_reset(fcinfo);
     pg_curl_easy_prequote_reset(fcinfo);
