@@ -1,0 +1,19 @@
+\unset ECHO
+t
+ERROR:  curl_header_append value must not contain CR or LF characters
+t
+ERROR:  curl_header_append name must not contain CR or LF characters
+t
+ERROR:  curl_quote_append command must not contain CR or LF characters
+t
+ERROR:  curl_prequote_append command must not contain CR or LF characters
+t
+ERROR:  curl_postquote_append command must not contain CR or LF characters
+t
+ERROR:  curl_recipient_append email must not contain CR or LF characters
+t
+t
+t
+t
+t
+t

@@ -67,6 +67,10 @@ static int pg_curl_mc(CURLMcode mc) {
     return errcode(MAKE_SQLSTATE('M','C','0','0','0'));
 }
 
+static void pg_curl_check_crlf(const char *str, const char *what) {
+    if (strpbrk(str, "\r\n")) ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("%s must not contain CR or LF characters", what)));
+}
+
 #if PG_VERSION_NUM >= 90500
 static void pg_curl_global_cleanup(void *arg) {
 #if CURL_AT_LEAST_VERSION(7, 8, 0)
@@ -309,6 +313,8 @@ EXTENSION(pg_curl_header_append) {
     name = TextDatumGetCString(PG_GETARG_DATUM(0));
     if (PG_ARGISNULL(1)) ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("curl_header_append requires argument value")));
     value = TextDatumGetCString(PG_GETARG_DATUM(1));
+    pg_curl_check_crlf(name, "curl_header_append name");
+    pg_curl_check_crlf(value, "curl_header_append value");
     initStringInfo(&buf);
     appendStringInfo(&buf, "%s: %s", name, value);
     if ((temp = curl_slist_append(temp, buf.data))) curl->header = temp; else ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_slist_append")));
@@ -324,6 +330,7 @@ EXTENSION(pg_curl_postquote_append) {
     struct curl_slist *temp = curl->postquote;
     if (PG_ARGISNULL(0)) ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("curl_postquote_append requires argument command")));
     command = TextDatumGetCString(PG_GETARG_DATUM(0));
+    pg_curl_check_crlf(command, "curl_postquote_append command");
     if ((temp = curl_slist_append(temp, command))) curl->postquote = temp; else ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_slist_append")));
     pfree(command);
     PG_RETURN_BOOL(temp != NULL);
@@ -335,6 +342,7 @@ EXTENSION(pg_curl_prequote_append) {
     struct curl_slist *temp = curl->prequote;
     if (PG_ARGISNULL(0)) ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("curl_prequote_append requires argument command")));
     command = TextDatumGetCString(PG_GETARG_DATUM(0));
+    pg_curl_check_crlf(command, "curl_prequote_append command");
     if ((temp = curl_slist_append(temp, command))) curl->prequote = temp; else ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_slist_append")));
     pfree(command);
     PG_RETURN_BOOL(temp != NULL);
@@ -346,6 +354,7 @@ EXTENSION(pg_curl_quote_append) {
     struct curl_slist *temp = curl->quote;
     if (PG_ARGISNULL(0)) ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("curl_quote_append requires argument command")));
     command = TextDatumGetCString(PG_GETARG_DATUM(0));
+    pg_curl_check_crlf(command, "curl_quote_append command");
     if ((temp = curl_slist_append(temp, command))) curl->quote = temp; else ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_slist_append")));
     pfree(command);
     PG_RETURN_BOOL(temp != NULL);
@@ -358,6 +367,7 @@ EXTENSION(pg_curl_recipient_append) {
     struct curl_slist *temp = curl->recipient;
     if (PG_ARGISNULL(0)) ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("curl_recipient_append requires argument email")));
     email = TextDatumGetCString(PG_GETARG_DATUM(0));
+    pg_curl_check_crlf(email, "curl_recipient_append email");
     if ((temp = curl_slist_append(temp, email))) curl->recipient = temp; else ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_slist_append")));
     pfree(email);
     PG_RETURN_BOOL(temp != NULL);
