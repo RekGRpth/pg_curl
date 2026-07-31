@@ -1,0 +1,8 @@
+\unset ECHO
+t
+t
+t
+WARNING:  curl_easy_getinfo_headers deprecated, use curl_easy_getinfo_header_in instead
+t
+WARNING:  curl_easy_getinfo_response deprecated, use curl_easy_getinfo_data_in instead
+t
