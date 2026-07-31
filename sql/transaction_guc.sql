@@ -20,17 +20,25 @@ DO $plpgsql$ BEGIN
     END;
 END;$plpgsql$;
 -- default pg_curl.transaction = true: connection state lives in
--- CurTransactionContext, so it is torn down when the transaction commits
+-- CurTransactionContext, so it is torn down when the transaction commits.
+-- MemoryContextRegisterResetCallback (needed for that) only exists since
+-- PostgreSQL 9.5, so on 9.4 pg_curl always falls back to TopMemoryContext
+-- regardless of this GUC -- state surviving there too is expected on 9.4,
+-- not a bug, hence comparing against the server's actual capability below
+-- instead of hardcoding "must reset".
 BEGIN;
 select curl_easy_reset();
 select curl_easy_setopt_url(current_setting('pg_curl.httpbin') || '/get');
 select curl_easy_perform();
 select curl_easy_getinfo_errcode() = 0 as ran_ok;
 COMMIT;
-select curl_easy_getinfo_errcode() <> 0 as state_reset_between_transactions;
+select (curl_easy_getinfo_errcode() <> 0) = (current_setting('server_version_num')::int >= 90500) as state_reset_matches_capability;
 -- pg_curl.transaction = false: connection state lives in TopMemoryContext,
 -- which is not tied to the transaction lifecycle, so it must survive
-select set_config('pg_curl.transaction', 'false', false);
+-- regardless of PostgreSQL version. set_config()'s return value is
+-- compared loosely since older PostgreSQL versions may not canonicalize
+-- a custom boolean GUC's display value to on/off.
+select set_config('pg_curl.transaction', 'false', false) IN ('off', 'false') as transaction_guc_set;
 BEGIN;
 select curl_easy_reset();
 select curl_easy_setopt_url(current_setting('pg_curl.httpbin') || '/get');
