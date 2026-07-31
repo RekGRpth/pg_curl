@@ -1,0 +1,32 @@
+\unset ECHO
+\set QUIET 1
+\pset format unaligned
+\pset tuples_only true
+\pset pager off
+BEGIN;
+SET LOCAL client_min_messages = WARNING;
+CREATE EXTENSION IF NOT EXISTS pg_curl;
+END;
+DO $plpgsql$ BEGIN
+    BEGIN
+        PERFORM curl_easy_reset();
+        PERFORM curl_easy_setopt_timeout(1);
+        PERFORM curl_easy_setopt_url('http://localhost/status/202');
+        PERFORM curl_easy_perform();
+        PERFORM curl_easy_getinfo_http_connectcode();
+        SET pg_curl.httpbin = 'http://localhost';
+    EXCEPTION WHEN OTHERS THEN
+        SET pg_curl.httpbin = 'https://httpbin.org';
+    END;
+END;$plpgsql$;
+BEGIN;
+-- curl_mime_file() reads its content from an actual local file (unlike
+-- curl_mime_data(), which takes the content in-memory); build that file
+-- from SQL so the test is self-contained
+COPY (select 'pg_curl mime file upload test content') TO '/tmp/pg_curl_mime_file_test.txt';
+select curl_easy_reset();
+select curl_easy_setopt_url(current_setting('pg_curl.httpbin') || '/post?');
+select curl_mime_file('/tmp/pg_curl_mime_file_test.txt', name:='upload');
+select curl_easy_perform();
+select (convert_from(curl_easy_getinfo_data_in(), 'utf-8')::jsonb -> 'files' ->> 'upload') = E'pg_curl mime file upload test content\n' as file_content_matches;
+END;
