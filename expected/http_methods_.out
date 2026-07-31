@@ -45,79 +45,10 @@ access-control-allow-credentials|true
 content-type|application/json
 access-control-allow-origin|*
 access-control-allow-credentials|true
-{
-    "args": {
-        "a": "b",
-        "c": "",
-        "d": ""
-    },
-    "headers": {
-        "Accept": "*/*"
-    }
-}
-{
-    "args": {
-        "a": "b",
-        "c": "",
-        "d": ""
-    },
-    "data": "{\"e\":\"f\",\"g\":\"\",\"h\":null}",
-    "form": {
-    },
-    "json": {
-        "e": "f",
-        "g": "",
-        "h": null
-    },
-    "files": {
-    },
-    "headers": {
-        "Accept": "*/*",
-        "Content-Type": "application/json; charset=utf-8",
-        "Content-Length": "25"
-    }
-}
-{
-    "args": {
-        "a": "b",
-        "c": "",
-        "d": ""
-    },
-    "data": "",
-    "form": {
-        "e": "f",
-        "g": "",
-        "h": ""
-    },
-    "json": null,
-    "files": {
-    },
-    "headers": {
-        "Accept": "*/*",
-        "Content-Type": "application/x-www-form-urlencoded",
-        "Content-Length": "8"
-    }
-}
-{
-    "args": {
-        "a": "b",
-        "c": "",
-        "d": ""
-    },
-    "data": "",
-    "form": {
-        "e": "f",
-        "g": "",
-        "h": ""
-    },
-    "json": null,
-    "files": {
-        "filename.txt": "content"
-    },
-    "headers": {
-        "Accept": "*/*"
-    }
-}
+{"args" : {"a": "b", "c": "", "d": ""}, "headers" : {"Accept" : "*/*"}}
+{"args" : {"a": "b", "c": "", "d": ""}, "data" : "{\"e\":\"f\",\"g\":\"\",\"h\":null}", "form" : {}, "json" : {"e": "f", "g": "", "h": null}, "files" : {}, "headers" : {"Accept" : "*/*", "Content-Type" : "application/json; charset=utf-8", "Content-Length" : "25"}}
+{"args" : {"a": "b", "c": "", "d": ""}, "data" : "", "form" : {"e": "f", "g": "", "h": ""}, "json" : null, "files" : {}, "headers" : {"Accept" : "*/*", "Content-Type" : "application/x-www-form-urlencoded", "Content-Length" : "8"}}
+{"args" : {"a": "b", "c": "", "d": ""}, "data" : "", "form" : {"e": "f", "g": "", "h": ""}, "json" : null, "files" : {"filename.txt": "content"}, "headers" : {"Accept" : "*/*"}}
 0|No error|
 0|No error|
 0|No error|

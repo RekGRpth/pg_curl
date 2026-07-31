@@ -29,7 +29,15 @@ select curl_easy_perform();
 with s as (
     select regexp_matches(curl_easy_getinfo_header_in(), E'([^ \t\r\n\f]+): ?([^\t\r\n\f]+)', 'g') as s
 ) select lower(s[1]) as key, s[2] as value from s where lower(s[1]) not in ('date', 'server', 'content-length', 'connection');
-select jsonb_pretty((convert_from(curl_easy_getinfo_data_in(), 'utf-8')::jsonb #- '{headers,X-Amzn-Trace-Id}'::text[] #- '{headers,Host}'::text[]) - 'origin' - 'url');
+-- args/headers are selected explicitly (rather than deleting the noisy keys
+-- with jsonb's -/#- operators, which only exist since PostgreSQL 9.5) so this
+-- keeps working back to PostgreSQL 9.4, which has -> and json_build_object
+with j as (
+    select convert_from(curl_easy_getinfo_data_in(), 'utf-8')::jsonb as data
+) select json_build_object(
+    'args', j.data->'args',
+    'headers', json_build_object('Accept', j.data->'headers'->>'Accept')
+) from j;
 select curl_easy_getinfo_errcode(), curl_easy_getinfo_errdesc(), curl_easy_getinfo_errbuf();
 END;
 BEGIN;
@@ -44,7 +52,20 @@ select curl_easy_perform();
 with s as (
     select regexp_matches(curl_easy_getinfo_header_in(), E'([^ \t\r\n\f]+): ?([^\t\r\n\f]+)', 'g') as s
 ) select lower(s[1]) as key, s[2] as value from s where lower(s[1]) not in ('date', 'server', 'content-length', 'connection');
-select jsonb_pretty((convert_from(curl_easy_getinfo_data_in(), 'utf-8')::jsonb #- '{headers,X-Amzn-Trace-Id}'::text[] #- '{headers,Host}'::text[]) - 'origin' - 'url');
+with j as (
+    select convert_from(curl_easy_getinfo_data_in(), 'utf-8')::jsonb as data
+) select json_build_object(
+    'args', j.data->'args',
+    'data', j.data->>'data',
+    'form', j.data->'form',
+    'json', j.data->'json',
+    'files', j.data->'files',
+    'headers', json_build_object(
+        'Accept', j.data->'headers'->>'Accept',
+        'Content-Type', j.data->'headers'->>'Content-Type',
+        'Content-Length', j.data->'headers'->>'Content-Length'
+    )
+) from j;
 select curl_easy_getinfo_errcode(), curl_easy_getinfo_errdesc(), curl_easy_getinfo_errbuf();
 END;
 BEGIN;
@@ -60,7 +81,20 @@ select curl_easy_perform();
 with s as (
     select regexp_matches(curl_easy_getinfo_header_in(), E'([^ \t\r\n\f]+): ?([^\t\r\n\f]+)', 'g') as s
 ) select lower(s[1]) as key, s[2] as value from s where lower(s[1]) not in ('date', 'server', 'content-length', 'connection');
-select jsonb_pretty((convert_from(curl_easy_getinfo_data_in(), 'utf-8')::jsonb #- '{headers,X-Amzn-Trace-Id}'::text[] #- '{headers,Host}'::text[]) - 'origin' - 'url');
+with j as (
+    select convert_from(curl_easy_getinfo_data_in(), 'utf-8')::jsonb as data
+) select json_build_object(
+    'args', j.data->'args',
+    'data', j.data->>'data',
+    'form', j.data->'form',
+    'json', j.data->'json',
+    'files', j.data->'files',
+    'headers', json_build_object(
+        'Accept', j.data->'headers'->>'Accept',
+        'Content-Type', j.data->'headers'->>'Content-Type',
+        'Content-Length', j.data->'headers'->>'Content-Length'
+    )
+) from j;
 select curl_easy_getinfo_errcode(), curl_easy_getinfo_errdesc(), curl_easy_getinfo_errbuf();
 END;
 BEGIN;
@@ -77,6 +111,15 @@ select curl_easy_perform();
 with s as (
     select regexp_matches(curl_easy_getinfo_header_in(), E'([^ \t\r\n\f]+): ?([^\t\r\n\f]+)', 'g') as s
 ) select lower(s[1]) as key, s[2] as value from s where lower(s[1]) not in ('date', 'server', 'content-length', 'connection');
-select jsonb_pretty((((convert_from(curl_easy_getinfo_data_in(), 'utf-8')::jsonb #- '{headers,X-Amzn-Trace-Id}'::text[] #- '{headers,Host}'::text[]) #- '{headers,Content-Type}'::text[]) #- '{headers,Content-Length}'::text[]) - 'origin' - 'url');
+with j as (
+    select convert_from(curl_easy_getinfo_data_in(), 'utf-8')::jsonb as data
+) select json_build_object(
+    'args', j.data->'args',
+    'data', j.data->>'data',
+    'form', j.data->'form',
+    'json', j.data->'json',
+    'files', j.data->'files',
+    'headers', json_build_object('Accept', j.data->'headers'->>'Accept')
+) from j;
 select curl_easy_getinfo_errcode(), curl_easy_getinfo_errdesc(), curl_easy_getinfo_errbuf();
 END;

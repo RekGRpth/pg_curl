@@ -66,10 +66,53 @@ with s as (
 with s as (
     select regexp_matches(curl_easy_getinfo_header_in(conname:='4'), E'([^ \t\r\n\f]+): ?([^\t\r\n\f]+)', 'g') as s
 ) select lower(s[1]) as key, s[2] as value from s where lower(s[1]) not in ('date', 'server', 'content-length', 'connection');
-select jsonb_pretty((convert_from(curl_easy_getinfo_data_in(conname:='1'), 'utf-8')::jsonb #- '{headers,X-Amzn-Trace-Id}'::text[] #- '{headers,Host}'::text[]) - 'origin' - 'url');
-select jsonb_pretty((convert_from(curl_easy_getinfo_data_in(conname:='2'), 'utf-8')::jsonb #- '{headers,X-Amzn-Trace-Id}'::text[] #- '{headers,Host}'::text[]) - 'origin' - 'url');
-select jsonb_pretty((convert_from(curl_easy_getinfo_data_in(conname:='3'), 'utf-8')::jsonb #- '{headers,X-Amzn-Trace-Id}'::text[] #- '{headers,Host}'::text[]) - 'origin' - 'url');
-select jsonb_pretty((((convert_from(curl_easy_getinfo_data_in(conname:='4'), 'utf-8')::jsonb #- '{headers,X-Amzn-Trace-Id}'::text[] #- '{headers,Host}'::text[]) #- '{headers,Content-Type}'::text[]) #- '{headers,Content-Length}'::text[]) - 'origin' - 'url');
+-- args/headers are selected explicitly (rather than deleting the noisy keys
+-- with jsonb's -/#- operators, which only exist since PostgreSQL 9.5) so this
+-- keeps working back to PostgreSQL 9.4, which has -> and json_build_object
+with j as (
+    select convert_from(curl_easy_getinfo_data_in(conname:='1'), 'utf-8')::jsonb as data
+) select json_build_object(
+    'args', j.data->'args',
+    'headers', json_build_object('Accept', j.data->'headers'->>'Accept')
+) from j;
+with j as (
+    select convert_from(curl_easy_getinfo_data_in(conname:='2'), 'utf-8')::jsonb as data
+) select json_build_object(
+    'args', j.data->'args',
+    'data', j.data->>'data',
+    'form', j.data->'form',
+    'json', j.data->'json',
+    'files', j.data->'files',
+    'headers', json_build_object(
+        'Accept', j.data->'headers'->>'Accept',
+        'Content-Type', j.data->'headers'->>'Content-Type',
+        'Content-Length', j.data->'headers'->>'Content-Length'
+    )
+) from j;
+with j as (
+    select convert_from(curl_easy_getinfo_data_in(conname:='3'), 'utf-8')::jsonb as data
+) select json_build_object(
+    'args', j.data->'args',
+    'data', j.data->>'data',
+    'form', j.data->'form',
+    'json', j.data->'json',
+    'files', j.data->'files',
+    'headers', json_build_object(
+        'Accept', j.data->'headers'->>'Accept',
+        'Content-Type', j.data->'headers'->>'Content-Type',
+        'Content-Length', j.data->'headers'->>'Content-Length'
+    )
+) from j;
+with j as (
+    select convert_from(curl_easy_getinfo_data_in(conname:='4'), 'utf-8')::jsonb as data
+) select json_build_object(
+    'args', j.data->'args',
+    'data', j.data->>'data',
+    'form', j.data->'form',
+    'json', j.data->'json',
+    'files', j.data->'files',
+    'headers', json_build_object('Accept', j.data->'headers'->>'Accept')
+) from j;
 select curl_easy_getinfo_errcode(conname:='1'), curl_easy_getinfo_errdesc(conname:='1'), curl_easy_getinfo_errbuf(conname:='1');
 select curl_easy_getinfo_errcode(conname:='2'), curl_easy_getinfo_errdesc(conname:='2'), curl_easy_getinfo_errbuf(conname:='2');
 select curl_easy_getinfo_errcode(conname:='3'), curl_easy_getinfo_errdesc(conname:='3'), curl_easy_getinfo_errbuf(conname:='3');
