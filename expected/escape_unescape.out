@@ -1,0 +1,6 @@
+\unset ECHO
+t
+a%20b%2Fc%3Fd%3De%26f%25g
+a b/c?d=e&f%g
+t
+t
