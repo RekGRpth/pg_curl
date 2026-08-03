@@ -1,7 +1,9 @@
 #include <postgres.h>
 
+#include <catalog/pg_authid.h>
 #include <lib/stringinfo.h>
 #include <miscadmin.h>
+#include <utils/acl.h>
 #include <utils/builtins.h>
 #include <utils/guc.h>
 #include <utils/hsearch.h>
@@ -14,6 +16,39 @@
 #define EXTENSION(function) Datum (function)(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(function); Datum (function)(PG_FUNCTION_ARGS)
 
 PG_MODULE_MAGIC;
+
+/* Mirrors pg_htmldoc's PGHTMLDOC_ROLE_* / has_role(): pg_curl has no
+ * predefined-role gate of its own to reuse, so pg_whitelist's "privileged"
+ * caller is one holding both pg_read_server_files (reads arbitrary local
+ * files, same risk as curl_mime_file()/cookiefile/crlfile/ssh keyfiles/
+ * random_file reading from disk) and pg_execute_server_program (the closest
+ * built-in stand-in for "trusted with server-level network access", since
+ * PostgreSQL has no predefined role specifically for outbound network I/O).
+ * Renamed from DEFAULT_ROLE_* to ROLE_PG_* in PG 14 (commit c9c41c7a337,
+ * "Rename Default Roles to Predefined Roles"); neither exists before PG 11. */
+#if PG_VERSION_NUM >= 140000
+#define PGCURL_ROLE_READ_SERVER_FILES      ROLE_PG_READ_SERVER_FILES
+#define PGCURL_ROLE_EXECUTE_SERVER_PROGRAM ROLE_PG_EXECUTE_SERVER_PROGRAM
+#elif PG_VERSION_NUM >= 110000
+#define PGCURL_ROLE_READ_SERVER_FILES      DEFAULT_ROLE_READ_SERVER_FILES
+#define PGCURL_ROLE_EXECUTE_SERVER_PROGRAM DEFAULT_ROLE_EXECUTE_SERVER_PROGRAM
+#else
+#define PGCURL_ROLE_READ_SERVER_FILES      InvalidOid
+#define PGCURL_ROLE_EXECUTE_SERVER_PROGRAM InvalidOid
+#endif
+
+static bool pg_curl_has_role(Oid role) {
+#if PG_VERSION_NUM >= 110000
+    return has_privs_of_role(GetUserId(), role);
+#else
+    (void)role;
+    return superuser();
+#endif
+}
+
+static bool pg_curl_privileged(void) {
+    return pg_curl_has_role(PGCURL_ROLE_READ_SERVER_FILES) && pg_curl_has_role(PGCURL_ROLE_EXECUTE_SERVER_PROGRAM);
+}
 
 typedef struct {
     char errbuf[CURL_ERROR_SIZE];
@@ -454,7 +489,7 @@ EXTENSION(pg_curl_mime_file) {
     if (!(part = curl_mime_addpart(curl->mime))) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_mime_addpart")));
     if (!PG_ARGISNULL(0)) {
         char *data = TextDatumGetCString(PG_GETARG_DATUM(0));
-        pg_whitelist_check_local(data, data, superuser());
+        pg_whitelist_check_local(data, data, pg_curl_privileged());
         if ((ec = curl_mime_filedata(part, data)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
         pfree(data);
     }
@@ -571,7 +606,7 @@ static Datum pg_curl_easy_setopt_localfile(PG_FUNCTION_ARGS, CURLoption option) 
     pg_curl_t *curl = pg_curl_easy_init(PG_CONNAME(1));
     if (PG_ARGISNULL(0)) ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("curl_easy_setopt_* requires argument parameter")));
     parameter = TextDatumGetCString(PG_GETARG_DATUM(0));
-    pg_whitelist_check_local(parameter, parameter, superuser());
+    pg_whitelist_check_local(parameter, parameter, pg_curl_privileged());
     if ((ec = curl_easy_setopt(curl->easy, option, parameter)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
     pfree(parameter);
     PG_RETURN_BOOL(ec == CURLE_OK);
@@ -1774,7 +1809,7 @@ static CURLcode pg_curl_easy_prepare(pg_curl_t *curl) {
     if (curl->readdata.len && (curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_SEEKFUNCTION, pg_seek_callback)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
 #endif
     if (curl->readdata.len && (curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_UPLOAD, 1L)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
-    pg_whitelist_check_url(curl->url.data, superuser());
+    pg_whitelist_check_url(curl->url.data, pg_curl_privileged());
     if ((curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_URL, curl->url.data)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
     if ((curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_WRITEDATA, curl)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
     if ((curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_WRITEFUNCTION, pg_write_callback)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));

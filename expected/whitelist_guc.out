@@ -7,6 +7,10 @@ DETAIL:  whitelist does not permit this file or URL for the current role.
 
 t
 t
+ERROR:  permission denied to access "http://192.0.2.1/forbidden"
+DETAIL:  whitelist does not permit this file or URL for the current role.
+t
+t
 ERROR:  permission denied to access "https://example.com/"
 DETAIL:  whitelist does not permit this file or URL for the current role.
 t
