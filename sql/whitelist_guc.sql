@@ -22,13 +22,10 @@ END;
 -- transient failure of that host would not make this test flaky.
 SELECT current_user AS pg_curl_test_orig_user \gset
 
--- pg_curl has no predefined-role gate of its own, so pg_curl_privileged()
--- (see pg_curl.c) treats a caller holding both pg_read_server_files and
--- pg_execute_server_program as "privileged", the same pair pg_htmldoc
--- checks -- has_privs_of_role() gives a superuser every role's privileges
--- automatically, so a superuser is privileged too without needing an
--- explicit grant. This session (pg_curl_test_orig_user) stays fully
--- unrestricted while pg_curl.whitelist is unset. PERFORM inside a plain DO
+-- pg_curl_privileged() (see pg_curl.c) is simply superuser(): a superuser
+-- stays fully unrestricted while pg_curl.whitelist is unset, and every
+-- other role's access is governed entirely by pg_curl.whitelist. This
+-- session (pg_curl_test_orig_user) is a superuser. PERFORM inside a plain DO
 -- block (no EXCEPTION clause) is used to assert "not denied" without
 -- depending on whether the request itself actually succeeds --
 -- curl_easy_perform() never raises on its own for a connection failure, so
@@ -59,57 +56,11 @@ SELECT curl_easy_perform();
 COMMIT;
 SELECT set_config('pg_curl.whitelist', '', false);
 
--- Role names can't start with "pg_" (reserved). Both need LOGIN: the
--- pg_curl.whitelist tests below need to \c into them directly, since
--- ALTER ROLE ... SET only takes effect for a new connection as that role,
--- not retroactively via SET ROLE in an already-open session.
+-- Needs LOGIN: the pg_curl.whitelist tests below need to \c into it
+-- directly, since ALTER ROLE ... SET only takes effect for a new
+-- connection as that role, not retroactively via SET ROLE in an
+-- already-open session.
 CREATE ROLE curl_test_none LOGIN;
-CREATE ROLE curl_test_full LOGIN;
-
--- pg_read_server_files/pg_execute_server_program don't exist before PG 11
--- (see the PGCURL_ROLE_* guard in pg_curl.c, mirroring pg_htmldoc's own);
--- make curl_test_full a superuser instead on those older servers so it
--- still ends up satisfying whichever check pg_curl_privileged() actually
--- performs here.
-DO $$
-BEGIN
-    IF current_setting('server_version_num')::int >= 110000 THEN
-        EXECUTE 'GRANT pg_read_server_files TO curl_test_full';
-        EXECUTE 'GRANT pg_execute_server_program TO curl_test_full';
-    ELSE
-        EXECUTE 'ALTER ROLE curl_test_full SUPERUSER';
-    END IF;
-END
-$$;
-
--- curl_test_full holds the two predefined roles pg_curl_privileged()
--- checks, but is deliberately NOT a superuser -- this isolates the
--- role-membership path from the has_privs_of_role() superuser bypass
--- exercised by pg_curl_test_orig_user above, confirming privilege here
--- really does come from role membership rather than superuser status.
-\c - curl_test_full
-DO $$
-BEGIN
-    PERFORM curl_easy_reset();
-    PERFORM curl_easy_setopt_url('https://example.com/');
-    PERFORM curl_easy_perform();
-END
-$$;
-
--- ... and, like any privileged caller, still gets narrowed once
--- pg_curl.whitelist is non-empty.
-\c - :pg_curl_test_orig_user
-ALTER ROLE curl_test_full SET pg_curl.whitelist = 'https://example.com/';
-\c - curl_test_full
-BEGIN;
-SELECT curl_easy_reset();
-SELECT curl_easy_setopt_url('http://192.0.2.1/forbidden');
-SELECT curl_easy_perform();
-COMMIT;
-
-\c - :pg_curl_test_orig_user
-ALTER ROLE curl_test_full RESET pg_curl.whitelist;
-DROP ROLE curl_test_full;
 
 -- Without any pg_curl.whitelist configured, a non-superuser role is
 -- denied outright -- pg_curl.whitelist is that role's only possible

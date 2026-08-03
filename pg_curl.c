@@ -1,9 +1,7 @@
 #include <postgres.h>
 
-#include <catalog/pg_authid.h>
 #include <lib/stringinfo.h>
 #include <miscadmin.h>
-#include <utils/acl.h>
 #include <utils/builtins.h>
 #include <utils/guc.h>
 #include <utils/hsearch.h>
@@ -17,37 +15,10 @@
 
 PG_MODULE_MAGIC;
 
-/* Mirrors pg_htmldoc's PGHTMLDOC_ROLE_* / has_role(): pg_curl has no
- * predefined-role gate of its own to reuse, so pg_whitelist's "privileged"
- * caller is one holding both pg_read_server_files (reads arbitrary local
- * files, same risk as curl_mime_file()/cookiefile/crlfile/ssh keyfiles/
- * random_file reading from disk) and pg_execute_server_program (the closest
- * built-in stand-in for "trusted with server-level network access", since
- * PostgreSQL has no predefined role specifically for outbound network I/O).
- * Renamed from DEFAULT_ROLE_* to ROLE_PG_* in PG 14 (commit c9c41c7a337,
- * "Rename Default Roles to Predefined Roles"); neither exists before PG 11. */
-#if PG_VERSION_NUM >= 140000
-#define PGCURL_ROLE_READ_SERVER_FILES      ROLE_PG_READ_SERVER_FILES
-#define PGCURL_ROLE_EXECUTE_SERVER_PROGRAM ROLE_PG_EXECUTE_SERVER_PROGRAM
-#elif PG_VERSION_NUM >= 110000
-#define PGCURL_ROLE_READ_SERVER_FILES      DEFAULT_ROLE_READ_SERVER_FILES
-#define PGCURL_ROLE_EXECUTE_SERVER_PROGRAM DEFAULT_ROLE_EXECUTE_SERVER_PROGRAM
-#else
-#define PGCURL_ROLE_READ_SERVER_FILES      InvalidOid
-#define PGCURL_ROLE_EXECUTE_SERVER_PROGRAM InvalidOid
-#endif
-
-static bool pg_curl_has_role(Oid role) {
-#if PG_VERSION_NUM >= 110000
-    return has_privs_of_role(GetUserId(), role);
-#else
-    (void)role;
-    return superuser();
-#endif
-}
-
+/* pg_whitelist's "privileged" caller is a superuser; anyone else must be
+ * granted access explicitly via pg_curl.whitelist. */
 static bool pg_curl_privileged(void) {
-    return pg_curl_has_role(PGCURL_ROLE_READ_SERVER_FILES) && pg_curl_has_role(PGCURL_ROLE_EXECUTE_SERVER_PROGRAM);
+    return superuser();
 }
 
 typedef struct {
