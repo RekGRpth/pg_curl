@@ -9,6 +9,8 @@
 
 #include <curl/curl.h>
 
+#include "pg_whitelist.h"
+
 #define EXTENSION(function) Datum (function)(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(function); Datum (function)(PG_FUNCTION_ARGS)
 
 PG_MODULE_MAGIC;
@@ -452,6 +454,7 @@ EXTENSION(pg_curl_mime_file) {
     if (!(part = curl_mime_addpart(curl->mime))) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_mime_addpart")));
     if (!PG_ARGISNULL(0)) {
         char *data = TextDatumGetCString(PG_GETARG_DATUM(0));
+        pg_whitelist_check_local(data, data, superuser());
         if ((ec = curl_mime_filedata(part, data)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
         pfree(data);
     }
@@ -559,6 +562,21 @@ static Datum pg_curl_easy_setopt_char(PG_FUNCTION_ARGS, CURLoption option) {
     PG_RETURN_BOOL(ec == CURLE_OK);
 }
 
+/* Like pg_curl_easy_setopt_char(), for options whose parameter is a local
+ * file path that curl reads from disk (rather than a value curl merely
+ * transmits), so it is checked against pg_curl.whitelist first. */
+static Datum pg_curl_easy_setopt_localfile(PG_FUNCTION_ARGS, CURLoption option) {
+    CURLcode ec = CURL_LAST;
+    char *parameter;
+    pg_curl_t *curl = pg_curl_easy_init(PG_CONNAME(1));
+    if (PG_ARGISNULL(0)) ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("curl_easy_setopt_* requires argument parameter")));
+    parameter = TextDatumGetCString(PG_GETARG_DATUM(0));
+    pg_whitelist_check_local(parameter, parameter, superuser());
+    if ((ec = curl_easy_setopt(curl->easy, option, parameter)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
+    pfree(parameter);
+    PG_RETURN_BOOL(ec == CURLE_OK);
+}
+
 static int pg_debug_callback(CURL *handle, curl_infotype type, char *data, size_t size, void *userptr) {
     pg_curl_t *curl = userptr;
     if (size) switch (type) {
@@ -606,7 +624,7 @@ EXTENSION(pg_curl_easy_setopt_capath) {
     ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_capath requires curl 7.56.0 or later")));
 #endif
 }
-EXTENSION(pg_curl_easy_setopt_cookiefile) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_COOKIEFILE); }
+EXTENSION(pg_curl_easy_setopt_cookiefile) { return pg_curl_easy_setopt_localfile(fcinfo, CURLOPT_COOKIEFILE); }
 EXTENSION(pg_curl_easy_setopt_cookiejar) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_COOKIEJAR); }
 EXTENSION(pg_curl_easy_setopt_cookielist) {
 #if CURL_AT_LEAST_VERSION(7, 14, 1)
@@ -618,7 +636,7 @@ EXTENSION(pg_curl_easy_setopt_cookielist) {
 EXTENSION(pg_curl_easy_setopt_cookie) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_COOKIE); }
 EXTENSION(pg_curl_easy_setopt_crlfile) {
 #if CURL_AT_LEAST_VERSION(7, 19, 0)
-    return pg_curl_easy_setopt_char(fcinfo, CURLOPT_CRLFILE);
+    return pg_curl_easy_setopt_localfile(fcinfo, CURLOPT_CRLFILE);
 #else
     ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_crlfile requires curl 7.19.0 or later")));
 #endif
@@ -953,7 +971,7 @@ EXTENSION(pg_curl_easy_setopt_random_file) {
 #if CURL_AT_LEAST_VERSION(7, 84, 0)
     ereport(ERROR, (errcode(ERRCODE_WARNING_DEPRECATED_FEATURE), errmsg("curl_easy_setopt_random_file deprecated: since 7.84.0. Serves no purpose anymore")));
 #else
-    return pg_curl_easy_setopt_char(fcinfo, CURLOPT_RANDOM_FILE);
+    return pg_curl_easy_setopt_localfile(fcinfo, CURLOPT_RANDOM_FILE);
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_range) {
@@ -1031,14 +1049,14 @@ EXTENSION(pg_curl_easy_setopt_ssh_knownhosts) {
 }
 EXTENSION(pg_curl_easy_setopt_ssh_private_keyfile) {
 #if CURL_AT_LEAST_VERSION(7, 16, 1)
-    return pg_curl_easy_setopt_char(fcinfo, CURLOPT_SSH_PRIVATE_KEYFILE);
+    return pg_curl_easy_setopt_localfile(fcinfo, CURLOPT_SSH_PRIVATE_KEYFILE);
 #else
     ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_ssh_private_keyfile requires curl 7.16.1 or later")));
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_ssh_public_keyfile) {
 #if CURL_AT_LEAST_VERSION(7, 26, 0)
-    return pg_curl_easy_setopt_char(fcinfo, CURLOPT_SSH_PUBLIC_KEYFILE);
+    return pg_curl_easy_setopt_localfile(fcinfo, CURLOPT_SSH_PUBLIC_KEYFILE);
 #else
     ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_ssh_public_keyfile requires curl 7.26.0 or later")));
 #endif
@@ -1756,6 +1774,7 @@ static CURLcode pg_curl_easy_prepare(pg_curl_t *curl) {
     if (curl->readdata.len && (curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_SEEKFUNCTION, pg_seek_callback)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
 #endif
     if (curl->readdata.len && (curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_UPLOAD, 1L)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
+    pg_whitelist_check_url(curl->url.data, superuser());
     if ((curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_URL, curl->url.data)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
     if ((curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_WRITEDATA, curl)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
     if ((curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_WRITEFUNCTION, pg_write_callback)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
@@ -2917,8 +2936,9 @@ EXTENSION(pg_curl_max_write_size) {
 #endif
 }
 
-#if PG_VERSION_NUM >= 90500
 void _PG_init(void); void _PG_init(void) {
+    pg_whitelist_init("pg_curl.whitelist");
+#if PG_VERSION_NUM >= 90500
     DefineCustomBoolVariable("pg_curl.transaction", "pg_curl transaction", "Use transaction context?", &pg_curl.transaction, true, PGC_USERSET, 0, NULL, NULL, NULL);
-}
 #endif
+}

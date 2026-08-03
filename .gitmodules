@@ -1,0 +1,3 @@
+[submodule "pg_whitelist"]
+	path = pg_whitelist
+	url = git@github.com:RekGRpth/pg_whitelist.git
