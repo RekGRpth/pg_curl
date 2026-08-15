@@ -1,5 +1,20 @@
 PostgreSQL tool for transferring data with URL syntax, supporting DICT, FILE, FTP, FTPS, GOPHER, GOPHERS, HTTP, HTTPS, IMAP, IMAPS, LDAP, LDAPS, MQTT, POP3, POP3S, RTMP, RTMPS, RTSP, SCP, SFTP, SMB, SMBS, SMTP, SMTPS, TELNET, TFTP, WS and WSS.
 
+# configuration
+
+pg_curl exposes two GUCs:
+
+- `pg_curl.whitelist` (superuser-settable, e.g. via `ALTER ROLE ... SET`) — comma-separated `file://` and `http(s)://` prefixes the current role is allowed to reach. A `file://` entry ending in `/` allows anything under that directory; without a trailing slash it allows only that exact file. An `http(s)://` entry allows any URL sharing that prefix.
+
+  It is checked before every request URL (`curl_easy_setopt_url`) and before every option that has curl read a local file from disk: `curl_mime_file`, `curl_easy_setopt_cookiefile`, `curl_easy_setopt_crlfile`, `curl_easy_setopt_ssh_private_keyfile`, `curl_easy_setopt_ssh_public_keyfile` and `curl_easy_setopt_random_file`.
+
+  Superusers bypass the whitelist entirely. Every other role is denied by default until a superuser grants specific prefixes:
+  ```sql
+  ALTER ROLE app_user SET pg_curl.whitelist = 'https://api.example.com/,file:///var/lib/postgresql/uploads/';
+  ```
+
+- `pg_curl.transaction` (boolean, default `true`) — keep curl handles in the current transaction's memory context instead of the top memory context, so they are cleaned up automatically at transaction end.
+
 # http get
 ```sql
 CREATE OR REPLACE FUNCTION get(url TEXT) RETURNS TEXT LANGUAGE SQL AS $BODY$
