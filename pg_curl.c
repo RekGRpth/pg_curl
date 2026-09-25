@@ -1831,9 +1831,9 @@ static CURLcode pg_curl_easy_prepare(pg_curl_t *curl) {
     if ((curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_NOPROGRESS, 0L)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
     if ((curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_NOSIGNAL, 1L)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
     if (curl->postfield.len && (curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_POSTFIELDS, curl->postfield.data)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
-    if (curl->postfield.len && (curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_POSTFIELDSIZE_LARGE, curl->postfield.len)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
+    if (curl->postfield.len && (curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_POSTFIELDSIZE_LARGE, (curl_off_t)curl->postfield.len)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
     if (curl->readdata.len) curl->readdata.cursor = 0;
-    if (curl->readdata.len && (curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_INFILESIZE_LARGE, curl->readdata.len)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
+    if (curl->readdata.len && (curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_INFILESIZE_LARGE, (curl_off_t)curl->readdata.len)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
     if (curl->readdata.len && (curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_READDATA, curl)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
     if (curl->readdata.len && (curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_READFUNCTION, pg_read_callback)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
 #if CURL_AT_LEAST_VERSION(7, 18, 0)
@@ -2069,7 +2069,14 @@ static Datum pg_curl_easy_getinfo_long(PG_FUNCTION_ARGS, CURLINFO info) {
 
 EXTENSION(pg_curl_easy_getinfo_activesocket) {
 #if CURL_AT_LEAST_VERSION(7, 45, 0)
-    return pg_curl_easy_getinfo_long(fcinfo, CURLINFO_ACTIVESOCKET);
+    /* CURLINFO_ACTIVESOCKET writes a curl_socket_t, not a long, so it can't
+     * go through pg_curl_easy_getinfo_long(). */
+    CURLcode ec = CURL_LAST;
+    curl_socket_t value;
+    pg_curl_t *curl = pg_curl_easy_init(PG_CONNAME(0));
+    pg_curl_check_error(curl);
+    if ((ec = curl_easy_getinfo(curl->easy, CURLINFO_ACTIVESOCKET, &value)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
+    PG_RETURN_INT64(value);
 #else
     ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_getinfo_activesocket requires curl 7.45.0 or later")));
 #endif
