@@ -10,7 +10,7 @@ pg_curl exposes two GUCs:
 
   A request URL is classified the way libcurl parses it (scheme case-insensitive, scheme-less URLs guessed): `http(s)://` URLs are matched against `http(s)://` entries, `file://` URLs against `file://` entries, and any other scheme (`ftp://`, `gopher://`, `dict://`, ...) is denied whenever the whitelist applies.
 
-  Superusers bypass the whitelist entirely. Every other role is denied by default until a superuser grants specific prefixes:
+  While `pg_curl.whitelist` is unset, superusers are unrestricted; once it is set, it limits superusers to the listed prefixes too. Every other role is denied by default until a superuser grants specific prefixes:
   ```sql
   ALTER ROLE app_user SET pg_curl.whitelist = 'https://api.example.com/,file:///var/lib/postgresql/uploads/';
   ```

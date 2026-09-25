@@ -11,6 +11,18 @@
 
 #include "pg_whitelist.h"
 
+/* pg_fallthrough only exists in PostgreSQL 19+ headers */
+#ifndef pg_fallthrough
+#if defined(__has_attribute)
+#if __has_attribute(fallthrough)
+#define pg_fallthrough __attribute__((fallthrough))
+#endif
+#endif
+#ifndef pg_fallthrough
+#define pg_fallthrough
+#endif
+#endif
+
 #define EXTENSION(function) Datum (function)(PG_FUNCTION_ARGS); PG_FUNCTION_INFO_V1(function); Datum (function)(PG_FUNCTION_ARGS)
 
 PG_MODULE_MAGIC;
@@ -400,6 +412,11 @@ static Datum pg_curl_mime_data_or_file(PG_FUNCTION_ARGS, curl_mimepart *part) {
     if (!PG_ARGISNULL(3)) type = TextDatumGetCString(PG_GETARG_DATUM(3));
     if (!PG_ARGISNULL(4)) code = TextDatumGetCString(PG_GETARG_DATUM(4));
     if (!PG_ARGISNULL(5)) head = TextDatumGetCString(PG_GETARG_DATUM(5));
+    /* name/file/type/head all end up in the part's header lines */
+    if (name) pg_curl_check_crlf(name, "curl_mime_* name");
+    if (file) pg_curl_check_crlf(file, "curl_mime_* file");
+    if (type) pg_curl_check_crlf(type, "curl_mime_* type");
+    if (head) pg_curl_check_crlf(head, "curl_mime_* head");
     if (name && ((ec = curl_mime_name(part, name)) != CURLE_OK)) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
     if (file && ((ec = curl_mime_filename(part, file)) != CURLE_OK)) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
     if (type && ((ec = curl_mime_type(part, type)) != CURLE_OK)) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
@@ -407,7 +424,10 @@ static Datum pg_curl_mime_data_or_file(PG_FUNCTION_ARGS, curl_mimepart *part) {
     if (head) {
         struct curl_slist *headers = NULL;
         if (!(headers = curl_slist_append(headers, head))) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_slist_append")));
-        if ((ec = curl_mime_headers(part, headers, true)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
+        if ((ec = curl_mime_headers(part, headers, true)) != CURLE_OK) {
+            curl_slist_free_all(headers);
+            ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
+        }
     }
     if (name) pfree(name);
     if (file) pfree(file);
@@ -1900,7 +1920,7 @@ EXTENSION(pg_curl_multi_perform) {
             switch ((ec = curl->errcode)) {
                 case CURLE_ABORTED_BY_CALLBACK: break;
                 case CURLE_OK: curl->try = try; break;
-                case CURLE_UNSUPPORTED_PROTOCOL: case CURLE_FAILED_INIT: case CURLE_URL_MALFORMAT: case CURLE_NOT_BUILT_IN: case CURLE_FUNCTION_NOT_FOUND: case CURLE_BAD_FUNCTION_ARGUMENT: case CURLE_UNKNOWN_OPTION: case CURLE_LDAP_INVALID_URL: curl->try = try; // fall through
+                case CURLE_UNSUPPORTED_PROTOCOL: case CURLE_FAILED_INIT: case CURLE_URL_MALFORMAT: case CURLE_NOT_BUILT_IN: case CURLE_FUNCTION_NOT_FOUND: case CURLE_BAD_FUNCTION_ARGUMENT: case CURLE_UNKNOWN_OPTION: case CURLE_LDAP_INVALID_URL: curl->try = try; pg_fallthrough;
                 default: if (curl->try < try) {
                     if (curl->errbuf[0]) ereport(WARNING, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec)), errdetail("%s", curl->errbuf), errcontext("try %i", curl->try)));
                     else ereport(WARNING, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec)), errcontext("try %i", curl->try)));

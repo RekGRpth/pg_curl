@@ -12,6 +12,15 @@ ERROR:  curl_postquote_append command must not contain CR or LF characters
 t
 ERROR:  curl_recipient_append email must not contain CR or LF characters
 t
+ERROR:  curl_mime_* head must not contain CR or LF characters
+t
+ERROR:  curl_mime_* type must not contain CR or LF characters
+t
+ERROR:  curl_mime_* name must not contain CR or LF characters
+t
+ERROR:  curl_mime_* file must not contain CR or LF characters
+t
+t
 t
 t
 t
