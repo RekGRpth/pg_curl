@@ -59,6 +59,13 @@ static void pg_curl_check_local(const char *path) {
     pg_whitelist_check_local(path, path, pg_curl_privileged());
 }
 
+/* Which request body pg_curl_easy_prepare() last put on the easy handle. */
+typedef enum {
+    PG_CURL_BODY_NONE,
+    PG_CURL_BODY_POSTFIELD,
+    PG_CURL_BODY_READDATA
+} pg_curl_body_t;
+
 typedef struct {
     char errbuf[CURL_ERROR_SIZE];
     CURLcode errcode;
@@ -76,6 +83,7 @@ typedef struct {
     StringInfoData postfield;
     StringInfoData readdata;
     StringInfoData url;
+    pg_curl_body_t body;
     struct curl_slist *header;
     struct curl_slist *postquote;
     struct curl_slist *prequote;
@@ -318,6 +326,7 @@ EXTENSION(pg_curl_easy_reset) {
     resetStringInfo(&curl->postfield);
     resetStringInfo(&curl->readdata);
     resetStringInfo(&curl->url);
+    curl->body = PG_CURL_BODY_NONE;
     pg_curl_multi_remove_handle(curl, true);
     PG_RETURN_BOOL(true);
 }
@@ -1894,6 +1903,7 @@ static void pg_curl_easy_rewind(pg_curl_t *curl) {
 
 static CURLcode pg_curl_easy_prepare(pg_curl_t *curl) {
     char *url;
+    pg_curl_body_t body;
     curl->errcode = CURL_LAST;
     pg_curl_easy_rewind(curl);
     if ((curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_ERRORBUFFER, curl->errbuf)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
@@ -1911,6 +1921,29 @@ static CURLcode pg_curl_easy_prepare(pg_curl_t *curl) {
 #endif
     if ((curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_NOPROGRESS, 0L)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
     if ((curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_NOSIGNAL, 1L)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
+    body = curl->postfield.len ? PG_CURL_BODY_POSTFIELD : curl->readdata.len ? PG_CURL_BODY_READDATA : PG_CURL_BODY_NONE;
+    /* libcurl keeps options across transfers, so undo the body a previous
+     * perform put on the handle unless this one overwrites it: a stale
+     * POSTFIELDS would resend the old buffer with its old size, a stale UPLOAD
+     * would try to PUT nothing. HTTPGET is libcurl's way back to a plain GET
+     * (it also clears UPLOAD). Options the caller set directly are left alone
+     * when no body was involved. */
+    if (curl->body == PG_CURL_BODY_POSTFIELD && body != PG_CURL_BODY_POSTFIELD) {
+        if ((curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_POSTFIELDS, (char *)NULL)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
+        if ((curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_POSTFIELDSIZE_LARGE, (curl_off_t)-1)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
+        if ((curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_HTTPGET, 1L)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
+    }
+    if (curl->body == PG_CURL_BODY_READDATA && body != PG_CURL_BODY_READDATA) {
+        if ((curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_HTTPGET, 1L)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
+        if ((curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_INFILESIZE_LARGE, (curl_off_t)-1)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
+        if ((curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_READFUNCTION, (curl_read_callback)NULL)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
+        if ((curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_READDATA, (void *)NULL)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
+#if CURL_AT_LEAST_VERSION(7, 18, 0)
+        if ((curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_SEEKFUNCTION, (curl_seek_callback)NULL)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
+        if ((curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_SEEKDATA, (void *)NULL)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
+#endif
+    }
+    curl->body = body;
     if (curl->postfield.len && (curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_POSTFIELDS, curl->postfield.data)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
     if (curl->postfield.len && (curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_POSTFIELDSIZE_LARGE, (curl_off_t)curl->postfield.len)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
     if (curl->readdata.len && (curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_INFILESIZE_LARGE, (curl_off_t)curl->readdata.len)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
