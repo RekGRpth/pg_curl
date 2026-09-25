@@ -25,3 +25,32 @@ t
 t
 ERROR:  permission denied to access "/tmp/../etc/passwd"
 DETAIL:  whitelist does not permit this file or URL for the current role.
+t
+t
+t
+ERROR:  permission denied to access "http://192.0.2.1/forbidden"
+DETAIL:  whitelist does not permit this file or URL for the current role.
+t
+t
+t
+ERROR:  permission denied to access "http://192.0.2.1/forbidden"
+DETAIL:  whitelist does not permit this file or URL for the current role.
+t
+t
+t
+ERROR:  permission denied to access "ftp://192.0.2.1/forbidden"
+DETAIL:  whitelist does not permit this file or URL for the current role.
+t
+t
+ERROR:  permission denied to access "/etc/passwd"
+DETAIL:  whitelist does not permit this file or URL for the current role.
+t
+t
+t
+ERROR:  permission denied to access "/etc/passwd"
+DETAIL:  whitelist does not permit this file or URL for the current role.
+t
+t
+t
+pg_curl whitelist local file test content
+

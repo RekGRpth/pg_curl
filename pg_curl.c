@@ -1747,7 +1747,62 @@ static size_t pg_write_callback(char *ptr, size_t size, size_t nmemb, void *user
     return size;
 }
 
+static void pg_curl_whitelist_deny(const char *url) {
+    ereport(ERROR, (errcode(ERRCODE_INSUFFICIENT_PRIVILEGE), errmsg("permission denied to access \"%s\"", url), errdetail("whitelist does not permit this file or URL for the current role.")));
+}
+
+/* pg_whitelist_check_url() only understands lowercase http(s):// URLs and
+ * lets anything else through unchecked, so classify the URL the way libcurl
+ * itself will first: http(s) goes to pg_whitelist_check_url(), file:// to
+ * pg_whitelist_check_local(), and any other scheme is denied. Returns the URL
+ * to hand to libcurl -- normalized, with an explicit scheme and no dot
+ * segments, so that what was checked is exactly what gets fetched regardless
+ * of curl_easy_setopt_default_protocol() or curl_easy_setopt_path_as_is(). A
+ * privileged caller with no whitelist configured is left unrestricted and
+ * gets the URL back unchanged. */
+static char *pg_curl_whitelist_url(const char *url) {
+    bool privileged = pg_curl_privileged();
+    const char *whitelist = GetConfigOption("pg_curl.whitelist", true, false);
+    char *result;
+#if CURL_AT_LEAST_VERSION(7, 62, 0)
+    char *scheme = NULL, *normalized = NULL, *path = NULL;
+    char *scheme_copy = NULL, *path_copy = NULL;
+    size_t i;
+    CURLU *h;
+    CURLUcode uc;
+#endif
+    if (privileged && (!whitelist || !whitelist[0])) return pstrdup(url);
+#if CURL_AT_LEAST_VERSION(7, 62, 0)
+    if (!(h = curl_url())) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_url")));
+    uc = curl_url_set(h, CURLUPART_URL, url, CURLU_GUESS_SCHEME | CURLU_NON_SUPPORT_SCHEME);
+    if (uc == CURLUE_OK) uc = curl_url_get(h, CURLUPART_SCHEME, &scheme, 0);
+    if (uc == CURLUE_OK) uc = curl_url_get(h, CURLUPART_URL, &normalized, 0);
+    if (uc == CURLUE_OK && !pg_strcasecmp(scheme, "file")) uc = curl_url_get(h, CURLUPART_PATH, &path, CURLU_URLDECODE);
+    result = uc == CURLUE_OK ? pstrdup(normalized) : NULL;
+    if (uc == CURLUE_OK) scheme_copy = pstrdup(scheme);
+    if (path) path_copy = pstrdup(path);
+    curl_free(scheme);
+    curl_free(normalized);
+    curl_free(path);
+    curl_url_cleanup(h);
+    if (!result) pg_curl_whitelist_deny(url);
+    if (!pg_strcasecmp(scheme_copy, "http") || !pg_strcasecmp(scheme_copy, "https")) {
+        for (i = 0; i < strlen(scheme_copy); i++) result[i] = pg_tolower((unsigned char) result[i]);
+        pg_whitelist_check_url(result, privileged);
+    } else if (!pg_strcasecmp(scheme_copy, "file") && path_copy) pg_whitelist_check_local(path_copy, path_copy, privileged);
+    else pg_curl_whitelist_deny(url);
+    pfree(scheme_copy);
+    if (path_copy) pfree(path_copy);
+#else
+    if (strncmp(url, "http://", 7) && strncmp(url, "https://", 8)) pg_curl_whitelist_deny(url);
+    pg_whitelist_check_url(url, privileged);
+    result = pstrdup(url);
+#endif
+    return result;
+}
+
 static CURLcode pg_curl_easy_prepare(pg_curl_t *curl) {
+    char *url;
     curl->errcode = CURL_LAST;
     resetStringInfo(&curl->data_in);
     resetStringInfo(&curl->data_out);
@@ -1780,8 +1835,9 @@ static CURLcode pg_curl_easy_prepare(pg_curl_t *curl) {
     if (curl->readdata.len && (curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_SEEKFUNCTION, pg_seek_callback)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
 #endif
     if (curl->readdata.len && (curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_UPLOAD, 1L)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
-    pg_whitelist_check_url(curl->url.data, pg_curl_privileged());
-    if ((curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_URL, curl->url.data)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
+    url = pg_curl_whitelist_url(curl->url.data);
+    if ((curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_URL, url)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
+    pfree(url);
     if ((curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_WRITEDATA, curl)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
     if ((curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_WRITEFUNCTION, pg_write_callback)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
 #if CURL_AT_LEAST_VERSION(7, 32, 0)

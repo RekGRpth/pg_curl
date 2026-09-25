@@ -152,6 +152,62 @@ SELECT curl_easy_reset();
 SELECT curl_mime_file('/tmp/pg_curl_whitelist_test.txt', name := 'upload');
 SELECT curl_mime_file('/tmp/../etc/passwd', name := 'upload2');
 
+-- pg_whitelist_check_url() by itself only recognizes lowercase http(s)://
+-- URLs and lets anything else through, so pg_curl classifies the request
+-- URL the way libcurl will first: an uppercase scheme, a scheme-less URL,
+-- a non-http(s) scheme or a file:// URL must not slip past the whitelist,
+-- not even via curl_easy_setopt_default_protocol(). The network cases set
+-- a 1 s connect timeout, so if one ever slipped through again it would fail
+-- fast against 192.0.2.1 instead of hanging for curl's default 300 s.
+\c - :pg_curl_test_orig_user
+ALTER ROLE curl_test_none SET pg_curl.whitelist = 'https://example.com/,file:///tmp/pg_curl_whitelist_test.txt';
+\c - curl_test_none
+BEGIN;
+SELECT curl_easy_reset();
+SELECT curl_easy_setopt_connecttimeout(1);
+SELECT curl_easy_setopt_url('HTTP://192.0.2.1/forbidden');
+SELECT curl_easy_perform();
+COMMIT;
+BEGIN;
+SELECT curl_easy_reset();
+SELECT curl_easy_setopt_connecttimeout(1);
+SELECT curl_easy_setopt_url('192.0.2.1/forbidden');
+SELECT curl_easy_perform();
+COMMIT;
+BEGIN;
+SELECT curl_easy_reset();
+SELECT curl_easy_setopt_connecttimeout(1);
+SELECT curl_easy_setopt_url('ftp://192.0.2.1/forbidden');
+SELECT curl_easy_perform();
+COMMIT;
+BEGIN;
+SELECT curl_easy_reset();
+SELECT curl_easy_setopt_url('file:///etc/passwd');
+SELECT curl_easy_perform();
+COMMIT;
+BEGIN;
+SELECT curl_easy_reset();
+SELECT curl_easy_setopt_default_protocol('file');
+SELECT curl_easy_setopt_url('/etc/passwd');
+SELECT curl_easy_perform();
+COMMIT;
+
+-- An uppercase scheme is still matched against a lowercase entry, and a
+-- whitelisted file:// URL is actually fetched.
+DO $$
+BEGIN
+    PERFORM curl_easy_reset();
+    PERFORM curl_easy_setopt_url('HTTPS://example.com/');
+    PERFORM curl_easy_perform();
+END
+$$;
+BEGIN;
+SELECT curl_easy_reset();
+SELECT curl_easy_setopt_url('file:///tmp/pg_curl_whitelist_test.txt');
+SELECT curl_easy_perform();
+SELECT convert_from(curl_easy_getinfo_data_in(), 'utf-8');
+COMMIT;
+
 \c - :pg_curl_test_orig_user
 ALTER ROLE curl_test_none RESET pg_curl.whitelist;
 DROP ROLE curl_test_none;
