@@ -1,7 +1,6 @@
 \unset ECHO
 t
 t
-WARNING:  Could not connect to server
-WARNING:  Could not connect to server
 f
+t
 7
