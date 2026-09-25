@@ -236,6 +236,11 @@ SELECT curl_easy_setopt_netrc(curl_netrc_optional());
 SELECT curl_easy_setopt_netrc(curl_netrc_required());
 SELECT curl_easy_setopt_netrc(curl_netrc_ignored());
 
+-- Only the request URL itself is checked, so following redirects -- which
+-- could lead to any host -- is unavailable too; turning it off is fine.
+SELECT curl_easy_setopt_followlocation(1);
+SELECT curl_easy_setopt_followlocation(0);
+
 \c - :pg_curl_test_orig_user
 ALTER ROLE curl_test_none RESET pg_curl.whitelist;
 DROP ROLE curl_test_none;

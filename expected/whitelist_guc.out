@@ -81,3 +81,6 @@ DETAIL:  curl_easy_setopt_netrc is not available while pg_curl.whitelist applies
 ERROR:  permission denied for curl_easy_setopt_netrc
 DETAIL:  curl_easy_setopt_netrc is not available while pg_curl.whitelist applies to the current role.
 t
+ERROR:  permission denied for curl_easy_setopt_followlocation
+DETAIL:  curl_easy_setopt_followlocation is not available while pg_curl.whitelist applies to the current role.
+t

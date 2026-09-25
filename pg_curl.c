@@ -1310,7 +1310,12 @@ EXTENSION(pg_curl_easy_setopt_expect_100_timeout_ms) {
 }
 EXTENSION(pg_curl_easy_setopt_failonerror) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_FAILONERROR); }
 EXTENSION(pg_curl_easy_setopt_filetime) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_FILETIME); }
-EXTENSION(pg_curl_easy_setopt_followlocation) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_FOLLOWLOCATION); }
+EXTENSION(pg_curl_easy_setopt_followlocation) {
+    /* only the request URL itself is checked against pg_curl.whitelist, so a
+     * redirect could lead anywhere */
+    if (!PG_ARGISNULL(0) && PG_GETARG_INT64(0) != 0 && !pg_curl_unrestricted()) pg_curl_whitelist_deny_option("curl_easy_setopt_followlocation");
+    return pg_curl_easy_setopt_long(fcinfo, CURLOPT_FOLLOWLOCATION);
+}
 EXTENSION(pg_curl_easy_setopt_forbid_reuse) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_FORBID_REUSE); }
 EXTENSION(pg_curl_easy_setopt_fresh_connect) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_FRESH_CONNECT); }
 EXTENSION(pg_curl_easy_setopt_ftp_create_missing_dirs) {
@@ -1911,6 +1916,9 @@ static CURLcode pg_curl_easy_prepare(pg_curl_t *curl) {
 #endif
     if (curl->readdata.len && (curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_UPLOAD, 1L)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
     url = pg_curl_whitelist_url(curl->url.data);
+    /* also covers followlocation set on this handle before the whitelist
+     * applied, e.g. by a superuser before SET ROLE */
+    if (!pg_curl_unrestricted() && (curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_FOLLOWLOCATION, 0L)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
     if ((curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_URL, url)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
     pfree(url);
     if ((curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_WRITEDATA, curl)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
