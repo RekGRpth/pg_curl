@@ -74,3 +74,10 @@ ERROR:  permission denied to access "https://example.com/../../etc/passwd"
 DETAIL:  whitelist does not permit this file or URL for the current role.
 ERROR:  permission denied to access "http://example.com/../../etc/passwd"
 DETAIL:  whitelist does not permit this file or URL for the current role.
+ERROR:  permission denied for curl_easy_setopt_sslengine
+DETAIL:  curl_easy_setopt_sslengine is not available while pg_curl.whitelist applies to the current role.
+ERROR:  permission denied for curl_easy_setopt_netrc
+DETAIL:  curl_easy_setopt_netrc is not available while pg_curl.whitelist applies to the current role.
+ERROR:  permission denied for curl_easy_setopt_netrc
+DETAIL:  curl_easy_setopt_netrc is not available while pg_curl.whitelist applies to the current role.
+t

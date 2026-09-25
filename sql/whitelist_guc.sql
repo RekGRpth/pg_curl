@@ -228,6 +228,14 @@ SELECT curl_easy_setopt_pinnedpublickey('/etc/passwd');
 SELECT curl_easy_setopt_cookiejar('https://example.com/../../etc/passwd');
 SELECT curl_mime_file('http://example.com/../../etc/passwd', name := 'upload');
 
+-- Options the whitelist has no way to scope are unavailable altogether: an
+-- OpenSSL engine (a shared library loaded into the backend) and .netrc (the
+-- postgres OS user's credentials), except for leaving .netrc ignored.
+SELECT curl_easy_setopt_sslengine('dynamic');
+SELECT curl_easy_setopt_netrc(curl_netrc_optional());
+SELECT curl_easy_setopt_netrc(curl_netrc_required());
+SELECT curl_easy_setopt_netrc(curl_netrc_ignored());
+
 \c - :pg_curl_test_orig_user
 ALTER ROLE curl_test_none RESET pg_curl.whitelist;
 DROP ROLE curl_test_none;

@@ -44,6 +44,12 @@ static void pg_curl_whitelist_deny(const char *url) {
     ereport(ERROR, (errcode(ERRCODE_INSUFFICIENT_PRIVILEGE), errmsg("permission denied to access \"%s\"", url), errdetail("whitelist does not permit this file or URL for the current role.")));
 }
 
+/* For options pg_curl.whitelist has no way to scope, so a role it applies to
+ * can't use them at all. */
+static void pg_curl_whitelist_deny_option(const char *function) {
+    ereport(ERROR, (errcode(ERRCODE_INSUFFICIENT_PRIVILEGE), errmsg("permission denied for %s", function), errdetail("%s is not available while pg_curl.whitelist applies to the current role.", function)));
+}
+
 /* Check a local path curl will open against pg_curl.whitelist.
  * pg_whitelist_check_local() skips anything that looks like an http(s) URL,
  * but here it is always a path (a relative one resolves against the data
@@ -1143,7 +1149,11 @@ EXTENSION(pg_curl_easy_setopt_sslcerttype) {
 #endif
 }
 EXTENSION(pg_curl_easy_setopt_ssl_cipher_list) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_SSL_CIPHER_LIST); }
-EXTENSION(pg_curl_easy_setopt_sslengine) { return pg_curl_easy_setopt_char(fcinfo, CURLOPT_SSLENGINE); }
+EXTENSION(pg_curl_easy_setopt_sslengine) {
+    /* an OpenSSL engine is a shared library OpenSSL may load into the backend */
+    if (!pg_curl_unrestricted()) pg_curl_whitelist_deny_option("curl_easy_setopt_sslengine");
+    return pg_curl_easy_setopt_char(fcinfo, CURLOPT_SSLENGINE);
+}
 EXTENSION(pg_curl_easy_setopt_sslkey_blob) {
 #if CURL_AT_LEAST_VERSION(7, 71, 0)
     return pg_curl_easy_setopt_blob(fcinfo, CURLOPT_SSLKEY_BLOB);
@@ -1440,7 +1450,11 @@ EXTENSION(pg_curl_easy_setopt_low_speed_time) { return pg_curl_easy_setopt_long(
 EXTENSION(pg_curl_easy_setopt_maxconnects) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_MAXCONNECTS); }
 EXTENSION(pg_curl_easy_setopt_maxfilesize) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_MAXFILESIZE); }
 EXTENSION(pg_curl_easy_setopt_maxredirs) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_MAXREDIRS); }
-EXTENSION(pg_curl_easy_setopt_netrc) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_NETRC); }
+EXTENSION(pg_curl_easy_setopt_netrc) {
+    /* .netrc holds the postgres OS user's credentials; ignoring it is fine */
+    if (!PG_ARGISNULL(0) && PG_GETARG_INT64(0) != CURL_NETRC_IGNORED && !pg_curl_unrestricted()) pg_curl_whitelist_deny_option("curl_easy_setopt_netrc");
+    return pg_curl_easy_setopt_long(fcinfo, CURLOPT_NETRC);
+}
 EXTENSION(pg_curl_easy_setopt_new_directory_perms) {
 #if CURL_AT_LEAST_VERSION(7, 16, 4)
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_NEW_DIRECTORY_PERMS);
