@@ -199,10 +199,20 @@ static pg_curl_t *pg_curl_easy_init(const char *conname) {
 
 #define PG_CONNAME(arg) (PG_NARGS() < arg + 1 || PG_ARGISNULL(arg)) ? "unknown" : NameStr(*PG_GETARG_NAME(arg))
 
+/* libcurl does not copy slist options, so detach the list from the easy
+ * handle before freeing it -- pg_curl_easy_prepare() only re-sets the option
+ * while the list is non-empty, so otherwise the next perform would walk
+ * freed memory. */
+static void pg_curl_easy_slist_reset(pg_curl_t *curl, CURLoption option, struct curl_slist **slist) {
+    CURLcode ec;
+    if ((ec = curl_easy_setopt(curl->easy, option, (struct curl_slist *)NULL)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
+    curl_slist_free_all(*slist);
+    *slist = NULL;
+}
+
 EXTENSION(pg_curl_easy_header_reset) {
     pg_curl_t *curl = pg_curl_easy_init(PG_CONNAME(0));
-    curl_slist_free_all(curl->header);
-    curl->header = NULL;
+    pg_curl_easy_slist_reset(curl, CURLOPT_HTTPHEADER, &curl->header);
     PG_RETURN_BOOL(true);
 }
 
@@ -219,30 +229,26 @@ EXTENSION(pg_curl_easy_mime_reset) {
 
 EXTENSION(pg_curl_easy_postquote_reset) {
     pg_curl_t *curl = pg_curl_easy_init(PG_CONNAME(0));
-    curl_slist_free_all(curl->postquote);
-    curl->postquote = NULL;
+    pg_curl_easy_slist_reset(curl, CURLOPT_POSTQUOTE, &curl->postquote);
     PG_RETURN_BOOL(true);
 }
 
 EXTENSION(pg_curl_easy_prequote_reset) {
     pg_curl_t *curl = pg_curl_easy_init(PG_CONNAME(0));
-    curl_slist_free_all(curl->prequote);
-    curl->prequote = NULL;
+    pg_curl_easy_slist_reset(curl, CURLOPT_PREQUOTE, &curl->prequote);
     PG_RETURN_BOOL(true);
 }
 
 EXTENSION(pg_curl_easy_quote_reset) {
     pg_curl_t *curl = pg_curl_easy_init(PG_CONNAME(0));
-    curl_slist_free_all(curl->quote);
-    curl->quote = NULL;
+    pg_curl_easy_slist_reset(curl, CURLOPT_QUOTE, &curl->quote);
     PG_RETURN_BOOL(true);
 }
 
 EXTENSION(pg_curl_easy_recipient_reset) {
 #if CURL_AT_LEAST_VERSION(7, 20, 0)
     pg_curl_t *curl = pg_curl_easy_init(PG_CONNAME(0));
-    curl_slist_free_all(curl->recipient);
-    curl->recipient = NULL;
+    pg_curl_easy_slist_reset(curl, CURLOPT_MAIL_RCPT, &curl->recipient);
     PG_RETURN_BOOL(true);
 #else
     ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_recipient_reset requires curl 7.20.0 or later")));
