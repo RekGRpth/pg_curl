@@ -1807,14 +1807,21 @@ static char *pg_curl_whitelist_url(const char *url) {
     return result;
 }
 
-static CURLcode pg_curl_easy_prepare(pg_curl_t *curl) {
-    char *url;
-    curl->errcode = CURL_LAST;
+/* Drop whatever a previous attempt collected, so the next transfer on this
+ * handle -- a new perform or a retry -- starts from scratch. */
+static void pg_curl_easy_rewind(pg_curl_t *curl) {
     resetStringInfo(&curl->data_in);
     resetStringInfo(&curl->data_out);
     resetStringInfo(&curl->debug);
     resetStringInfo(&curl->header_in);
     resetStringInfo(&curl->header_out);
+    curl->readdata.cursor = 0;
+}
+
+static CURLcode pg_curl_easy_prepare(pg_curl_t *curl) {
+    char *url;
+    curl->errcode = CURL_LAST;
+    pg_curl_easy_rewind(curl);
     if ((curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_ERRORBUFFER, curl->errbuf)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
     if ((curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_HEADERDATA, curl)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
     if ((curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_HEADERFUNCTION, pg_header_callback)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
@@ -1832,7 +1839,6 @@ static CURLcode pg_curl_easy_prepare(pg_curl_t *curl) {
     if ((curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_NOSIGNAL, 1L)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
     if (curl->postfield.len && (curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_POSTFIELDS, curl->postfield.data)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
     if (curl->postfield.len && (curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_POSTFIELDSIZE_LARGE, (curl_off_t)curl->postfield.len)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
-    if (curl->readdata.len) curl->readdata.cursor = 0;
     if (curl->readdata.len && (curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_INFILESIZE_LARGE, (curl_off_t)curl->readdata.len)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
     if (curl->readdata.len && (curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_READDATA, curl)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
     if (curl->readdata.len && (curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_READFUNCTION, pg_read_callback)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
@@ -1901,7 +1907,15 @@ EXTENSION(pg_curl_multi_perform) {
                     sleep_need = true;
                 }
             }
-            if (curl->try < try) running_handles++; else {
+            if (curl->try < try) {
+                /* libcurl considers a finished transfer done for good, so a
+                 * retry means taking the handle out of the multi and adding
+                 * it back, which restarts the transfer from the beginning. */
+                if ((mc = curl_multi_remove_handle(pg_curl.multi, curl->easy)) != CURLM_OK) ereport(ERROR, (pg_curl_mc(mc), errmsg("%s", curl_multi_strerror(mc))));
+                pg_curl_easy_rewind(curl);
+                if ((mc = curl_multi_add_handle(pg_curl.multi, curl->easy)) != CURLM_OK) ereport(ERROR, (pg_curl_mc(mc), errmsg("%s", curl_multi_strerror(mc))));
+                running_handles++;
+            } else {
                 if (curl->errcode != CURLE_OK) all_ok = false;
                 pg_curl_multi_remove_handle(curl, true);
             }
