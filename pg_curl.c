@@ -84,6 +84,7 @@ typedef struct {
     StringInfoData readdata;
     StringInfoData url;
     pg_curl_body_t body;
+    ErrorData *callback_error;
     struct curl_slist *header;
     struct curl_slist *postquote;
     struct curl_slist *prequote;
@@ -656,13 +657,42 @@ static Datum pg_curl_easy_setopt_pinned(PG_FUNCTION_ARGS, CURLoption option) {
     return hashes ? pg_curl_easy_setopt_char(fcinfo, option) : pg_curl_easy_setopt_localfile(fcinfo, option);
 }
 
+/* libcurl callbacks must not ereport(ERROR): longjmp'ing out of one leaves
+ * libcurl believing it is still inside the callback, so every later call on
+ * the multi handle fails with "API function called from within callback".
+ * So an error while appending (e.g. a response over the 1 GB StringInfo
+ * limit, or out of memory) is caught and stashed here instead, the callback
+ * fails the transfer, and pg_curl_multi_perform() re-throws it once libcurl
+ * is done with the transfer. */
+static bool pg_curl_append(pg_curl_t *curl, StringInfo si, const char *data, size_t size) {
+    MemoryContext oldcontext = CurrentMemoryContext;
+    volatile bool ok = true;
+    if (curl->callback_error) return false;
+    PG_TRY();
+    {
+        appendBinaryStringInfo(si, data, size);
+    }
+    PG_CATCH();
+    {
+        MemoryContextSwitchTo(pg_curl.context);
+        curl->callback_error = CopyErrorData();
+        FlushErrorState();
+        MemoryContextSwitchTo(oldcontext);
+        ok = false;
+    }
+    PG_END_TRY();
+    return ok;
+}
+
+/* must return 0 whatever happens, so a failed append just stops recording;
+ * pg_write_callback()/pg_header_callback() then fail the transfer */
 static int pg_debug_callback(CURL *handle, curl_infotype type, char *data, size_t size, void *userptr) {
     pg_curl_t *curl = userptr;
     if (size) switch (type) {
-        case CURLINFO_DATA_OUT: appendBinaryStringInfo(&curl->data_out, data, size); break;
+        case CURLINFO_DATA_OUT: pg_curl_append(curl, &curl->data_out, data, size); break;
         case CURLINFO_HEADER_IN: fwrite("< ", sizeof("< ") - 1, 1, stderr); fwrite(data, size, 1, stderr); break;
-        case CURLINFO_HEADER_OUT: fwrite("> ", sizeof("> ") - 1, 1, stderr); fwrite(data, size, 1, stderr); appendBinaryStringInfo(&curl->header_out, data, size); break;
-        case CURLINFO_TEXT: fwrite("* ", sizeof("* ") - 1, 1, stderr); fwrite(data, size, 1, stderr); appendBinaryStringInfo(&curl->debug, data, size); break;
+        case CURLINFO_HEADER_OUT: fwrite("> ", sizeof("> ") - 1, 1, stderr); fwrite(data, size, 1, stderr); pg_curl_append(curl, &curl->header_out, data, size); break;
+        case CURLINFO_TEXT: fwrite("* ", sizeof("* ") - 1, 1, stderr); fwrite(data, size, 1, stderr); pg_curl_append(curl, &curl->debug, data, size); break;
         default: break;
     }
     return 0;
@@ -1809,7 +1839,7 @@ static int pg_progress_callback(void *clientp, curl_off_t dltotal, curl_off_t dl
 static size_t pg_header_callback(char *buffer, size_t size, size_t nitems, void *userdata) {
     pg_curl_t *curl = userdata;
     size *= nitems;
-    if (size) appendBinaryStringInfo(&curl->header_in, buffer, size);
+    if (size && !pg_curl_append(curl, &curl->header_in, buffer, size)) return 0;
     return size;
 }
 
@@ -1837,7 +1867,7 @@ static int pg_seek_callback(void *userdata, curl_off_t offset, int origin) {
 static size_t pg_write_callback(char *ptr, size_t size, size_t nmemb, void *userdata) {
     pg_curl_t *curl = userdata;
     size *= nmemb;
-    if (size) appendBinaryStringInfo(&curl->data_in, ptr, size);
+    if (size && !pg_curl_append(curl, &curl->data_in, ptr, size)) return 0;
     return size;
 }
 
@@ -1899,6 +1929,8 @@ static void pg_curl_easy_rewind(pg_curl_t *curl) {
     resetStringInfo(&curl->header_in);
     resetStringInfo(&curl->header_out);
     curl->readdata.cursor = 0;
+    if (curl->callback_error) FreeErrorData(curl->callback_error);
+    curl->callback_error = NULL;
 }
 
 static CURLcode pg_curl_easy_prepare(pg_curl_t *curl) {
@@ -2016,6 +2048,7 @@ EXTENSION(pg_curl_multi_perform) {
             if ((ec = curl_easy_getinfo(msg->easy_handle, CURLINFO_PRIVATE, &curl)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
             curl->errcode = msg->data.result;
             curl->try++;
+            if (curl->callback_error) curl->try = try; /* no point retrying */
             switch ((ec = curl->errcode)) {
                 case CURLE_ABORTED_BY_CALLBACK: break;
                 case CURLE_OK: curl->try = try; break;
@@ -2037,6 +2070,12 @@ EXTENSION(pg_curl_multi_perform) {
             } else {
                 if (curl->errcode != CURLE_OK) all_ok = false;
                 pg_curl_multi_remove_handle(curl, true);
+            }
+            if (curl->callback_error) {
+                /* libcurl is out of the callback and done with the transfer */
+                ErrorData *edata = curl->callback_error;
+                curl->callback_error = NULL;
+                ReThrowError(edata);
             }
         }
         if (sleep_need && sleep) pg_usleep(sleep);
