@@ -854,7 +854,7 @@ EXTENSION(pg_curl_easy_setopt_proxy_issuercert_blob) {
 }
 EXTENSION(pg_curl_easy_setopt_proxy_issuercert) {
 #if CURL_AT_LEAST_VERSION(7, 71, 0)
-    return pg_curl_easy_setopt_blob(fcinfo, CURLOPT_PROXY_ISSUERCERT);
+    return pg_curl_easy_setopt_char(fcinfo, CURLOPT_PROXY_ISSUERCERT);
 #else
     ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_proxy_issuercert requires curl 7.71.0 or later")));
 #endif
