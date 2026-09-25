@@ -1,8 +1,52 @@
-\unset ECHO
-t
-t
-t
+BEGIN;
+SET LOCAL client_min_messages = WARNING;
+CREATE EXTENSION IF NOT EXISTS pg_curl;
+END;
+DO $plpgsql$ BEGIN
+    BEGIN
+        PERFORM curl_easy_reset();
+        PERFORM curl_easy_setopt_timeout(1);
+        PERFORM curl_easy_setopt_url('http://localhost/status/202');
+        PERFORM curl_easy_perform();
+        PERFORM curl_easy_getinfo_http_connectcode();
+        SET pg_curl.httpbin = 'http://localhost';
+    EXCEPTION WHEN OTHERS THEN
+        SET pg_curl.httpbin = 'https://httpbin.org';
+    END;
+END;$plpgsql$;
+BEGIN;
+select curl_easy_reset();
+ curl_easy_reset 
+-----------------
+ t
+(1 row)
+
+select curl_easy_setopt_url(current_setting('pg_curl.httpbin') || '/get');
+ curl_easy_setopt_url 
+----------------------
+ t
+(1 row)
+
+select curl_easy_perform();
+ curl_easy_perform 
+-------------------
+ t
+(1 row)
+
+-- curl_easy_getinfo_headers/_response are deprecated aliases that must warn
+-- and still delegate to header_in/data_in with identical results
+select curl_easy_getinfo_headers() = curl_easy_getinfo_header_in() as headers_alias_matches;
 WARNING:  curl_easy_getinfo_headers deprecated, use curl_easy_getinfo_header_in instead
-t
+ headers_alias_matches 
+-----------------------
+ t
+(1 row)
+
+select curl_easy_getinfo_response() = curl_easy_getinfo_data_in() as response_alias_matches;
 WARNING:  curl_easy_getinfo_response deprecated, use curl_easy_getinfo_data_in instead
-t
+ response_alias_matches 
+------------------------
+ t
+(1 row)
+
+END;

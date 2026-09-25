@@ -1,30 +1,172 @@
-\unset ECHO
-t
-t
-t
-t
-t
-www-authenticate|Basic realm="Fake Realm"
-access-control-allow-origin|*
-access-control-allow-credentials|true
+BEGIN;
+SET LOCAL client_min_messages = WARNING;
+CREATE EXTENSION IF NOT EXISTS pg_curl;
+END;
+DO $plpgsql$ BEGIN
+    BEGIN
+        PERFORM curl_easy_reset();
+        PERFORM curl_easy_setopt_timeout(1);
+        PERFORM curl_easy_setopt_url('http://localhost/status/202');
+        PERFORM curl_easy_perform();
+        PERFORM curl_easy_getinfo_http_connectcode();
+        SET pg_curl.httpbin = 'http://localhost';
+    EXCEPTION WHEN OTHERS THEN
+        SET pg_curl.httpbin = 'https://httpbin.org';
+    END;
+END;$plpgsql$;
+BEGIN;
+select curl_easy_reset();
+ curl_easy_reset 
+-----------------
+ t
+(1 row)
 
-0|No error|
-t
-t
-t
-t
-t
-content-type|application/json
-access-control-allow-origin|*
-access-control-allow-credentials|true
-{"user": "username", "authenticated": true}
-0|No error|
-t
-t
-t
-t
-content-type|application/json
-access-control-allow-origin|*
-access-control-allow-credentials|true
-{"token": "token", "authenticated": true}
-0|No error|
+select curl_easy_setopt_password('wrong');
+ curl_easy_setopt_password 
+---------------------------
+ t
+(1 row)
+
+select curl_easy_setopt_url(current_setting('pg_curl.httpbin') || '/basic-auth/username/password');
+ curl_easy_setopt_url 
+----------------------
+ t
+(1 row)
+
+select curl_easy_setopt_username('username');
+ curl_easy_setopt_username 
+---------------------------
+ t
+(1 row)
+
+select curl_easy_perform();
+ curl_easy_perform 
+-------------------
+ t
+(1 row)
+
+with s as (
+    select regexp_matches(curl_easy_getinfo_header_in(), E'([^ \t\r\n\f]+): ?([^\t\r\n\f]+)', 'g') as s
+) select lower(s[1]) as key, s[2] as value from s where lower(s[1]) not in ('date', 'server', 'content-length', 'connection');
+               key                |          value           
+----------------------------------+--------------------------
+ www-authenticate                 | Basic realm="Fake Realm"
+ access-control-allow-origin      | *
+ access-control-allow-credentials | true
+(3 rows)
+
+select convert_from(curl_easy_getinfo_data_in(), 'utf-8')::jsonb;
+ convert_from 
+--------------
+ 
+(1 row)
+
+select curl_easy_getinfo_errcode(), curl_easy_getinfo_errdesc(), curl_easy_getinfo_errbuf();
+ curl_easy_getinfo_errcode | curl_easy_getinfo_errdesc | curl_easy_getinfo_errbuf 
+---------------------------+---------------------------+--------------------------
+                         0 | No error                  | 
+(1 row)
+
+END;
+BEGIN;
+select curl_easy_reset();
+ curl_easy_reset 
+-----------------
+ t
+(1 row)
+
+select curl_easy_setopt_password('password');
+ curl_easy_setopt_password 
+---------------------------
+ t
+(1 row)
+
+select curl_easy_setopt_url(current_setting('pg_curl.httpbin') || '/basic-auth/username/password');
+ curl_easy_setopt_url 
+----------------------
+ t
+(1 row)
+
+select curl_easy_setopt_username('username');
+ curl_easy_setopt_username 
+---------------------------
+ t
+(1 row)
+
+select curl_easy_perform();
+ curl_easy_perform 
+-------------------
+ t
+(1 row)
+
+with s as (
+    select regexp_matches(curl_easy_getinfo_header_in(), E'([^ \t\r\n\f]+): ?([^\t\r\n\f]+)', 'g') as s
+) select lower(s[1]) as key, s[2] as value from s where lower(s[1]) not in ('date', 'server', 'content-length', 'connection');
+               key                |      value       
+----------------------------------+------------------
+ content-type                     | application/json
+ access-control-allow-origin      | *
+ access-control-allow-credentials | true
+(3 rows)
+
+select convert_from(curl_easy_getinfo_data_in(), 'utf-8')::jsonb;
+                convert_from                 
+---------------------------------------------
+ {"user": "username", "authenticated": true}
+(1 row)
+
+select curl_easy_getinfo_errcode(), curl_easy_getinfo_errdesc(), curl_easy_getinfo_errbuf();
+ curl_easy_getinfo_errcode | curl_easy_getinfo_errdesc | curl_easy_getinfo_errbuf 
+---------------------------+---------------------------+--------------------------
+                         0 | No error                  | 
+(1 row)
+
+END;
+BEGIN;
+select curl_easy_reset();
+ curl_easy_reset 
+-----------------
+ t
+(1 row)
+
+select curl_easy_setopt_url(current_setting('pg_curl.httpbin') || '/bearer');
+ curl_easy_setopt_url 
+----------------------
+ t
+(1 row)
+
+select curl_header_append('Authorization', 'Bearer token');
+ curl_header_append 
+--------------------
+ t
+(1 row)
+
+select curl_easy_perform();
+ curl_easy_perform 
+-------------------
+ t
+(1 row)
+
+with s as (
+    select regexp_matches(curl_easy_getinfo_header_in(), E'([^ \t\r\n\f]+): ?([^\t\r\n\f]+)', 'g') as s
+) select lower(s[1]) as key, s[2] as value from s where lower(s[1]) not in ('date', 'server', 'content-length', 'connection');
+               key                |      value       
+----------------------------------+------------------
+ content-type                     | application/json
+ access-control-allow-origin      | *
+ access-control-allow-credentials | true
+(3 rows)
+
+select convert_from(curl_easy_getinfo_data_in(), 'utf-8')::jsonb;
+               convert_from                
+-------------------------------------------
+ {"token": "token", "authenticated": true}
+(1 row)
+
+select curl_easy_getinfo_errcode(), curl_easy_getinfo_errdesc(), curl_easy_getinfo_errbuf();
+ curl_easy_getinfo_errcode | curl_easy_getinfo_errdesc | curl_easy_getinfo_errbuf 
+---------------------------+---------------------------+--------------------------
+                         0 | No error                  | 
+(1 row)
+
+END;

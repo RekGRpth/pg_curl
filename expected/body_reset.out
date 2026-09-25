@@ -1,19 +1,132 @@
-\unset ECHO
-t
-t
-t
-t
-t
-t
-t
-t
-t
-t
-t
-t
-t
-t
-t
-t
-0
-t
+BEGIN;
+SET LOCAL client_min_messages = WARNING;
+CREATE EXTENSION IF NOT EXISTS pg_curl;
+END;
+DO $plpgsql$ BEGIN
+    BEGIN
+        PERFORM curl_easy_reset();
+        PERFORM curl_easy_setopt_timeout(1);
+        PERFORM curl_easy_setopt_url('http://localhost/status/202');
+        PERFORM curl_easy_perform();
+        PERFORM curl_easy_getinfo_http_connectcode();
+        SET pg_curl.httpbin = 'http://localhost';
+    EXCEPTION WHEN OTHERS THEN
+        SET pg_curl.httpbin = 'https://httpbin.org';
+    END;
+END;$plpgsql$;
+-- libcurl keeps options across transfers, so once a body is emptied the
+-- next perform on the same handle must not keep sending the previous one:
+-- a stale POSTFIELDS used to resend the old buffer with its old size (first
+-- byte zeroed), a stale UPLOAD used to fail with CURLE_READ_ERROR.
+BEGIN;
+select curl_easy_reset();
+ curl_easy_reset 
+-----------------
+ t
+(1 row)
+
+select curl_easy_setopt_url(current_setting('pg_curl.httpbin') || '/anything');
+ curl_easy_setopt_url 
+----------------------
+ t
+(1 row)
+
+select curl_easy_setopt_postfields(convert_to('secret-body', 'utf-8'));
+ curl_easy_setopt_postfields 
+-----------------------------
+ t
+(1 row)
+
+select curl_easy_perform();
+ curl_easy_perform 
+-------------------
+ t
+(1 row)
+
+select (convert_from(curl_easy_getinfo_data_in(), 'utf-8')::jsonb ->> 'method') = 'POST' as first_post;
+ first_post 
+------------
+ t
+(1 row)
+
+select curl_easy_setopt_postfields(convert_to('', 'utf-8'));
+ curl_easy_setopt_postfields 
+-----------------------------
+ t
+(1 row)
+
+select curl_easy_perform();
+ curl_easy_perform 
+-------------------
+ t
+(1 row)
+
+select (convert_from(curl_easy_getinfo_data_in(), 'utf-8')::jsonb ->> 'method') = 'GET' as emptied_postfields_get;
+ emptied_postfields_get 
+------------------------
+ t
+(1 row)
+
+select convert_from(curl_easy_getinfo_data_in(), 'utf-8')::jsonb -> 'form' = '{}' as no_stale_body;
+ no_stale_body 
+---------------
+ t
+(1 row)
+
+END;
+BEGIN;
+select curl_easy_reset();
+ curl_easy_reset 
+-----------------
+ t
+(1 row)
+
+select curl_easy_setopt_url(current_setting('pg_curl.httpbin') || '/anything');
+ curl_easy_setopt_url 
+----------------------
+ t
+(1 row)
+
+select curl_easy_setopt_readdata(convert_to('put-body', 'utf-8'));
+ curl_easy_setopt_readdata 
+---------------------------
+ t
+(1 row)
+
+select curl_easy_perform();
+ curl_easy_perform 
+-------------------
+ t
+(1 row)
+
+select (convert_from(curl_easy_getinfo_data_in(), 'utf-8')::jsonb ->> 'method') = 'PUT' as first_put;
+ first_put 
+-----------
+ t
+(1 row)
+
+select curl_easy_setopt_readdata(convert_to('', 'utf-8'));
+ curl_easy_setopt_readdata 
+---------------------------
+ t
+(1 row)
+
+select curl_easy_perform();
+ curl_easy_perform 
+-------------------
+ t
+(1 row)
+
+select curl_easy_getinfo_errcode();
+ curl_easy_getinfo_errcode 
+---------------------------
+                         0
+(1 row)
+
+select (convert_from(curl_easy_getinfo_data_in(), 'utf-8')::jsonb ->> 'method') = 'GET' as emptied_readdata_get;
+ emptied_readdata_get 
+----------------------
+ t
+(1 row)
+
+END;

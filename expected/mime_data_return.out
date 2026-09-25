@@ -1,5 +1,32 @@
-\unset ECHO
-t
-t
-t
-t
+BEGIN;
+SET LOCAL client_min_messages = WARNING;
+CREATE EXTENSION IF NOT EXISTS pg_curl;
+END;
+BEGIN;
+select curl_easy_reset();
+ curl_easy_reset 
+-----------------
+ t
+(1 row)
+
+-- no name/file/type/code/head supplied: the mime part is still added
+-- successfully and must be reported as such
+select curl_mime_data('content');
+ curl_mime_data 
+----------------
+ t
+(1 row)
+
+select curl_mime_data(convert_to('content', 'utf-8'));
+ curl_mime_data 
+----------------
+ t
+(1 row)
+
+select curl_mime_file('/dev/null');
+ curl_mime_file 
+----------------
+ t
+(1 row)
+
+END;
