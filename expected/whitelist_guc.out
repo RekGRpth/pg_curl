@@ -54,3 +54,23 @@ t
 t
 pg_curl whitelist local file test content
 
+t
+ERROR:  permission denied to access "/etc/passwd"
+DETAIL:  whitelist does not permit this file or URL for the current role.
+ERROR:  permission denied to access "/etc/passwd"
+DETAIL:  whitelist does not permit this file or URL for the current role.
+ERROR:  permission denied to access "/etc/passwd"
+DETAIL:  whitelist does not permit this file or URL for the current role.
+ERROR:  permission denied to access "/etc/passwd"
+DETAIL:  whitelist does not permit this file or URL for the current role.
+ERROR:  permission denied to access "/etc/passwd"
+DETAIL:  whitelist does not permit this file or URL for the current role.
+ERROR:  permission denied to access "pg_curl_test"
+DETAIL:  whitelist does not permit this file or URL for the current role.
+t
+ERROR:  permission denied to access "/etc/passwd"
+DETAIL:  whitelist does not permit this file or URL for the current role.
+ERROR:  permission denied to access "https://example.com/../../etc/passwd"
+DETAIL:  whitelist does not permit this file or URL for the current role.
+ERROR:  permission denied to access "http://example.com/../../etc/passwd"
+DETAIL:  whitelist does not permit this file or URL for the current role.

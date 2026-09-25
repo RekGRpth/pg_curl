@@ -208,6 +208,26 @@ SELECT curl_easy_perform();
 SELECT convert_from(curl_easy_getinfo_data_in(), 'utf-8');
 COMMIT;
 
+-- Every option that has curl open a local file or socket goes through the
+-- same local check as curl_mime_file(): cookiejar (written) and the
+-- certificate/key/known_hosts files (read) only for whitelisted paths, a
+-- pinned public key only when it is a file rather than sha256// hashes, and
+-- an abstract socket (no path on disk to whitelist) not at all.
+SELECT curl_easy_setopt_cookiejar('/tmp/pg_curl_whitelist_test.txt');
+SELECT curl_easy_setopt_cookiejar('/etc/passwd');
+SELECT curl_easy_setopt_cainfo('/etc/passwd');
+SELECT curl_easy_setopt_sslkey('/etc/passwd');
+SELECT curl_easy_setopt_ssh_knownhosts('/etc/passwd');
+SELECT curl_easy_setopt_unix_socket_path('/etc/passwd');
+SELECT curl_easy_setopt_abstract_unix_socket('pg_curl_test');
+SELECT curl_easy_setopt_pinnedpublickey('sha256//AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=');
+SELECT curl_easy_setopt_pinnedpublickey('/etc/passwd');
+
+-- pg_whitelist_check_local() skips anything that looks like an http(s) URL,
+-- but for these it is always a path (relative to the data directory).
+SELECT curl_easy_setopt_cookiejar('https://example.com/../../etc/passwd');
+SELECT curl_mime_file('http://example.com/../../etc/passwd', name := 'upload');
+
 \c - :pg_curl_test_orig_user
 ALTER ROLE curl_test_none RESET pg_curl.whitelist;
 DROP ROLE curl_test_none;
