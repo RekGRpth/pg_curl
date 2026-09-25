@@ -757,6 +757,8 @@ EXTENSION(pg_curl_easy_setopt_dns_servers) {
 }
 EXTENSION(pg_curl_easy_setopt_doh_url) {
 #if CURL_AT_LEAST_VERSION(7, 62, 0)
+    /* a host curl connects to on its own, never checked against the whitelist */
+    if (!PG_ARGISNULL(0) && !pg_curl_unrestricted()) pg_curl_whitelist_deny_option("curl_easy_setopt_doh_url");
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_DOH_URL);
 #else
     ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_doh_url requires curl 7.62.0 or later")));
@@ -865,6 +867,8 @@ EXTENSION(pg_curl_easy_setopt_pinnedpublickey) {
 }
 EXTENSION(pg_curl_easy_setopt_pre_proxy) {
 #if CURL_AT_LEAST_VERSION(7, 52, 0)
+    /* a host curl connects to on its own, never checked against the whitelist */
+    if (!PG_ARGISNULL(0) && !pg_curl_unrestricted()) pg_curl_whitelist_deny_option("curl_easy_setopt_pre_proxy");
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_PRE_PROXY);
 #else
     ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_pre_proxy requires curl 7.52.0 or later")));
@@ -949,6 +953,8 @@ EXTENSION(pg_curl_easy_setopt_proxy_service_name) {
 }
 EXTENSION(pg_curl_easy_setopt_proxy) {
 #if CURL_AT_LEAST_VERSION(7, 14, 1)
+    /* a host curl connects to on its own, never checked against the whitelist */
+    if (!PG_ARGISNULL(0) && !pg_curl_unrestricted()) pg_curl_whitelist_deny_option("curl_easy_setopt_proxy");
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_PROXY);
 #else
     ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_proxy requires curl 7.14.1 or later")));
@@ -1919,6 +1925,15 @@ static CURLcode pg_curl_easy_prepare(pg_curl_t *curl) {
     /* also covers followlocation set on this handle before the whitelist
      * applied, e.g. by a superuser before SET ROLE */
     if (!pg_curl_unrestricted() && (curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_FOLLOWLOCATION, 0L)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
+    /* likewise for hosts curl would connect to besides the request URL; NULL
+     * restores the default, i.e. a proxy from the server's environment */
+    if (!pg_curl_unrestricted() && (curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_PROXY, (char *)NULL)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
+#if CURL_AT_LEAST_VERSION(7, 52, 0)
+    if (!pg_curl_unrestricted() && (curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_PRE_PROXY, (char *)NULL)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
+#endif
+#if CURL_AT_LEAST_VERSION(7, 62, 0)
+    if (!pg_curl_unrestricted() && (curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_DOH_URL, (char *)NULL)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
+#endif
     if ((curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_URL, url)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
     pfree(url);
     if ((curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_WRITEDATA, curl)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));

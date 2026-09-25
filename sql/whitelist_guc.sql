@@ -241,6 +241,11 @@ SELECT curl_easy_setopt_netrc(curl_netrc_ignored());
 SELECT curl_easy_setopt_followlocation(1);
 SELECT curl_easy_setopt_followlocation(0);
 
+-- The same goes for hosts curl connects to besides the request URL.
+SELECT curl_easy_setopt_proxy('http://192.0.2.1:3128');
+SELECT curl_easy_setopt_pre_proxy('socks5://192.0.2.1:1080');
+SELECT curl_easy_setopt_doh_url('https://192.0.2.1/dns-query');
+
 \c - :pg_curl_test_orig_user
 ALTER ROLE curl_test_none RESET pg_curl.whitelist;
 DROP ROLE curl_test_none;

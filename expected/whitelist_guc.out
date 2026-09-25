@@ -84,3 +84,9 @@ t
 ERROR:  permission denied for curl_easy_setopt_followlocation
 DETAIL:  curl_easy_setopt_followlocation is not available while pg_curl.whitelist applies to the current role.
 t
+ERROR:  permission denied for curl_easy_setopt_proxy
+DETAIL:  curl_easy_setopt_proxy is not available while pg_curl.whitelist applies to the current role.
+ERROR:  permission denied for curl_easy_setopt_pre_proxy
+DETAIL:  curl_easy_setopt_pre_proxy is not available while pg_curl.whitelist applies to the current role.
+ERROR:  permission denied for curl_easy_setopt_doh_url
+DETAIL:  curl_easy_setopt_doh_url is not available while pg_curl.whitelist applies to the current role.
