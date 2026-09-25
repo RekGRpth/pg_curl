@@ -246,6 +246,22 @@ SELECT curl_easy_setopt_proxy('http://192.0.2.1:3128');
 SELECT curl_easy_setopt_pre_proxy('socks5://192.0.2.1:1080');
 SELECT curl_easy_setopt_doh_url('https://192.0.2.1/dns-query');
 
+-- An entry without a trailing slash matches only up to a URL delimiter, so
+-- it can't be stretched to another host via userinfo or a longer name.
+\c - :pg_curl_test_orig_user
+ALTER ROLE curl_test_none SET pg_curl.whitelist = 'https://example.com';
+\c - curl_test_none
+BEGIN;
+SELECT curl_easy_reset();
+SELECT curl_easy_setopt_url('https://example.com@192.0.2.1/');
+SELECT curl_easy_perform();
+COMMIT;
+BEGIN;
+SELECT curl_easy_reset();
+SELECT curl_easy_setopt_url('https://example.com.invalid/');
+SELECT curl_easy_perform();
+COMMIT;
+
 \c - :pg_curl_test_orig_user
 ALTER ROLE curl_test_none RESET pg_curl.whitelist;
 DROP ROLE curl_test_none;

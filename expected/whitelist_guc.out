@@ -90,3 +90,11 @@ ERROR:  permission denied for curl_easy_setopt_pre_proxy
 DETAIL:  curl_easy_setopt_pre_proxy is not available while pg_curl.whitelist applies to the current role.
 ERROR:  permission denied for curl_easy_setopt_doh_url
 DETAIL:  curl_easy_setopt_doh_url is not available while pg_curl.whitelist applies to the current role.
+t
+t
+ERROR:  permission denied to access "https://example.com@192.0.2.1/"
+DETAIL:  whitelist does not permit this file or URL for the current role.
+t
+t
+ERROR:  permission denied to access "https://example.com.invalid/"
+DETAIL:  whitelist does not permit this file or URL for the current role.
