@@ -1867,9 +1867,10 @@ static size_t pg_write_callback(char *ptr, size_t size, size_t nmemb, void *user
     return size;
 }
 
-/* pg_whitelist_check_url() only understands lowercase http(s):// URLs and
- * lets anything else through unchecked, so classify the URL the way libcurl
- * itself will first: http(s) goes to pg_whitelist_check_url(), file:// to
+/* pg_whitelist_check_url() only understands what htmldoc would fetch -- a
+ * lowercase "http:", "https:" or scheme-relative "//" -- and lets anything
+ * else through unchecked, so classify the URL the way libcurl itself will
+ * first: http(s) goes to pg_whitelist_check_url(), file:// to
  * pg_curl_check_local(), and any other scheme is denied. Returns the URL
  * to hand to libcurl -- normalized, with an explicit scheme and no dot
  * segments, so that what was checked is exactly what gets fetched regardless

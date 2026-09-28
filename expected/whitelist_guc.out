@@ -143,9 +143,9 @@ END
 $$;
 -- curl_mime_file() reads its content from an actual local file (unlike
 -- curl_mime_data(), which takes the content in-memory) and never touches
--- the network by itself, so it goes through pg_whitelist_check_local()
--- the same way pg_htmldoc's read_fileurl() does for local files -- purely
--- a local realpath()-based decision, so these assertions are
+-- the network by itself, so it goes through pg_curl_check_local(), which
+-- asks pg_whitelist_allows_local() about the path -- purely a local
+-- realpath()-based decision, so these assertions are
 -- deterministic regardless of network conditions.
 \c - :pg_curl_test_orig_user
 ALTER ROLE curl_test_none RESET pg_curl.whitelist;
