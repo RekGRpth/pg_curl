@@ -64,5 +64,16 @@ EXCEPTION WHEN insufficient_privilege THEN
 END
 $$;
 
+-- libcurl doesn't follow a redirect to file:// unless told to, but the role
+-- may tell it to, so such a target is checked against the whitelist's
+-- file:// entries like any local path.
+BEGIN;
+SELECT curl_easy_reset();
+SELECT curl_easy_setopt_followlocation(1);
+SELECT curl_easy_setopt_redir_protocols_str('http,https,file');
+SELECT curl_easy_setopt_url(current_setting('pg_curl.httpbin') || '/redirect-to?url=file%3A%2F%2F%2Fetc%2Fpasswd');
+SELECT curl_easy_perform();
+COMMIT;
+
 \c - :pg_curl_test_orig_user
 DROP ROLE curl_test_redirect;
