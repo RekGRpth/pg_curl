@@ -186,6 +186,14 @@ SELECT curl_easy_setopt_default_protocol('file');
 SELECT curl_easy_setopt_url('/etc/passwd');
 SELECT curl_easy_perform();
 COMMIT;
+-- libcurl parses "file:////etc/passwd" to the path "//etc/passwd", which
+-- pg_whitelist would take for a scheme-relative URL and skip; it is still
+-- a local path and must be checked as one.
+BEGIN;
+SELECT curl_easy_reset();
+SELECT curl_easy_setopt_url('file:////etc/passwd');
+SELECT curl_easy_perform();
+COMMIT;
 
 -- An uppercase scheme is still matched against a lowercase entry, and a
 -- whitelisted file:// URL is actually fetched.
@@ -218,10 +226,13 @@ SELECT curl_easy_setopt_abstract_unix_socket('pg_curl_test');
 SELECT curl_easy_setopt_pinnedpublickey('sha256//AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=');
 SELECT curl_easy_setopt_pinnedpublickey('/etc/passwd');
 
--- pg_whitelist_check_local() skips anything that looks like an http(s) URL,
--- but for these it is always a path (relative to the data directory).
+-- pg_whitelist skips anything that looks like a URL ("http:", "https:" or
+-- "//"), but for these it is always a path (relative to the data directory,
+-- or "//etc/passwd", which is just "/etc/passwd").
 SELECT curl_easy_setopt_cookiejar('https://example.com/../../etc/passwd');
 SELECT curl_mime_file('http://example.com/../../etc/passwd', name := 'upload');
+SELECT curl_easy_setopt_cookiefile('//etc/passwd');
+SELECT curl_mime_file('//etc/passwd', name := 'upload');
 
 -- Options the whitelist has no way to scope are unavailable altogether: an
 -- OpenSSL engine (a shared library loaded into the backend) and .netrc (the

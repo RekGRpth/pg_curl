@@ -40,10 +40,6 @@ static bool pg_curl_unrestricted(void) {
     return pg_curl_privileged() && (!whitelist || !whitelist[0]);
 }
 
-static void pg_curl_whitelist_deny(const char *url) {
-    ereport(ERROR, (errcode(ERRCODE_INSUFFICIENT_PRIVILEGE), errmsg("permission denied to access \"%s\"", url), errdetail("whitelist does not permit this file or URL for the current role.")));
-}
-
 /* For options pg_curl.whitelist has no way to scope, so a role it applies to
  * can't use them at all. */
 static void pg_curl_whitelist_deny_option(const char *function) {
@@ -51,12 +47,12 @@ static void pg_curl_whitelist_deny_option(const char *function) {
 }
 
 /* Check a local path curl will open against pg_curl.whitelist.
- * pg_whitelist_check_local() skips anything that looks like an http(s) URL,
- * but here it is always a path (a relative one resolves against the data
- * directory), so don't let it slip through that way. */
+ * pg_whitelist waves through anything it takes for a URL ("http:", "https:"
+ * or "//"), but here it is always a path ("//etc" is just "/etc", a relative
+ * one resolves against the data directory), so classify it by an empty
+ * fileurl it can't mistake for one. */
 static void pg_curl_check_local(const char *path) {
-    if (!pg_curl_unrestricted() && (!strncmp(path, "http://", 7) || !strncmp(path, "https://", 8))) pg_curl_whitelist_deny(path);
-    pg_whitelist_check_local(path, path, pg_curl_privileged());
+    if (!pg_whitelist_allows_local("", path, pg_curl_privileged())) pg_whitelist_deny(path);
 }
 
 /* Which request body pg_curl_easy_prepare() last put on the easy handle. */
@@ -701,7 +697,7 @@ static int pg_debug_callback(CURL *handle, curl_infotype type, char *data, size_
 EXTENSION(pg_curl_easy_setopt_abstract_unix_socket) {
 #if CURL_AT_LEAST_VERSION(7, 53, 0)
     /* an abstract socket has no path on disk that pg_curl.whitelist could list */
-    if (!PG_ARGISNULL(0) && !pg_curl_unrestricted()) pg_curl_whitelist_deny(TextDatumGetCString(PG_GETARG_DATUM(0)));
+    if (!PG_ARGISNULL(0) && !pg_curl_unrestricted()) pg_whitelist_deny(TextDatumGetCString(PG_GETARG_DATUM(0)));
     return pg_curl_easy_setopt_char(fcinfo, CURLOPT_ABSTRACT_UNIX_SOCKET);
 #else
     ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("curl_easy_setopt_abstract_unix_socket requires curl 7.53.0 or later")));
@@ -1874,7 +1870,7 @@ static size_t pg_write_callback(char *ptr, size_t size, size_t nmemb, void *user
 /* pg_whitelist_check_url() only understands lowercase http(s):// URLs and
  * lets anything else through unchecked, so classify the URL the way libcurl
  * itself will first: http(s) goes to pg_whitelist_check_url(), file:// to
- * pg_whitelist_check_local(), and any other scheme is denied. Returns the URL
+ * pg_curl_check_local(), and any other scheme is denied. Returns the URL
  * to hand to libcurl -- normalized, with an explicit scheme and no dot
  * segments, so that what was checked is exactly what gets fetched regardless
  * of curl_easy_setopt_default_protocol() or curl_easy_setopt_path_as_is(). A
@@ -1904,16 +1900,16 @@ static char *pg_curl_whitelist_url(const char *url) {
     curl_free(normalized);
     curl_free(path);
     curl_url_cleanup(h);
-    if (!result) pg_curl_whitelist_deny(url);
+    if (!result) pg_whitelist_deny(url);
     if (!pg_strcasecmp(scheme_copy, "http") || !pg_strcasecmp(scheme_copy, "https")) {
         for (i = 0; i < strlen(scheme_copy); i++) result[i] = pg_tolower((unsigned char) result[i]);
         pg_whitelist_check_url(result, privileged);
-    } else if (!pg_strcasecmp(scheme_copy, "file") && path_copy) pg_whitelist_check_local(path_copy, path_copy, privileged);
-    else pg_curl_whitelist_deny(url);
+    } else if (!pg_strcasecmp(scheme_copy, "file") && path_copy) pg_curl_check_local(path_copy);
+    else pg_whitelist_deny(url);
     pfree(scheme_copy);
     if (path_copy) pfree(path_copy);
 #else
-    if (strncmp(url, "http://", 7) && strncmp(url, "https://", 8)) pg_curl_whitelist_deny(url);
+    if (strncmp(url, "http://", 7) && strncmp(url, "https://", 8)) pg_whitelist_deny(url);
     pg_whitelist_check_url(url, privileged);
     result = pstrdup(url);
 #endif
