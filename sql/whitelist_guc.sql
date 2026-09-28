@@ -242,11 +242,6 @@ SELECT curl_easy_setopt_netrc(curl_netrc_optional());
 SELECT curl_easy_setopt_netrc(curl_netrc_required());
 SELECT curl_easy_setopt_netrc(curl_netrc_ignored());
 
--- Only the request URL itself is checked, so following redirects -- which
--- could lead to any host -- is unavailable too; turning it off is fine.
-SELECT curl_easy_setopt_followlocation(1);
-SELECT curl_easy_setopt_followlocation(0);
-
 -- The same goes for hosts curl connects to besides the request URL.
 SELECT curl_easy_setopt_proxy('http://192.0.2.1:3128');
 SELECT curl_easy_setopt_pre_proxy('socks5://192.0.2.1:1080');

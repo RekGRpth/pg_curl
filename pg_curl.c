@@ -1352,9 +1352,11 @@ EXTENSION(pg_curl_easy_setopt_expect_100_timeout_ms) {
 EXTENSION(pg_curl_easy_setopt_failonerror) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_FAILONERROR); }
 EXTENSION(pg_curl_easy_setopt_filetime) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_FILETIME); }
 EXTENSION(pg_curl_easy_setopt_followlocation) {
-    /* only the request URL itself is checked against pg_curl.whitelist, so a
-     * redirect could lead anywhere */
+#if !CURL_AT_LEAST_VERSION(7, 80, 0)
+    /* without CURLOPT_PREREQFUNCTION only the request URL itself can be
+     * checked against pg_curl.whitelist, so a redirect could lead anywhere */
     if (!PG_ARGISNULL(0) && PG_GETARG_INT64(0) != 0 && !pg_curl_unrestricted()) pg_curl_whitelist_deny_option("curl_easy_setopt_followlocation");
+#endif
     return pg_curl_easy_setopt_long(fcinfo, CURLOPT_FOLLOWLOCATION);
 }
 EXTENSION(pg_curl_easy_setopt_forbid_reuse) { return pg_curl_easy_setopt_long(fcinfo, CURLOPT_FORBID_REUSE); }
@@ -1917,6 +1919,53 @@ static char *pg_curl_whitelist_url(const char *url) {
     return result;
 }
 
+#if CURL_AT_LEAST_VERSION(7, 80, 0)
+/* Check the URL libcurl is about to connect to or request -- a redirect
+ * target as much as the request URL -- against pg_curl.whitelist from inside
+ * a libcurl callback. The refusal can't be raised there (see
+ * pg_curl_append()), so it is stashed like an append error, the callback
+ * fails the transfer, and pg_curl_multi_perform() re-throws it. */
+static bool pg_curl_whitelist_allows(pg_curl_t *curl) {
+    MemoryContext oldcontext = CurrentMemoryContext;
+    volatile bool ok = true;
+    char *url = NULL;
+    if (curl->callback_error) return false;
+    if (curl_easy_getinfo(curl->easy, CURLINFO_EFFECTIVE_URL, &url) != CURLE_OK || !url) return false;
+    PG_TRY();
+    {
+        pfree(pg_curl_whitelist_url(url));
+    }
+    PG_CATCH();
+    {
+        MemoryContextSwitchTo(pg_curl.context);
+        curl->callback_error = CopyErrorData();
+        FlushErrorState();
+        MemoryContextSwitchTo(oldcontext);
+        ok = false;
+    }
+    PG_END_TRY();
+    return ok;
+}
+
+/* called before every new connection, so a redirect to a host the whitelist
+ * doesn't list is refused before that host is contacted */
+static curl_socket_t pg_opensocket_callback(void *clientp, curlsocktype purpose, struct curl_sockaddr *address) {
+    if (!pg_curl_whitelist_allows(clientp)) return CURL_SOCKET_BAD;
+#ifdef SOCK_CLOEXEC
+    return socket(address->family, address->socktype | SOCK_CLOEXEC, address->protocol);
+#else
+    return socket(address->family, address->socktype, address->protocol);
+#endif
+}
+
+/* called before every request, including one on a reused connection, which
+ * pg_opensocket_callback() never sees -- e.g. a redirect to another path on
+ * the same host */
+static int pg_prereq_callback(void *clientp, char *conn_primary_ip, char *conn_local_ip, int conn_primary_port, int conn_local_port) {
+    return pg_curl_whitelist_allows(clientp) ? CURL_PREREQFUNC_OK : CURL_PREREQFUNC_ABORT;
+}
+#endif
+
 /* Drop whatever a previous attempt collected, so the next transfer on this
  * handle -- a new perform or a retry -- starts from scratch. */
 static void pg_curl_easy_rewind(pg_curl_t *curl) {
@@ -1984,9 +2033,19 @@ static CURLcode pg_curl_easy_prepare(pg_curl_t *curl) {
 #endif
     if (curl->readdata.len && (curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_UPLOAD, 1L)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
     url = pg_curl_whitelist_url(curl->url.data);
+#if CURL_AT_LEAST_VERSION(7, 80, 0)
+    /* the request URL is checked above, but a redirect target only once
+     * libcurl gets to it; NULL restores libcurl's own behavior for a handle a
+     * previous perform left the callbacks on */
+    if ((curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_OPENSOCKETDATA, curl)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
+    if ((curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_OPENSOCKETFUNCTION, pg_curl_unrestricted() ? (curl_opensocket_callback)NULL : pg_opensocket_callback)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
+    if ((curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_PREREQDATA, curl)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
+    if ((curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_PREREQFUNCTION, pg_curl_unrestricted() ? (curl_prereq_callback)NULL : pg_prereq_callback)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
+#else
     /* also covers followlocation set on this handle before the whitelist
      * applied, e.g. by a superuser before SET ROLE */
     if (!pg_curl_unrestricted() && (curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_FOLLOWLOCATION, 0L)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
+#endif
     /* likewise for hosts curl would connect to besides the request URL; NULL
      * restores the default, i.e. a proxy from the server's environment */
     if (!pg_curl_unrestricted() && (curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_PROXY, (char *)NULL)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
