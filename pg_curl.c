@@ -35,9 +35,13 @@ static bool pg_curl_privileged(void) {
 
 /* pg_curl.whitelist does not apply at all: a privileged caller with no
  * whitelist configured. */
-static bool pg_curl_unrestricted(void) {
+static bool pg_curl_unrestricted_for(bool privileged) {
     const char *whitelist = GetConfigOption("pg_curl.whitelist", true, false);
-    return pg_curl_privileged() && (!whitelist || !whitelist[0]);
+    return privileged && (!whitelist || !whitelist[0]);
+}
+
+static bool pg_curl_unrestricted(void) {
+    return pg_curl_unrestricted_for(pg_curl_privileged());
 }
 
 /* For options pg_curl.whitelist has no way to scope, so a role it applies to
@@ -51,8 +55,12 @@ static void pg_curl_whitelist_deny_option(const char *function) {
  * or "//"), but here it is always a path ("//etc" is just "/etc", a relative
  * one resolves against the data directory), so classify it by an empty
  * fileurl it can't mistake for one. */
+static void pg_curl_check_local_for(const char *path, bool privileged) {
+    if (!pg_whitelist_allows_local("", path, privileged)) pg_whitelist_deny(path);
+}
+
 static void pg_curl_check_local(const char *path) {
-    if (!pg_whitelist_allows_local("", path, pg_curl_privileged())) pg_whitelist_deny(path);
+    pg_curl_check_local_for(path, pg_curl_privileged());
 }
 
 /* Which request body pg_curl_easy_prepare() last put on the easy handle. */
@@ -80,6 +88,10 @@ typedef struct {
     StringInfoData readdata;
     StringInfoData url;
     pg_curl_body_t body;
+    /* pg_curl_privileged() as of pg_curl_easy_prepare(), for the whitelist
+     * checks libcurl callbacks make: superuser() may look up the catalog,
+     * which has no business happening inside libcurl */
+    bool privileged;
     ErrorData *callback_error;
     struct curl_slist *header;
     struct curl_slist *postquote;
@@ -1879,8 +1891,7 @@ static size_t pg_write_callback(char *ptr, size_t size, size_t nmemb, void *user
  * of curl_easy_setopt_default_protocol() or curl_easy_setopt_path_as_is(). A
  * privileged caller with no whitelist configured is left unrestricted and
  * gets the URL back unchanged. */
-static char *pg_curl_whitelist_url(const char *url) {
-    bool privileged = pg_curl_privileged();
+static char *pg_curl_whitelist_url(const char *url, bool privileged) {
     char *result;
 #if CURL_AT_LEAST_VERSION(7, 62, 0)
     char *scheme = NULL, *normalized = NULL, *path = NULL;
@@ -1889,7 +1900,7 @@ static char *pg_curl_whitelist_url(const char *url) {
     CURLU *h;
     CURLUcode uc;
 #endif
-    if (pg_curl_unrestricted()) return pstrdup(url);
+    if (pg_curl_unrestricted_for(privileged)) return pstrdup(url);
 #if CURL_AT_LEAST_VERSION(7, 62, 0)
     if (!(h = curl_url())) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_url")));
     uc = curl_url_set(h, CURLUPART_URL, url, CURLU_GUESS_SCHEME | CURLU_NON_SUPPORT_SCHEME);
@@ -1907,7 +1918,7 @@ static char *pg_curl_whitelist_url(const char *url) {
     if (!pg_strcasecmp(scheme_copy, "http") || !pg_strcasecmp(scheme_copy, "https")) {
         for (i = 0; i < strlen(scheme_copy); i++) result[i] = pg_tolower((unsigned char) result[i]);
         pg_whitelist_check_url(result, privileged);
-    } else if (!pg_strcasecmp(scheme_copy, "file") && path_copy) pg_curl_check_local(path_copy);
+    } else if (!pg_strcasecmp(scheme_copy, "file") && path_copy) pg_curl_check_local_for(path_copy, privileged);
     else pg_whitelist_deny(url);
     pfree(scheme_copy);
     if (path_copy) pfree(path_copy);
@@ -1933,7 +1944,7 @@ static bool pg_curl_whitelist_allows(pg_curl_t *curl) {
     if (curl_easy_getinfo(curl->easy, CURLINFO_EFFECTIVE_URL, &url) != CURLE_OK || !url) return false;
     PG_TRY();
     {
-        pfree(pg_curl_whitelist_url(url));
+        pfree(pg_curl_whitelist_url(url, curl->privileged));
     }
     PG_CATCH();
     {
@@ -2040,17 +2051,18 @@ static CURLcode pg_curl_easy_prepare(pg_curl_t *curl) {
     if (curl->readdata.len && (curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_SEEKFUNCTION, pg_seek_callback)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
 #endif
     if (curl->readdata.len && (curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_UPLOAD, 1L)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
-    url = pg_curl_whitelist_url(curl->url.data);
+    curl->privileged = pg_curl_privileged();
+    url = pg_curl_whitelist_url(curl->url.data, curl->privileged);
 #if CURL_AT_LEAST_VERSION(7, 80, 0)
     /* the request URL is checked above, but a redirect target only once
      * libcurl gets to it; NULL restores libcurl's own behavior for a handle a
      * previous perform left the callbacks on */
     if ((curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_RESOLVER_START_DATA, curl)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
-    if ((curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_RESOLVER_START_FUNCTION, pg_curl_unrestricted() ? (curl_resolver_start_callback)NULL : pg_resolver_start_callback)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
+    if ((curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_RESOLVER_START_FUNCTION, pg_curl_unrestricted_for(curl->privileged) ? (curl_resolver_start_callback)NULL : pg_resolver_start_callback)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
     if ((curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_OPENSOCKETDATA, curl)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
-    if ((curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_OPENSOCKETFUNCTION, pg_curl_unrestricted() ? (curl_opensocket_callback)NULL : pg_opensocket_callback)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
+    if ((curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_OPENSOCKETFUNCTION, pg_curl_unrestricted_for(curl->privileged) ? (curl_opensocket_callback)NULL : pg_opensocket_callback)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
     if ((curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_PREREQDATA, curl)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
-    if ((curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_PREREQFUNCTION, pg_curl_unrestricted() ? (curl_prereq_callback)NULL : pg_prereq_callback)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
+    if ((curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_PREREQFUNCTION, pg_curl_unrestricted_for(curl->privileged) ? (curl_prereq_callback)NULL : pg_prereq_callback)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
 #else
     /* also covers followlocation set on this handle before the whitelist
      * applied, e.g. by a superuser before SET ROLE */
