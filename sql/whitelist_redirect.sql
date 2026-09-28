@@ -47,6 +47,16 @@ SELECT curl_easy_setopt_url(current_setting('pg_curl.httpbin') || '/redirect-to?
 SELECT curl_easy_perform();
 COMMIT;
 
+-- It is refused before its name is even resolved, too: were it looked up,
+-- example.invalid (RFC 2606, never resolves) would fail with a resolve
+-- error instead.
+BEGIN;
+SELECT curl_easy_reset();
+SELECT curl_easy_setopt_followlocation(1);
+SELECT curl_easy_setopt_url(current_setting('pg_curl.httpbin') || '/redirect-to?url=http%3A%2F%2Fexample.invalid%2F');
+SELECT curl_easy_perform();
+COMMIT;
+
 -- A redirect to another path on the same host goes over the connection
 -- already open to it, so only the check before the request can refuse it.
 \c - :pg_curl_test_orig_user
@@ -77,3 +87,20 @@ COMMIT;
 
 \c - :pg_curl_test_orig_user
 DROP ROLE curl_test_redirect;
+
+-- libcurl skips the resolve for a host already in its DNS cache, so a
+-- redirect to such a host is refused only before the connection. A
+-- superuser without a whitelist puts 127.0.0.1 in the cache (port 9 is
+-- closed, so no connection is left open for the redirect to reuse); the
+-- whitelist then applies to the superuser too, and the redirect there must
+-- still be refused -- were a connection attempted, it would fail as refused.
+BEGIN;
+SELECT curl_easy_reset();
+SELECT curl_easy_setopt_url('http://127.0.0.1:9/');
+SELECT curl_easy_perform() IS NOT NULL AS performed;
+SELECT set_config('pg_curl.whitelist', :'whitelist_all', true) IS NOT NULL AS whitelisted;
+SELECT curl_easy_reset();
+SELECT curl_easy_setopt_followlocation(1);
+SELECT curl_easy_setopt_url(:'httpbin' || '/redirect-to?url=http%3A%2F%2F127.0.0.1%3A9%2F');
+SELECT curl_easy_perform();
+COMMIT;

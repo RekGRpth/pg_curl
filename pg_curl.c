@@ -1947,6 +1947,14 @@ static bool pg_curl_whitelist_allows(pg_curl_t *curl) {
     return ok;
 }
 
+/* called before a host name is resolved, so a redirect to a host the
+ * whitelist doesn't list is refused before even a DNS query goes out for it;
+ * not for a name already in libcurl's DNS cache, though, which
+ * pg_opensocket_callback() still catches */
+static int pg_resolver_start_callback(void *resolver_state, void *reserved, void *userdata) {
+    return !pg_curl_whitelist_allows(userdata);
+}
+
 /* called before every new connection, so a redirect to a host the whitelist
  * doesn't list is refused before that host is contacted */
 static curl_socket_t pg_opensocket_callback(void *clientp, curlsocktype purpose, struct curl_sockaddr *address) {
@@ -2037,6 +2045,8 @@ static CURLcode pg_curl_easy_prepare(pg_curl_t *curl) {
     /* the request URL is checked above, but a redirect target only once
      * libcurl gets to it; NULL restores libcurl's own behavior for a handle a
      * previous perform left the callbacks on */
+    if ((curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_RESOLVER_START_DATA, curl)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
+    if ((curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_RESOLVER_START_FUNCTION, pg_curl_unrestricted() ? (curl_resolver_start_callback)NULL : pg_resolver_start_callback)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
     if ((curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_OPENSOCKETDATA, curl)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
     if ((curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_OPENSOCKETFUNCTION, pg_curl_unrestricted() ? (curl_opensocket_callback)NULL : pg_opensocket_callback)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
     if ((curl->errcode = curl_easy_setopt(curl->easy, CURLOPT_PREREQDATA, curl)) != CURLE_OK) ereport(ERROR, (pg_curl_ec(curl->errcode), errmsg("%s", curl_easy_strerror(curl->errcode))));
