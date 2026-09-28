@@ -263,6 +263,51 @@ SELECT curl_easy_setopt_url('https://example.com.invalid/');
 SELECT curl_easy_perform();
 COMMIT;
 
+-- A default port and userinfo don't change where a request goes, so they
+-- are ignored, and paths are compared percent-decoded -- on both sides.
+\c - :pg_curl_test_orig_user
+ALTER ROLE curl_test_none SET pg_curl.whitelist = 'https://example.com/a/';
+\c - curl_test_none
+DO $$
+BEGIN
+    PERFORM curl_easy_reset();
+    PERFORM curl_easy_setopt_url('https://example.com:443/a/');
+    PERFORM curl_easy_perform();
+    PERFORM curl_easy_setopt_url('https://user@example.com/a/');
+    PERFORM curl_easy_perform();
+    PERFORM curl_easy_setopt_url('https://example.com/%61/');
+    PERFORM curl_easy_perform();
+END
+$$;
+\c - :pg_curl_test_orig_user
+ALTER ROLE curl_test_none SET pg_curl.whitelist = 'https://user@example.com:443/%61/';
+\c - curl_test_none
+DO $$
+BEGIN
+    PERFORM curl_easy_reset();
+    PERFORM curl_easy_setopt_url('https://example.com/a/');
+    PERFORM curl_easy_perform();
+END
+$$;
+
+-- A port other than the default is still part of the host, and a dot
+-- segment -- even one only a percent-decoded "/" makes -- can't climb out
+-- of an entry's path: "..%2F" is no dot segment to libcurl, but a server
+-- that decodes it resolves "/a/..%2Fsecret" to "/secret".
+\c - :pg_curl_test_orig_user
+ALTER ROLE curl_test_none SET pg_curl.whitelist = 'https://example.com/a/';
+\c - curl_test_none
+BEGIN;
+SELECT curl_easy_reset();
+SELECT curl_easy_setopt_url('https://example.com:8443/a/');
+SELECT curl_easy_perform();
+COMMIT;
+BEGIN;
+SELECT curl_easy_reset();
+SELECT curl_easy_setopt_url('https://example.com/a/..%2Fsecret');
+SELECT curl_easy_perform();
+COMMIT;
+
 \c - :pg_curl_test_orig_user
 ALTER ROLE curl_test_none RESET pg_curl.whitelist;
 DROP ROLE curl_test_none;
