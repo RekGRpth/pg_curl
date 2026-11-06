@@ -59,6 +59,24 @@ CREATE OR REPLACE FUNCTION post(url TEXT, request JSON) RETURNS TEXT LANGUAGE SQ
 $BODY$;
 ```
 
+# mime part with multiple headers
+
+The `head` argument of `curl_mime_data` and `curl_mime_file` also accepts an array of complete header lines:
+
+```sql
+SELECT curl_mime_data(
+    'image data',
+    head := ARRAY[
+        'Content-ID: <picture1>',
+        'Content-Disposition: inline; filename="picture1.png"'
+    ],
+    name := 'picture',
+    type := 'image/png'
+);
+```
+
+`curl_mime_data` accepts either `text` or `bytea` content. Array elements must not contain CR or LF characters or be null. A null or empty array leaves the part without custom headers; cast an untyped null or empty array literal as `NULL::text[]` or `'{}'::text[]` to select the array overload.
+
 # http json post
 ```sql
 CREATE OR REPLACE FUNCTION post(url TEXT, request JSON) RETURNS TEXT LANGUAGE SQL AS $BODY$

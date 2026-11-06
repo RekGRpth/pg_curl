@@ -1,10 +1,13 @@
 #include <postgres.h>
 
+#include <catalog/pg_type.h>
 #include <lib/stringinfo.h>
 #include <miscadmin.h>
+#include <utils/array.h>
 #include <utils/builtins.h>
 #include <utils/guc.h>
 #include <utils/hsearch.h>
+#include <utils/lsyscache.h>
 #include <utils/memutils.h>
 
 #include <curl/curl.h>
@@ -447,15 +450,60 @@ EXTENSION(pg_curl_recipient_append) {
 #endif
 }
 
+#if CURL_AT_LEAST_VERSION(7, 56, 0)
+static struct curl_slist *pg_curl_mime_headers_array(ArrayType *array) {
+    Datum *elements;
+    bool *nulls;
+    int16 typlen;
+    bool typbyval;
+    char typalign;
+    int count, i;
+    struct curl_slist *headers = NULL;
+    get_typlenbyvalalign(TEXTOID, &typlen, &typbyval, &typalign);
+    deconstruct_array(array, TEXTOID, typlen, typbyval, typalign, &elements, &nulls, &count);
+    /* Validate everything before allocating the list, so a SQL ERROR cannot
+     * leak a partly constructed list that libcurl does not own yet. */
+    for (i = 0; i < count; i++) {
+        char *head;
+        if (nulls[i]) ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("curl_mime_* head must not contain null elements")));
+        head = TextDatumGetCString(elements[i]);
+        pg_curl_check_crlf(head, "curl_mime_* head");
+        pfree(head);
+    }
+    for (i = 0; i < count; i++) {
+        char *head = TextDatumGetCString(elements[i]);
+        struct curl_slist *temp = curl_slist_append(headers, head);
+        pfree(head);
+        if (!temp) {
+            curl_slist_free_all(headers);
+            ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_slist_append")));
+        }
+        headers = temp;
+    }
+    if (count) {
+        pfree(elements);
+        pfree(nulls);
+    }
+    return headers;
+}
+#endif
+
 static Datum pg_curl_mime_data_or_file(PG_FUNCTION_ARGS, curl_mimepart *part) {
 #if CURL_AT_LEAST_VERSION(7, 56, 0)
     char *name = NULL, *file = NULL, *type = NULL, *code = NULL, *head = NULL;
+    ArrayType *head_array = NULL;
+    struct curl_slist *headers = NULL;
+    int offset = get_fn_expr_argtype(fcinfo->flinfo, 1) == TEXTARRAYOID ? 1 : 0;
+    int head_arg = offset ? 1 : 5;
     CURLcode ec = CURL_LAST;
-    if (!PG_ARGISNULL(1)) name = TextDatumGetCString(PG_GETARG_DATUM(1));
-    if (!PG_ARGISNULL(2)) file = TextDatumGetCString(PG_GETARG_DATUM(2));
-    if (!PG_ARGISNULL(3)) type = TextDatumGetCString(PG_GETARG_DATUM(3));
-    if (!PG_ARGISNULL(4)) code = TextDatumGetCString(PG_GETARG_DATUM(4));
-    if (!PG_ARGISNULL(5)) head = TextDatumGetCString(PG_GETARG_DATUM(5));
+    if (!PG_ARGISNULL(1 + offset)) name = TextDatumGetCString(PG_GETARG_DATUM(1 + offset));
+    if (!PG_ARGISNULL(2 + offset)) file = TextDatumGetCString(PG_GETARG_DATUM(2 + offset));
+    if (!PG_ARGISNULL(3 + offset)) type = TextDatumGetCString(PG_GETARG_DATUM(3 + offset));
+    if (!PG_ARGISNULL(4 + offset)) code = TextDatumGetCString(PG_GETARG_DATUM(4 + offset));
+    if (!PG_ARGISNULL(head_arg)) {
+        if (offset) head_array = PG_GETARG_ARRAYTYPE_P(head_arg);
+        else head = TextDatumGetCString(PG_GETARG_DATUM(head_arg));
+    }
     /* name/file/type/head all end up in the part's header lines */
     if (name) pg_curl_check_crlf(name, "curl_mime_* name");
     if (file) pg_curl_check_crlf(file, "curl_mime_* file");
@@ -466,8 +514,13 @@ static Datum pg_curl_mime_data_or_file(PG_FUNCTION_ARGS, curl_mimepart *part) {
     if (type && ((ec = curl_mime_type(part, type)) != CURLE_OK)) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
     if (code && ((ec = curl_mime_encoder(part, code)) != CURLE_OK)) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
     if (head) {
-        struct curl_slist *headers = NULL;
         if (!(headers = curl_slist_append(headers, head))) ereport(ERROR, (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("!curl_slist_append")));
+    }
+    if (head_array) {
+        headers = pg_curl_mime_headers_array(head_array);
+        PG_FREE_IF_COPY(head_array, head_arg);
+    }
+    if (headers) {
         if ((ec = curl_mime_headers(part, headers, true)) != CURLE_OK) {
             curl_slist_free_all(headers);
             ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
