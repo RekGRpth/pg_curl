@@ -262,12 +262,10 @@ static pg_curl_t *pg_curl_easy_init(const char *conname) {
  * while the list is non-empty, so otherwise the next perform would walk
  * freed memory. */
 static void pg_curl_easy_slist_reset(pg_curl_t *curl, CURLoption option, struct curl_slist **slist) {
-    CURLcode ec;
     /* A protocol omitted from libcurl cannot retain this list option.
      * Clearing it is a no-op; setting or using it still reports an error. */
-    ec = curl_easy_setopt(curl->easy, option, (struct curl_slist *)NULL);
-    if (ec != CURLE_OK && ec != CURLE_UNKNOWN_OPTION && ec != CURLE_NOT_BUILT_IN)
-        ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
+    CURLcode ec = curl_easy_setopt(curl->easy, option, (struct curl_slist *)NULL);
+    if (ec != CURLE_OK && ec != CURLE_UNKNOWN_OPTION && ec != CURLE_NOT_BUILT_IN) ereport(ERROR, (pg_curl_ec(ec), errmsg("%s", curl_easy_strerror(ec))));
     curl_slist_free_all(*slist);
     *slist = NULL;
 }
